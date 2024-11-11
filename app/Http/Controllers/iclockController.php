@@ -28,7 +28,7 @@ public function handshake(Request $request)
 
     // update status device
     DB::table('devices')->updateOrInsert(
-        ['no_sn' => $request->input('SN')],
+        ['serial_number' => $request->input('SN')],
         ['online' => now()]
     );
 
