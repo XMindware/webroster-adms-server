@@ -17,8 +17,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\iclockController;
 
 Route::controller(AuthController::class)->group(function(){
-    Route::get('/registration','registration')->middleware('alreadyLoggedIn');
-    Route::post('/registration-user','registerUser')->name('register-user');
+    Route::get('/registration','registration')->middleware('isLoggedIn');
+    Route::post('/registration-user','registerUser')->name('isLoggedIn');
     Route::get('/login','login')->middleware('alreadyLoggedIn');
     Route::post('/login-user','loginUser')->name('login-user');
     Route::get('/logout','logout')->name('logout');

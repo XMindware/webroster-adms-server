@@ -9,7 +9,12 @@
   <body>
     <div class="container">
         <div class="row">
-            <div class="col-md-col-md-offset-4">
+            <div class="col-md-col-md-offset-4">                
+                <img src="{{ asset('images/webroster_bw_logo-tr.png') }}" alt="Logo" height="60">
+            </div>  
+        </div>
+        <div class="row">
+            <div class="col-md-col-md-offset-4">                
                 <h2>Login</h2>
                 <form action="{{route('login-user')}}" method="post" enctype="multipart/form-data">
                     @csrf
@@ -23,7 +28,6 @@
                         {{Session::get('fail')}}
                     </div>
                 @endif
-
                     <div class="form-group">
                         <label for="email">Email</label>
                         <input type="email" name="email" class="form-control">
@@ -48,7 +52,6 @@
                         <button type="submit" class="btn btn-block btn-success">Login</button>                        
                     </div>
                     <br>
-                    <a href="registration">Registration</a>
                 </form>
             </div>
         </div>
