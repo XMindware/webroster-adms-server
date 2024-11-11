@@ -21,7 +21,7 @@ Route::controller(AuthController::class)->group(function(){
     Route::post('/registration-user','registerUser')->name('register-user');
     Route::get('/login','login')->middleware('alreadyLoggedIn');
     Route::post('/login-user','loginUser')->name('login-user');
-    Route::get('/logout','logout');
+    Route::get('/logout','logout')->name('logout');
     Route::get('devices', [DeviceController::class, 'Index'])->name('devices.index')->middleware('isLoggedIn');
     Route::get('devices/create', [DeviceController::class, 'Create'])->name('devices.create')->middleware('isLoggedIn');
     Route::post('devices/store', [DeviceController::class, 'Store'])->name('devices.store')->middleware('isLoggedIn');

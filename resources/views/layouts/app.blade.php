@@ -62,6 +62,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('devices.FingerLog') }}">Finger Log</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('logout') }}">Logout</a>
+                    </li>
                 </ul>
             </div>
             <span class="navbar-text d-none d-lg-block">
