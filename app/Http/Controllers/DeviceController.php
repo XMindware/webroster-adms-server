@@ -72,8 +72,8 @@ class DeviceController extends Controller
     {
         $device = Device::find($id);
         $device->name = $request->input('name');
-        $device->no_sn = $request->input('no_sn');
-        $device->idreloj = $request->input('idreloj');
+        $device->serial_number = $request->input('no_sn');
+        $device->idreloj = $request->input('idreloj') ?? '999999';
         $device->save();
       return redirect()->route('devices.index')->with('success', 'Biométrico actualizado correctamente');
     }
