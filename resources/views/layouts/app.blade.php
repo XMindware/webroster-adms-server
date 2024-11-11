@@ -6,7 +6,7 @@
     <title>Webroster ADMS Server</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Favicons -->
-    <link href="{{ asset('images/favicon.png') }}" rel="icon">
+    <link href="{{ asset('favicon.png') }}" rel="icon">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.1/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/1.11.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <style>
