@@ -117,9 +117,9 @@ public function handshake(Request $request)
     }
     public function getrequest(Request $request)
     {
-        // $r = "GET OPTION FROM: ".$request->SN."\nStamp=".strtotime('now')."\nOpStamp=".strtotime('now')."\nErrorDelay=60\nDelay=30\nResLogDay=18250\nResLogDelCount=10000\nResLogCount=50000\nTransTimes=00:00;14:05\nTransInterval=1\nTransFlag=1111000000\nRealtime=1\nEncrypt=0";
+        $r = "C:100:CHECK";
 
-        return "OK";
+        return $r;
     }
     private function validateAndFormatInteger($value)
     {
