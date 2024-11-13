@@ -19,7 +19,7 @@ class Attendance extends Model
         'status3',
         'status4',
         'status5',
-        'record_uniqueid',
+        'response_uniqueid',
     ];
 
     protected $casts = [
