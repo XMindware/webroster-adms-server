@@ -34,7 +34,7 @@ class DeviceController extends Controller
     }
     public function Attendance() {
        //$attendances = Attendance::latest('timestamp')->orderBy('id','DESC')->paginate(15);
-       $attendances = DB::table('attendances')->select('id','sn','table','stamp','employee_id','timestamp','status1','status2','status3','status4','status5')->orderBy('id','DESC')->paginate(15);
+       $attendances = DB::table('attendances')->select('id','sn','table','stamp','employee_id','timestamp','response_uniqueid')->orderBy('id','DESC')->paginate(15);
 
         return view('devices.attendance', compact('attendances'));
         
