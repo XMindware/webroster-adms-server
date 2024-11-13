@@ -36,7 +36,10 @@ class SyncronizeAttendance extends Command
         foreach ($records as $record) {
             $data = $this->prepareData($record);
             $response = (object)$this->apiServices->postData($data); // Adjust the endpoint as necessary
-
+            if ($response->status == 'failed') {
+                $this->error("Failed to process record ID {$record->id}. " . $response->message);
+                continue;
+            }
             $this->info("Processed record ID {$record->id}. " . $response->id);       
             $this->updateRecord($record, $response); 
         }
