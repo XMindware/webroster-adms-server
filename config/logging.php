@@ -116,6 +116,11 @@ return [
             'path' => storage_path('logs/request_response.log'),
             'level' => 'info',
         ],
+            '404_errors' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/404_errors.log'),
+            'level' => 'warning',
+        ],
         'errorlog' => [
             'driver' => 'errorlog',
             'level' => env('LOG_LEVEL', 'debug'),
