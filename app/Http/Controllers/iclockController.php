@@ -31,10 +31,14 @@ class iclockController extends Controller
             ['serial_number' => $request->input('SN')],
             ['online' => now()]
         );
+        // set time() to gmt -6
+        $date = Carbon::now('America/Mexico_City');
+        $format = 'Y-m-d H:i:s';
+        $localTime = $date->format($format);
 
         $r = "GET OPTION FROM: {$request->input('SN')}\r\n" .
             "Stamp=9999\r\n" .
-            "OpStamp=" . time() . "\r\n" .
+            "OpStamp=" . $localTime . "\r\n" .
             "ErrorDelay=60\r\n" .
             "Delay=30\r\n" .
             "ResLogDay=18250\r\n" .
@@ -43,7 +47,7 @@ class iclockController extends Controller
             "TransTimes=00:00;14:05\r\n" .
             "TransInterval=1\r\n" .
             "TransFlag=1111000000\r\n" .
-            //  "TimeZone=7\r\n" .
+//            "TimeZone=-6\r\n" .
             "Realtime=1\r\n" .
             "Encrypt=0";
 
