@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADMS Server</title>
+    <title>Webroster ADMS Server</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <!-- Favicons -->
+    <link href="{{ asset('favicon.png') }}" rel="icon">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.0.1/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/1.11.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <style>
@@ -40,7 +42,9 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container">
-            <a class="navbar-brand" href="#">ADMS Server</a>
+            <a class="navbar-brand" href="#">
+                <img src="{{ asset('images/webroster_bw_logo-tr.png') }}" alt="Logo" height="30">
+                Webroster ADMS</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -58,10 +62,13 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('devices.FingerLog') }}">Finger Log</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('logout') }}">Logout</a>
+                    </li>
                 </ul>
             </div>
             <span class="navbar-text d-none d-lg-block">
-                {{ now() }}
+                Mindware.com.mx
             </span>
         </div>
     </nav>
