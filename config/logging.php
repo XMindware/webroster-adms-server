@@ -111,7 +111,11 @@ return [
             'facility' => LOG_USER,
             'replace_placeholders' => true,
         ],
-
+            'request_log' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/request_response.log'),
+            'level' => 'info',
+        ],
         'errorlog' => [
             'driver' => 'errorlog',
             'level' => env('LOG_LEVEL', 'debug'),
