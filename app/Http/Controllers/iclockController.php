@@ -116,9 +116,8 @@ class iclockController extends Controller
     }
     public function getrequest(Request $request)
     {
-        $r = "C:100:CHECK";
-
-        return $r;
+        // TODO : Get commands pending for this clock and send them, meanwhile just return OK
+        return "OK";
     }
     private function validateAndFormatInteger($value)
     {
