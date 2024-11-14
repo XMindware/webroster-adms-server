@@ -19,28 +19,35 @@ class RequestLogger
     public function handle(Request $request, Closure $next)
     {
         $routesToLog = [
-            '/iclock/cdata',
-            '/iclock/getrequest',
-            // Add more routes here
+            'iclock/cdata',
+            'iclock/getrequest',
+            // Add more routes here if needed
         ];
-        
-        // Log the incoming request
-        Log::channel('request_log')->info('Request Logged', [
-            'method' => $request->getMethod(),
-            'url' => $request->fullUrl(),
-            'headers' => $request->headers->all(),
-            'body' => $request->all(),
-        ]);
 
-        // Process the request and get the response
-        $response = $next($request);
+        // Check if the current route is in the routes to log
+        if (in_array($request->path(), $routesToLog)) {
+            
+            // Log the incoming request
+            Log::channel('request_log')->info('Request Logged', [
+                'method' => $request->getMethod(),
+                'url' => $request->fullUrl(),
+                'headers' => $request->headers->all(),
+                'body' => $request->all(),
+            ]);
 
-        // Log the response
-        Log::channel('request_log')->info('Response Logged', [
-            'status' => $response->status(),
-            'content' => $response->getContent(),
-        ]);
+            // Process the request and get the response
+            $response = $next($request);
 
-        return $response;
+            // Log the response
+            Log::channel('request_log')->info('Response Logged', [
+                'status' => $response->status(),
+                'content' => $response->getContent(),
+            ]);
+
+            return $response;
+        }
+
+        // If route is not in routesToLog, process request without logging
+        return $next($request);
     }
 }
