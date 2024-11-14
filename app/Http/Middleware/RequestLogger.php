@@ -20,29 +20,27 @@ class RequestLogger
     {
         $routesToLog = [
             '/iclock/cdata',
-            '/iclock/getrequest'
+            '/iclock/getrequest',
+            // Add more routes here
         ];
+        
+        // Log the incoming request
+        Log::channel('request_log')->info('Request Logged', [
+            'method' => $request->getMethod(),
+            'url' => $request->fullUrl(),
+            'headers' => $request->headers->all(),
+            'body' => $request->all(),
+        ]);
 
-        if (in_array($request->path(), $routesToLog)) {
-            
-            // Log the incoming request
-            Log::channel('request_log')->info('Request Logged', [
-                'method' => $request->getMethod(),
-                'url' => $request->fullUrl(),
-                'headers' => $request->headers->all(),
-                'body' => $request->all(),
-            ]);
+        // Process the request and get the response
+        $response = $next($request);
 
-            // Process the request and get the response
-            $response = $next($request);
+        // Log the response
+        Log::channel('request_log')->info('Response Logged', [
+            'status' => $response->status(),
+            'content' => $response->getContent(),
+        ]);
 
-            // Log the response
-            Log::channel('request_log')->info('Response Logged', [
-                'status' => $response->status(),
-                'content' => $response->getContent(),
-            ]);
-
-            return $response;
-        }
+        return $response;
     }
 }
