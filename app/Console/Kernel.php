@@ -13,9 +13,6 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
 
-        $schedule->call(function () {
-            \Log::info('Scheduler is working at ' . now());
-        })->everyMinute();
         $schedule->command('api:sincronizeAttendance')->everyMinute();
     }
 
