@@ -57,7 +57,6 @@ class iclockController extends Controller
     public function receiveRecords(Request $request)
     {   
         
-        //DB::connection()->enableQueryLog();
         $content['url'] = json_encode($request->all());
         $content['data'] = $request->getContent();;
         DB::table('finger_log')->insert($content);
@@ -75,6 +74,20 @@ class iclockController extends Controller
                 }
                 return "OK: ".$tot;
             }
+
+            $data = [
+                'url' => json_encode($request->all()),
+                'data' => $request->getContent(),
+                'sn' => $request->input('SN'),
+                'option' => $request->input('option'),
+            ];
+            DB::table('device_log')->insert($data);
+    
+            // update status device
+            DB::table('devices')->updateOrInsert(
+                ['serial_number' => $request->input('SN')],
+                ['online' => now()]
+            );
 
             //attendance
             foreach ($arr as $rey) {
