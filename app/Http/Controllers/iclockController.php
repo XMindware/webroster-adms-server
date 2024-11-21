@@ -146,6 +146,8 @@ class iclockController extends Controller
         $response = '';
         foreach ($commands as $command) {
             $response .= $command->data . "\r\n";
+            $command->update(['executed_at' => now()]);
+            $command->save();         
         }
         Log::info('getrequest Response', ['response' => $response]);
         return $response;
