@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Oficina;
 use Illuminate\Support\Facades\Http;
 
 class PushChecadaService
@@ -46,5 +47,24 @@ class PushChecadaService
                 'message' => $e->getMessage()
             ];
         }
+    }
+
+    public function getStationAgents(Oficina $oficina)
+    {
+        $currentAPI = (object)$this->baseUrls['uamex'];
+        $headers = [
+            'Authorization' => $currentAPI->token,
+            'Content-Type' => 'multipart/form-data',
+            'Accept' => 'application/json',
+        ];
+
+        $form = [
+            'idempresa' => $oficina->idempresa,
+            'idoficina' => $oficina->idoficina,
+        ];
+
+        $response = Http::withHeaders($headers)
+            ->post($oficina->public_url() . '/checador/getStationAgents', $form);
+        return $response->json();
     }
 }

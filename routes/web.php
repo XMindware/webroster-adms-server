@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\UsersController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\iclockController;
+use App\Http\Controllers\AgentesController;
 
 Route::controller(AuthController::class)->group(function(){
     Route::get('/registration','registration')->middleware('isLoggedIn');
@@ -22,14 +24,24 @@ Route::controller(AuthController::class)->group(function(){
     Route::get('/login','login')->middleware('alreadyLoggedIn');
     Route::post('/login-user','loginUser')->name('login-user');
     Route::get('/logout','logout')->name('logout');
-    Route::get('devices', [DeviceController::class, 'Index'])->name('devices.index')->middleware('isLoggedIn');
-    Route::get('devices/create', [DeviceController::class, 'Create'])->name('devices.create')->middleware('isLoggedIn');
-    Route::post('devices/store', [DeviceController::class, 'Store'])->name('devices.store')->middleware('isLoggedIn');
-    Route::get('devices-log', [DeviceController::class, 'DeviceLog'])->name('devices.DeviceLog')->middleware('isLoggedIn');
-    Route::get('finger-log', [DeviceController::class, 'FingerLog'])->name('devices.FingerLog')->middleware('isLoggedIn');
-    Route::get('attendance', [DeviceController::class, 'Attendance'])->name('devices.Attendance')->middleware('isLoggedIn');
-
 });
+
+Route::controller(DeviceController::class)->group(function(){
+    Route::get('/devices/{id}/edit','Edit')->name('devices.edit');
+    Route::get('devices','Index')->name('devices.index');
+    Route::get('devices/create','Create')->name('devices.create');
+    Route::post('devices/{id}/update','Update')->name('devices.update');
+    Route::post('devices/store','Store')->name('devices.store');
+    Route::get('devices/{id}/populate','Populate')->name('devices.populate');
+    Route::get('devices-log','DeviceLog')->name('devices.DeviceLog');
+    Route::get('finger-log','FingerLog')->name('devices.FingerLog');
+    Route::get('attendance','Attendance')->name('devices.Attendance');
+})->middleware('isLoggedIn');
+
+Route::get('agentes', [AgentesController::class, 'index'])->name('agentes.index')->middleware('isLoggedIn');
+Route::get('agentes/pull', [AgentesController::class, 'pullAgentes'])->name('agentes.pull')->middleware('isLoggedIn');
+Route::post('agentes/runpull', [AgentesController::class, 'runPullAgentes'])->name('agentes.runpull')->middleware('isLoggedIn');
+
 
 // handshake
 Route::get('/iclock/cdata', [iclockController::class, 'handshake']);

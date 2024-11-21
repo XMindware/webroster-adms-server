@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Yajra\DataTables\Facades\Datatables;
 use Illuminate\Http\Request;
 use App\Models\Device;
+use App\Models\Oficina;
 use App\Models\Attendance;
 use DB;
 
@@ -65,17 +66,32 @@ class DeviceController extends Controller
     public function edit($id)
     {
         $device = Device::find($id);
-        return view('devices.edit', compact('device'));
+        $oficinas = Oficina::all();
+        return view('devices.edit', compact('device', 'oficinas'));
     }
 
     public function update(Request $request, $id)
     {
         $device = Device::find($id);
+        $oficina = Oficina::where('idoficina', $request->input('idoficina'))->first();
+
+        if (!$oficina) {
+            return redirect()->route('devices.index')->with('error', 'Oficina no encontrada');
+        }
         $device->name = $request->input('name');
-        $device->serial_number = $request->input('no_sn');
+        $device->serial_number = $request->input('serial_number');
         $device->idreloj = $request->input('idreloj') ?? '999999';
+        $device->idoficina = $oficina->idoficina;
+        $device->idempresa = $oficina->idempresa;
         $device->save();
       return redirect()->route('devices.index')->with('success', 'Biométrico actualizado correctamente');
+    }
+
+    public function Populate($id)
+    {
+        $device = Device::find($id);
+        $device->populate();
+        return redirect()->route('devices.index')->with('success', 'Biométrico actualizado correctamente');
     }
 
     // // Menghapus device dari database

@@ -5,6 +5,7 @@ use App\Models\Attendance;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Log;
 
 
 class iclockController extends Controller
@@ -129,8 +130,24 @@ class iclockController extends Controller
     }
     public function getrequest(Request $request)
     {
-        // TODO : Get commands pending for this clock and send them, meanwhile just return OK
-        return "OK";
+        $device = Device::where('serial_number', $request->input('SN'))->first();
+        if (!$device) {
+            return "ERROR: Device not found";
+        }
+
+        $commands = $device->pendingCommands();
+
+        if ($commands->count() === 0) {
+            return "OK";
+        }
+
+        // concatenate all commands
+        $response = '';
+        foreach ($commands as $command) {
+            $response .= $command->data . "\r\n";
+        }
+        Log::info('getrequest Response', ['response' => $response]);
+        return $response;
     }
     private function validateAndFormatInteger($value)
     {

@@ -54,13 +54,17 @@
                         <a class="nav-link" href="{{ route('devices.index') }}">Device</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('devices.Attendance') }}">Attendance</a>
+                        <a class="nav-link" href="{{ route('agentes.index') }}">Employees</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('devices.DeviceLog') }}">Device Log</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('devices.FingerLog') }}">Finger Log</a>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Utilities
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="{{ route('devices.Attendance') }}">Attendance</a></li>
+                            <li><a class="dropdown-item" href="{{ route('devices.DeviceLog') }}">Device Log</a></li>
+                            <li><a class="dropdown-item" href="{{ route('devices.FingerLog') }}">Finger Log</a></li>
+                        </ul>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('logout') }}">Logout</a>
