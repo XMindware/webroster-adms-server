@@ -39,6 +39,11 @@ class Device extends Model
         return $query->where('online', true);
     }
 
+    public function pendingCommands()
+    {
+        return $this->commands()->where('executed_at', null);
+    }
+
     public function populate()
     {
         $service = new PopulateEmployeesService($this);
