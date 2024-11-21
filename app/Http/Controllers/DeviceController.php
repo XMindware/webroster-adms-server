@@ -88,7 +88,7 @@ class DeviceController extends Controller
       return redirect()->route('devices.index')->with('success', 'Biométrico actualizado correctamente');
     }
 
-    public function Populate($id)
+    public function Populate(Request $request, $id)
     {
         Log::info('Populate', ['id' => $id]);
         $device = Device::find($id);

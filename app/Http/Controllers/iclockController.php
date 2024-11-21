@@ -137,18 +137,21 @@ class iclockController extends Controller
         }
 
         $commands = $device->pendingCommands();
-   
-        if ($commands->count() === 0) {
+
+        if ($commands->isEmpty()) {
             return "OK";
         }
 
-        // concatenate all commands
-        $response = '';
-        foreach ($commands as $command) {
-            $response .= $command->data . "\r\n";
-            $command->update(['executed_at' => now()]);
-            $command->save();         
-        }
+        // Collect and concatenate all command data
+        $response = implode("\r\n", $commands->pluck('data')->toArray()) . "\r\n";
+
+        // Update commands' executed_at timestamps
+        DB::transaction(function () use ($commands) {
+            foreach ($commands as $command) {
+                $command->update(['executed_at' => now()]);
+            }
+        });
+        
         Log::info('getrequest Response', ['response' => $response]);
         return $response;
     }
