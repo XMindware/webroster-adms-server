@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Agente;
 use App\Models\Device;
+use App\Models\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
