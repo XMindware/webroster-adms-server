@@ -46,7 +46,12 @@ class Device extends Model
 
     public function populate()
     {
-        $service = new PopulateEmployeesService($this);
-        $service->run();
+        try {
+            $service = new PopulateEmployeesService($this);
+            $service->run();
+        } catch (\Exception $e) {
+            // log the error
+            \Log::error($e->getMessage());
+        }        
     }
 }

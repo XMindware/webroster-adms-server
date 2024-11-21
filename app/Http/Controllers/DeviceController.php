@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Log;
 use Yajra\DataTables\Facades\Datatables;
 use Illuminate\Http\Request;
 use App\Models\Device;
@@ -89,9 +90,14 @@ class DeviceController extends Controller
 
     public function Populate($id)
     {
+        Log::info('Populate', ['id' => $id]);
         $device = Device::find($id);
-        $device->populate();
-        return redirect()->route('devices.index')->with('success', 'Biométrico actualizado correctamente');
+        try {
+            $device->populate();
+            return redirect()->route('devices.index')->with('success', 'Biométrico actualizado correctamente');
+        } catch (\Exception $e) {
+            return redirect()->route('devices.index')->with('error', 'Error al actualizar biométrico');
+        }
     }
 
     // // Menghapus device dari database
