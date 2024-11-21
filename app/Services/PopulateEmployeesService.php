@@ -43,6 +43,6 @@ class PopulateEmployeesService
 
     protected function updateEmployee($employee, $CmdId)
     {
-        return "C:{$CmdId}:DATA UPDATE USERINFO PIN={$employee->idagente}\tName={$employee->fullname}\tPasswd=\tCard=\tGrp=1\tTZ=0000000100000000\tPri=0\tCategory=0";
+        return "C:{$CmdId}:DATA UPDATE USERINFO PIN={$employee->idagente}	Name={$employee->fullname}	Passwd=	Card=	Grp=1	TZ=0000000100000000	Pri=0	Category=0";
     }
 }
