@@ -137,7 +137,7 @@ class iclockController extends Controller
         }
 
         $commands = $device->pendingCommands();
-
+        dd($commands);
         if ($commands->count() === 0) {
             return "OK";
         }
