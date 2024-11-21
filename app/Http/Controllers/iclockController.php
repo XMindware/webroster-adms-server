@@ -141,6 +141,7 @@ class iclockController extends Controller
         if ($commands->isEmpty()) {
             return "OK";
         }
+        $countresponse = $commands->pluck('data')->count();
 
         // Collect and concatenate all command data
         $response = implode("\r\n", $commands->pluck('data')->toArray()) . "\r\n";
@@ -151,8 +152,8 @@ class iclockController extends Controller
                 $command->update(['executed_at' => now()]);
             }
         });
-        
-        Log::info('getrequest Response', ['response' => $response]);
+
+        Log::info('getrequest Response count', ['response' => $countresponse]);
         return $response;
     }
     private function validateAndFormatInteger($value)

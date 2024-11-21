@@ -16,10 +16,10 @@ class Command extends Model
         'command',
         'data',
         'response',
+        'executed_at'
     ];
 
     public $timestamps = [
-        'executed_at',
         'completed_at',
         'failed_at',
     ];
