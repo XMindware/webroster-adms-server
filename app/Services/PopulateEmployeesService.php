@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Agente;
 use App\Models\Device;
-use App\Models\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -29,7 +28,7 @@ class PopulateEmployeesService
         $CmdId = $lastCommand ? $lastCommand->id : 0;
 
         foreach ($employees as $employee) {
-            $CmdId =
+            
             // create a command to populate the employee
             $command = $this->device->commands()->create([
                 'command' => $CmdId,
