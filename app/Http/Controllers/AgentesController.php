@@ -11,15 +11,15 @@ class AgentesController extends Controller
 {
     public function index(Request $request)
     {        
-        $oficina = $request->input('oficina');
-        if ($oficina) {
-            $agentes = Agente::where('idoficina', $oficina)->get()
+        $selectedOficina = $request->query('selectedOficina');
+        if ($selectedOficina) {
+            $agentes = Agente::where('idoficina', $selectedOficina)->get()
                     ->sortBy('idagente');
         } else {
             $agentes = Agente::all()->sortBy('idagente');
         }
         $oficinas = Oficina::all();
-        return view('agentes.index', compact('agentes', 'oficinas'));
+        return view('agentes.index', compact('agentes', 'oficinas', 'selectedOficina'));
     }
 
     public function pullAgentes(Request $request)

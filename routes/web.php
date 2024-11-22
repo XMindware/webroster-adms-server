@@ -36,12 +36,16 @@ Route::controller(DeviceController::class)->group(function(){
     Route::get('devices-log','DeviceLog')->name('devices.DeviceLog');
     Route::get('finger-log','FingerLog')->name('devices.FingerLog');
     Route::get('attendance','Attendance')->name('devices.Attendance');
+    Route::get('devices/delete/employee','DeleteEmployeeRecord')->name('devices.DeleteEmployeeRecord');
+    Route::post('devices/delete/employee','RunDeleteFingerRecord')->name('devices.RunDeleteFingerRecord');
+    Route::get('devices/retrieve/fingerdata','RetrieveFingerData')->name('devices.RetrieveFingerData');
 })->middleware('isLoggedIn');
 
-Route::get('agentes', [AgentesController::class, 'index'])->name('agentes.index')->middleware('isLoggedIn');
-Route::get('agentes/pull', [AgentesController::class, 'pullAgentes'])->name('agentes.pull')->middleware('isLoggedIn');
-Route::post('agentes/runpull', [AgentesController::class, 'runPullAgentes'])->name('agentes.runpull')->middleware('isLoggedIn');
-
+Route::controller(AgentesController::class)->group(function(){    
+    Route::get('agentes', 'index')->name('agentes.index');
+    Route::get('agentes/pull', 'pullAgentes')->name('agentes.pull');
+    Route::post('agentes/runpull', 'runPullAgentes')->name('agentes.runpull');
+})->middleware('isLoggedIn');
 
 // handshake
 Route::get('/iclock/cdata', [iclockController::class, 'handshake']);

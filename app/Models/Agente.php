@@ -16,11 +16,13 @@ class Agente extends Model
         'idoficina',
         'idagente',
         'shortname',
-        'fullname'
+        'fullname',
+        'fingerprint_data'
     ];
 
     public function oficina()
     {
         return $this->belongsTo(Oficina::class, 'idoficina', 'idoficina');
     }
+
 }

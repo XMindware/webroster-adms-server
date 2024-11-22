@@ -12,11 +12,16 @@
         @endif
         <div class="form-group">
             <label for="oficina">Offices</label>
-            <select name="oficina" class="form-control" id="oficina">
-                @foreach ($oficinas as $oficina)
-                    <option value="{{ $oficina->idoficina }}">{{ $oficina->ubicacion }}</option>
-                @endforeach
-            </select>
+            <form method="GET" action="{{ route('agentes.index', ['selectedOficina' => $selectedOficina]) }}" id="oficinaForm">
+                <select name="selectedOficina" class="form-control" id="selectedOficina">
+                    @foreach ($oficinas as $oficina)
+                        <option value="{{ $oficina->idoficina }}" 
+                            {{ $oficina->idoficina == $selectedOficina ? 'selected' : '' }}>
+                            {{ $oficina->ubicacion }}
+                        </option>
+                    @endforeach
+                </select>
+            </form>
         </div>
         <br>
         <table class="table table-bordered data-table" id="employees">
@@ -45,4 +50,15 @@
         </table>
 
     </div>
+@endsection
+
+@section('scripts')
+    <script>
+        $(document).ready(function() {
+            $('#selectedOficina').change(function() {
+                $('#oficinaForm').submit();
+            });
+        });
+    </script>
+
 @endsection
