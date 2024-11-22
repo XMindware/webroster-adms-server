@@ -25,7 +25,7 @@ class OficinasSeeder extends Seeder
                 'idoficina' => 1,
                 'ubicacion' => 'Cancun',
                 'iatacode' => 'CUN',
-                'public_url' => 'https://unitedpvr.mindware.com.mx',
+                'public_url' => 'https://unitedcun.mindware.com.mx',
             ],
             [
                 'idempresa' => 2,
