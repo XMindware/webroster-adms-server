@@ -126,8 +126,7 @@ class iclockController extends Controller
     }
     public function test(Request $request)
     {
-        $log['data'] = $request->getContent();
-        DB::table('finger_log')->insert($log);
+        return "OK";
     }
     public function getrequest(Request $request)
     {

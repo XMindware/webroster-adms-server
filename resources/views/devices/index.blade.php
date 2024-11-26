@@ -25,18 +25,7 @@
                         <td>{{ $d->online }}</td>
                         <td>
                             <a href="{{ route('devices.populate', ['id' => $d->id ]) }}" class="btn btn-info">Update Employees</a>                            
-                            <a href="{{ route('devices.edit', ['id' => $d->id ]) }}" class="btn btn-primary">Edit</a>
-                            <!-- dropdown menu TBD
-                            <div class="dropdown d-inline-block">
-                                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    Actions
-                                </button>
-                                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                    <a class="dropdown-item" href="{{ route('devices.DeleteEmployeeRecord', ['id' => $d->id ]) }}" disabled>Delete Employee</a>
-                                    <a class="dropdown-item" href="{{ route('devices.RetrieveFingerData', ['id' => $d->id ]) }}" disabled>Pull Fingerprint data</a>
-                                </div>
-                            </div>
-                            -->
+                            <a href="{{ route('devices.edit', ['id' => $d->id ]) }}" class="btn btn-primary">Edit</a>                            
                         </td>
                     </tr>
                 @endforeach

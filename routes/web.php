@@ -26,26 +26,30 @@ Route::controller(AuthController::class)->group(function(){
     Route::get('/logout','logout')->name('logout');
 });
 
-Route::controller(DeviceController::class)->group(function(){
-    Route::get('/devices/{id}/edit','Edit')->name('devices.edit');
-    Route::get('devices','Index')->name('devices.index');
-    Route::get('devices/create','Create')->name('devices.create');
-    Route::post('devices/{id}/update','Update')->name('devices.update');
-    Route::post('devices/store','Store')->name('devices.store');
-    Route::get('devices/{id}/populate','Populate')->name('devices.populate');
-    Route::get('devices-log','DeviceLog')->name('devices.DeviceLog');
-    Route::get('finger-log','FingerLog')->name('devices.FingerLog');
-    Route::get('attendance','Attendance')->name('devices.Attendance');
-    Route::get('devices/delete/employee','DeleteEmployeeRecord')->name('devices.DeleteEmployeeRecord');
-    Route::post('devices/delete/employee','RunDeleteFingerRecord')->name('devices.RunDeleteFingerRecord');
-    Route::get('devices/retrieve/fingerdata','RetrieveFingerData')->name('devices.RetrieveFingerData');
-})->middleware('isLoggedIn');
+Route::controller(DeviceController::class)
+    ->middleware('isLoggedIn')
+    ->group(function () {
+        Route::get('devices', 'index')->name('devices.index');
+        Route::get('devices/create', 'create')->name('devices.create');
+        Route::post('devices/store', 'store')->name('devices.store');
+        Route::get('devices/{id}/edit', 'edit')->name('devices.edit');
+        Route::post('devices/{id}/update', 'update')->name('devices.update');
+        Route::get('devices/{id}/populate', 'populate')->name('devices.populate');
+        Route::get('devices-log', 'deviceLog')->name('devices.deviceLog');
+        Route::get('finger-log', 'fingerLog')->name('devices.fingerLog');
+        Route::get('attendance', 'attendance')->name('devices.attendance');
+        Route::get('devices/delete/employee', 'deleteEmployeeRecord')->name('devices.deleteEmployeeRecord');
+        Route::post('devices/delete/employee', 'runDeleteFingerRecord')->name('devices.runDeleteFingerRecord');
+        Route::get('devices/retrieve/fingerdata', 'retrieveFingerData')->name('devices.retrieveFingerData');
+    });
 
-Route::controller(AgentesController::class)->group(function(){    
-    Route::get('agentes', 'index')->name('agentes.index');
-    Route::get('agentes/pull', 'pullAgentes')->name('agentes.pull');
-    Route::post('agentes/runpull', 'runPullAgentes')->name('agentes.runpull');
-})->middleware('isLoggedIn');
+Route::controller(AgentesController::class)
+    ->middleware('isLoggedIn')
+    ->group(function(){    
+        Route::get('agentes', 'index')->name('agentes.index');
+        Route::get('agentes/pull', 'pullAgentes')->name('agentes.pull');
+        Route::post('agentes/runpull', 'runPullAgentes')->name('agentes.runpull');
+    });
 
 // handshake
 Route::get('/iclock/cdata', [iclockController::class, 'handshake']);
