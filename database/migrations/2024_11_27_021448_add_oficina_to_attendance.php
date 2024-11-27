@@ -24,16 +24,30 @@ return new class extends Migration
             $table->unsignedSmallInteger('idoficina')->nullable();
         }
 
-        // Add index and foreign key if not already existing
-        if (!Schema::hasIndex('attendances', 'idoficina')) {
-            $table->index('idoficina');
+        // Check if the index already exists before adding it
+        $indexExists = DB::select(
+            "SHOW INDEX FROM attendances WHERE Key_name = 'attendances_idoficina_index'"
+        );
+
+        if (empty($indexExists)) {
+            $table->index('idoficina', 'attendances_idoficina_index');
         }
 
         // Ensure foreign key constraint
-        $table->foreign('idoficina')
-            ->references('idoficina')
-            ->on('oficinas')
-            ->onDelete('cascade'); // Optional: Specify behavior on delete
+        $foreignExists = DB::select(
+            "SELECT CONSTRAINT_NAME 
+             FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+             WHERE TABLE_NAME = 'attendances'
+             AND COLUMN_NAME = 'idoficina'
+             AND REFERENCED_TABLE_NAME = 'oficinas'"
+        );
+
+        if (empty($foreignExists)) {
+            $table->foreign('idoficina')
+                ->references('idoficina')
+                ->on('oficinas')
+                ->onDelete('cascade'); // Optional: Specify behavior on delete
+        }
     });
 }
 
