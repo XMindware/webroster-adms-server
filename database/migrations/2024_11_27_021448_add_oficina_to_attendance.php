@@ -45,8 +45,7 @@ return new class extends Migration
         if (empty($foreignExists)) {
             $table->foreign('idoficina')
                 ->references('idoficina')
-                ->on('oficinas')
-                ->onDelete('cascade'); // Optional: Specify behavior on delete
+                ->on('oficinas');
         }
     });
 }
