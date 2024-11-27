@@ -61,7 +61,8 @@ class iclockController extends Controller
     {   
         
         $content['url'] = json_encode($request->all());
-        $content['data'] = $request->getContent();;
+        $content['data'] = $request->getContent();
+        
         DB::table('finger_log')->insert($content);
         try {
             $arr = preg_split('/\\r\\n|\\r|,|\\n/', $request->getContent());

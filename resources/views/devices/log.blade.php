@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="container">
-        <h2>Devices Log</h2>
+        <h2>{{ $title }}</h2>
         <table class="table table-bordered data-table" id="devices">
             <thead>
                 <tr>

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Models\Device;
 use App\Models\Oficina;
 use App\Models\Attendance;
+use App\Models\FingerLog;
 use DB;
 
 class DeviceController extends Controller
@@ -23,16 +24,16 @@ class DeviceController extends Controller
 
     public function DeviceLog(Request $request)
     {
-        $data['lable'] = "Devices Log";
+        $title = "Devices Log";
         $deviceLogs = DeviceLog::orderBy('id', 'DESC')->paginate(40);
-        return view('devices.log', compact('deviceLogs'));
+        return view('devices.log', compact('deviceLogs', 'title'));
     }
     
     public function FingerLog(Request $request)
     {
-        $data['lable'] = "Finger Log";
-        $data['log'] = DB::table('finger_log')->select('id','data','url')->orderBy('id','DESC')->get();
-        return view('devices.log',$data);
+        $title = "Finger Log";
+        $deviceLogs = FingerLog::orderBy('id', 'DESC')->paginate(40);
+        return view('devices.log', compact('deviceLogs', 'title'));
     }
     public function Attendance(Request $request) {
         $selectedOficina = $request->query('selectedOficina');
