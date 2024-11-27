@@ -9,11 +9,14 @@ class Attendance extends Model
 {
     use HasFactory;
 
+    protected $table = 'attendances';
+
     protected $fillable = [
         'employee_id',
         'timestamp',
         'sn',
         'idreloj',
+        'idoficina',
         'status1',
         'status2',
         'status3',
@@ -36,4 +39,9 @@ class Attendance extends Model
     {
         return $this->belongsTo(Device::class, 'sn', 'serial_number');
     }
+
+    public function office()
+    {
+        return $this->belongsTo(Oficina::class, 'idoficina', 'idoficina');
+    }  
 }

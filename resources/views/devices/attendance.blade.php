@@ -4,11 +4,25 @@
 <div class="container">
     <h2 class="mb-4">Checadas</h2>
 
-    @if(session('success'))
+    @if(session('status'))
         <div class="alert alert-success">
-            {{ session('success') }}
+            {{ session('status') }}
         </div>
     @endif
+    <div class="form-group">
+        <label for="oficina">Offices</label>
+        <form method="GET" action="{{ route('agentes.index', ['selectedOficina' => $selectedOficina]) }}" id="oficinaForm">
+            <select name="selectedOficina" class="form-control" id="selectedOficina">
+                @foreach ($oficinas as $oficina)
+                    <option value="{{ $oficina->idoficina }}" 
+                        {{ $oficina->idoficina == $selectedOficina ? 'selected' : '' }}>
+                        {{ $oficina->ubicacion }}
+                    </option>
+                @endforeach
+            </select>
+        </form>
+    </div>
+    <br>
 
     <div class="table-responsive">
         <table class="table table-bordered data-table">
@@ -35,11 +49,8 @@
         </table>
     </div>
     
-    <!-- source: https://stackoverflow.com/a/70119390 -->
     <div class="d-felx justify-content-center">
-        {{ $attendances->links() }}  {{-- Tampilkan pagination jika ada --}}
+        {{ $attendances->links() }}  
     </div>
-
-
 </div>
 @endsection

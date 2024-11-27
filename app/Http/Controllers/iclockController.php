@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use App\Models\Attendance;
 use App\Models\Device;
+use App\Models\DeviceLog;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -78,13 +79,14 @@ class iclockController extends Controller
             }
 
             $data = [
-                'url' => json_encode($request->all()),
-                'data' => $request->getContent(),
+                'url' => json_encode($request->url()),
+                'data' => json_encode($request->all()),
                 'sn' => $request->input('SN'),
                 'option' => $request->input('option'),
+                'idreloj' => Device::where('serial_number', $request->input('SN'))->first()->idreloj,
             ];
-            DB::table('device_log')->insert($data);
-    
+            DeviceLog::create($data);
+
             // update status device
             DB::table('devices')->updateOrInsert(
                 ['serial_number' => $request->input('SN')],

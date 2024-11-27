@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DeviceLog;
 use Log;
 use Yajra\DataTables\Facades\Datatables;
 use Illuminate\Http\Request;
@@ -23,9 +24,8 @@ class DeviceController extends Controller
     public function DeviceLog(Request $request)
     {
         $data['lable'] = "Devices Log";
-        $data['log'] = DB::table('device_log')->select('id','data','url')->orderBy('id','DESC')->get();
-        
-        return view('devices.log',$data);
+        $deviceLogs = DeviceLog::orderBy('id', 'DESC')->paginate(40);
+        return view('devices.log', compact('deviceLogs'));
     }
     
     public function FingerLog(Request $request)
@@ -34,11 +34,18 @@ class DeviceController extends Controller
         $data['log'] = DB::table('finger_log')->select('id','data','url')->orderBy('id','DESC')->get();
         return view('devices.log',$data);
     }
-    public function Attendance() {
-       //$attendances = Attendance::latest('timestamp')->orderBy('id','DESC')->paginate(15);
-       $attendances = DB::table('attendances')->select('id','sn','table','stamp','employee_id','timestamp','response_uniqueid')->orderBy('id','DESC')->paginate(15);
-
-        return view('devices.attendance', compact('attendances'));
+    public function Attendance(Request $request) {
+        $selectedOficina = $request->query('selectedOficina');
+        if ($selectedOficina) {
+            $attendances = Attendance::where('idoficina', $selectedOficina)
+                ->sortBy('timestamp', 'DESC')
+                ->paginate(40);
+        } else {
+            $attendances = Attendance::orderBy('timestamp', 'DESC')
+                ->paginate(40);
+        }
+        $oficinas = Oficina::all();
+        return view('devices.attendance', compact('attendances', 'oficinas', 'selectedOficina'));
         
     }
 
@@ -99,13 +106,4 @@ class DeviceController extends Controller
             return redirect()->route('devices.index')->with('error', 'Error al actualizar biométrico');
         }
     }
-
-    // // Menghapus device dari database
-    // public function destroy($id)
-    // {
-    //     $device = Device::find($id);
-    //     $device->delete();
-
-    //     return redirect()->route('devices.index')->with('success', 'Device berhasil dihapus!');
-    // }
 }
