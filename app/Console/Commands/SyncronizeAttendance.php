@@ -36,7 +36,6 @@ class SyncronizeAttendance extends Command
         // Loop through the data and call the API for each record
         foreach ($records as $record) {
             $data = $this->prepareData($record);
-            Log::info('Preparing data for record ID ' . json_encode($data));
             $response = (object)$this->apiServices->postData($data); // Adjust the endpoint as necessary
             if ($response->status == 'failed') {
                 $this->error("Failed to process record ID {$record->id}. " . $response->message);
