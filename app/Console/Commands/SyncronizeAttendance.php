@@ -68,6 +68,7 @@ class SyncronizeAttendance extends Command
             'status3' => $record->status3,
             'status4' => $record->status4,
             'status5' => $record->status5,
+            'idoficina' => $record->device->oficina->idoficina,
         ];
     }
 }

@@ -31,7 +31,7 @@ class PushChecadaService
     {
         try{
             
-            $currentAPI = (object)$this->baseUrls['uamex'];
+            $currentAPI = (object)$this->baseUrls[$data->idoficina];
             // set headers
             $headers = [
                 'Authorization' => $currentAPI->token,
