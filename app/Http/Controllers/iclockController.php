@@ -62,7 +62,7 @@ class iclockController extends Controller
         
         $content['url'] = json_encode($request->all());
         $content['data'] = $request->getContent();
-        
+
         DB::table('finger_log')->insert($content);
         try {
             $arr = preg_split('/\\r\\n|\\r|,|\\n/', $request->getContent());
@@ -114,7 +114,7 @@ class iclockController extends Controller
                 $q['status5'] = $this->validateAndFormatInteger($data[6] ?? null);
                 $q['created_at'] = now();
                 $q['updated_at'] = now();
-                
+                Log::info('receiveRecords', ['q' => $q]);
                 DB::table('attendances')->insert($q);
                 $tot++;
             }
