@@ -33,7 +33,7 @@ return [
     'apis' => [
         '4' => [
             'base_url' => env('API_UAMEX_BASE_URL', 'https://unitedmex.mindware.com.mx'),
-            'token' => env('API_UAMEX_TOKEN', 'CUMjLjVsFgCOPDBhGbPahrLH3C0HcR7pHG1EQIdUw841f6iLCx2mfW2ILvtmpHdT'),
+            'token' => env('API_UAMEX_TOKEN', ''),
         ],
         '1' => [
             'base_url' => env('API_UACUN_BASE_URL', 'https://unitedmex.test.mindware.com.mx'),
