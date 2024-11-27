@@ -24,6 +24,11 @@ class Device extends Model
         'modelo',
     ];
 
+    protected $casts = [
+        'updated_at' => 'datetime',
+        'online' => 'datetime',
+    ];
+
     public function oficina()
     {
         return $this->belongsTo(Oficina::class, 'idoficina', 'idoficina');

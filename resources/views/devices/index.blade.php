@@ -22,7 +22,7 @@
                         <td>{{ $d->idreloj }}</td>
                         <td>{{ $d->oficina->ubicacion }}</td>
                         <td>{{ $d->name }}</td>
-                        <td>{{ $d->online }}</td>
+                        <td>{{ $d->online->diffForHumans() }}</td>
                         <td>
                             <a href="{{ route('devices.populate', ['id' => $d->id ]) }}" class="btn btn-info">Update Employees</a>                            
                             <a href="{{ route('devices.edit', ['id' => $d->id ]) }}" class="btn btn-primary">Edit</a>                            
