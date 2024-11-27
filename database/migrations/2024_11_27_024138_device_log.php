@@ -26,7 +26,6 @@ return new class extends Migration
         if(!Schema::hasColumn('device_log','idreloj')){
             Schema::table('device_log', function (Blueprint $table) {
                 $table->string('idreloj')->default('999999');
-                $table->foreign('idreloj')->references('id')->on('devices');
             });
         }
     }
