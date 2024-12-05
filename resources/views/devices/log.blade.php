@@ -10,6 +10,7 @@
                     <th>Url</th>
                     <th>Data</th>
                     <th>ID Reloj</th>
+                    <th>Fecha</th>
                 </tr>
             </thead>
             <tbody>
@@ -19,6 +20,7 @@
                         <td>{{ $d->url }}</td>
                         <td>{{ $d->data }}</td>
                         <td>{{ $d->idreloj }}</td>
+                        <td>{{ $d->created_at->toDateTimeString() }}</td>
                     </tr>
                 @endforeach
             </tbody>

@@ -20,6 +20,11 @@ class DeviceLog extends Model
         'url'
     ];
 
+    protected $casts = [
+        'updated_at' => 'datetime',
+        'created_at' => 'datetime',
+    ];
+
     public function device()
     {
         return $this->belongsTo(Device::class, 'idreloj', 'id');
