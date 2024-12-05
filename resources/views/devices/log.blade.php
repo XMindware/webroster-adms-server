@@ -10,7 +10,7 @@
                     <th>Url</th>
                     <th class="w-50">Data</th>
                     <th>ID Reloj</th>
-                    <th class="w-10">Fecha</th>
+                    <th class="w-16">Fecha</th>
                 </tr>
             </thead>
             <tbody>
