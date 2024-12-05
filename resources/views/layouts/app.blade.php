@@ -14,6 +14,10 @@
         td.text-wrap {
             word-break: break-word;
         }
+
+        .w-20 {
+            width: 20% !important;
+        }
         
         @media (max-width: 991.98px) {
             .navbar-collapse {
