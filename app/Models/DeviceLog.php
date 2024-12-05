@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -20,10 +21,17 @@ class DeviceLog extends Model
         'url'
     ];
 
-    protected $casts = [
-        'updated_at' => 'datetime',
-        'created_at' => 'datetime',
-    ];
+    public function getCreatedAtAttribute($value)
+    {
+        $timezone = config('app.timezone');
+        return Carbon::parse($value)->setTimezone($timezone)->toDateTimeString();
+    }
+
+    public function getUpdatedAtAttribute($value)
+    {
+        $timezone = config('app.timezone');
+        return Carbon::parse($value)->setTimezone($timezone)->toDateTimeString();
+    }
 
     public function device()
     {

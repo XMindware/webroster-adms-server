@@ -20,7 +20,7 @@
                         <td>{{ $d->url }}</td>
                         <td>{{ $d->data }}</td>
                         <td>{{ $d->idreloj }}</td>
-                        <td>{{ $d->created_at->toDateTimeString() }}</td>
+                        <td>{{ $d->created_at }}</td>
                     </tr>
                 @endforeach
             </tbody>
