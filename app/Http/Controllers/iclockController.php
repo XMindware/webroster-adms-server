@@ -7,6 +7,7 @@ use App\Models\DeviceLog;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 use Log;
 
 
@@ -21,6 +22,9 @@ class iclockController extends Controller
     // handshake
     public function handshake(Request $request)
     {
+
+        try{
+            
         $data = [
             'url' => json_encode($request->all()),
             'data' => $request->getContent(),
@@ -50,16 +54,22 @@ class iclockController extends Controller
             "TransTimes=00:00;14:05\r\n" .
             "TransInterval=1\r\n" .
             "TransFlag=1111000000\r\n" .
-            "TimeZone=-6\r\n" .
+            //  "TimeZone=-6\r\n" .
             "Realtime=1\r\n" .
             "Encrypt=0";
 
         return $r;
+
+        } catch (Throwable $e) {
+            $data['error'] = $e;
+            DB::table('error_log')->insert($data);
+            report($e);
+            return "ERROR: ".$e."\n";
+        }
     }
 
     public function receiveRecords(Request $request)
-    {   
-        
+    {      
         $content['url'] = json_encode($request->all());
         $content['data'] = $request->getContent();
 
@@ -133,30 +143,39 @@ class iclockController extends Controller
     }
     public function getrequest(Request $request)
     {
-        $device = Device::where('serial_number', $request->input('SN'))->first();
-        if (!$device) {
-            return "ERROR: Device not found";
-        }
-
-        $commands = $device->pendingCommands();
-
-        if ($commands->isEmpty()) {
-            return "OK";
-        }
-        $countresponse = $commands->pluck('data')->count();
-
-        // Collect and concatenate all command data
-        $response = implode("\r\n", $commands->pluck('data')->toArray()) . "\r\n";
-
-        // Update commands' executed_at timestamps
-        DB::transaction(function () use ($commands) {
-            foreach ($commands as $command) {
-                $command->update(['executed_at' => now()]);
+        try {
+            
+            $device = Device::where('serial_number', $request->input('SN'))->first();
+            if (!$device) {
+                return "ERROR: Device not found";
             }
-        });
 
-        Log::info('getrequest Response count', ['response' => $countresponse]);
-        return $response;
+            $commands = $device->pendingCommands();
+
+            if ($commands->isEmpty()) {
+                return "OK";
+            }
+            $countresponse = $commands->pluck('data')->count();
+
+            // Collect and concatenate all command data
+            $response = implode("\r\n", $commands->pluck('data')->toArray()) . "\r\n";
+
+            // Update commands' executed_at timestamps
+            DB::transaction(function () use ($commands) {
+                foreach ($commands as $command) {
+                    $command->update(['executed_at' => now()]);
+                }
+            });
+
+            Log::info('getrequest Response count', ['response' => $countresponse]);
+            return $response;
+
+        } catch (Throwable $e) {
+            $data['error'] = $e;
+            DB::table('error_log')->insert($data);
+            report($e);
+            return "ERROR: ".$e."\n";
+        }
     }
     private function validateAndFormatInteger($value)
     {
