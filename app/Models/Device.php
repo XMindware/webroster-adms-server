@@ -34,6 +34,11 @@ class Device extends Model
         return $this->belongsTo(Oficina::class, 'idoficina', 'idoficina');
     }
 
+    public function getLastAttendance()
+    {
+        return Attendance::where('sn', $this->no_sn)->latest()->first();
+    }
+
     public function commands()
     {
         return $this->hasMany(Command::class);

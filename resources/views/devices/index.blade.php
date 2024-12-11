@@ -12,6 +12,7 @@
                     <th>Oficina</th>
                     <th>Ubicacion</th>
                     <th>Online</th>
+                    <th>Ultima checada</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -23,6 +24,7 @@
                         <td>{{ $d->oficina->ubicacion ?? '' }}</td>
                         <td>{{ $d->name }}</td>
                         <td>{{ $d->online ? $d->online->diffForHumans() : 'unknown' }}</td>
+                        <td>{{ $d->getLastAttendance() ? $d->getLastAttendance()->created_at->diffForHumans() : 'unknown' }}</td>
                         <td>
                             <a href="{{ route('devices.populate', ['id' => $d->id ]) }}" class="btn btn-info">Update Employees</a>                            
                             <a href="{{ route('devices.edit', ['id' => $d->id ]) }}" class="btn btn-primary">Edit</a>                            
