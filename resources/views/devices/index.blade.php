@@ -23,18 +23,18 @@
                         <td>{{ $d->idreloj }}</td>
                         <td>{{ $d->oficina->ubicacion ?? '' }}</td>
                         <td>{{ $d->name }}</td>
-                        <td>
+                        <td class="text-center align-middle">
                             @if ($d->online)
                                 @php
                                     $diffInMinutes = $d->online->diffInMinutes(now());
                                 @endphp
 
                                 @if ($diffInMinutes < 1)
-                                    <span style="color: green;">✔</span> {{-- Green checkmark --}}
+                                    <i class="fas fa-check-circle text-success"></i>
                                 @elseif ($diffInMinutes <= 5)
-                                    <span style="color: orange;">⚠</span> {{-- Warning sign --}}
+                                    <i class="fas fa-exclamation-circle text-warning"></i>
                                 @else
-                                    <span style="color: red;">✘</span> {{-- Red cross --}}
+                                    <i class="fas fa-times-circle text-danger"></i>
                                 @endif
                             @else
                                 <span style="color: gray;">unknown</span>
