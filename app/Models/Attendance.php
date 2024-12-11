@@ -4,6 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Device;
+use App\Models\Oficina;
+use App\Models\Agente;
 
 class Attendance extends Model
 {
@@ -44,4 +47,9 @@ class Attendance extends Model
     {
         return $this->belongsTo(Oficina::class, 'idoficina', 'idoficina');
     }  
+
+    public function getEmployee()
+    {
+        return Agente::where('idagente', $this->employee_id)->first();
+    }
 }

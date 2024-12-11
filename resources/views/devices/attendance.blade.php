@@ -31,6 +31,7 @@
                     <th>ID</th>
                     <th>SN</th>
                     <th>Employee ID</th>
+                    <th>Employee</th>
                     <th>Timestamp</th>
                     <th>Checada Uniqueid</th>
                 </tr>
@@ -41,6 +42,7 @@
                         <td>{{ $attendance->id }}</td>
                         <td>{{ $attendance->sn }}</td>
                         <td>{{ $attendance->employee_id }}</td>
+                        <td>{!! $attendance->getEmployee()?->fullname ?? '<em>Unknown</em>' !!}</td>
                         <td>{{ $attendance->timestamp }}</td>
                         <td>{{ $attendance->response_uniqueid }}</td>
                     </tr>
