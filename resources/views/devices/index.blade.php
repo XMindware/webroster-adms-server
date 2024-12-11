@@ -23,7 +23,23 @@
                         <td>{{ $d->idreloj }}</td>
                         <td>{{ $d->oficina->ubicacion ?? '' }}</td>
                         <td>{{ $d->name }}</td>
-                        <td>{{ $d->online ? $d->online->diffForHumans() : 'unknown' }}</td>
+                        <td>
+                            @if ($d->online)
+                                @php
+                                    $diffInMinutes = $d->online->diffInMinutes(now());
+                                @endphp
+
+                                @if ($diffInMinutes < 1)
+                                    <span style="color: green;">✔</span> {{-- Green checkmark --}}
+                                @elseif ($diffInMinutes <= 5)
+                                    <span style="color: orange;">⚠</span> {{-- Warning sign --}}
+                                @else
+                                    <span style="color: red;">✘</span> {{-- Red cross --}}
+                                @endif
+                            @else
+                                <span style="color: gray;">unknown</span>
+                            @endif
+                        </td>
                         <td>{{ $d->getLastAttendance() ? $d->getLastAttendance()->created_at->diffForHumans() : 'unknown' }}</td>
                         <td>
                             <a href="{{ route('devices.populate', ['id' => $d->id ]) }}" class="btn btn-info">Update Employees</a>                            
