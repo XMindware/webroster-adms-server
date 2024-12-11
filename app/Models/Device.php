@@ -16,7 +16,7 @@ class Device extends Model
     protected $table = 'devices';
 
     protected $fillable = [
-        'no_sn',
+        'serial_number',
         'online',
         'idreloj',
         'idempresa',
@@ -36,7 +36,7 @@ class Device extends Model
 
     public function getLastAttendance()
     {
-        return Attendance::where('sn', $this->no_sn)->orderBy('id', 'desc')->first();
+        return Attendance::where('sn', $this->serial_number)->orderBy('id', 'desc')->first();
     }
 
     public function commands()
