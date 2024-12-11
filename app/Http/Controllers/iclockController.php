@@ -161,6 +161,9 @@ class iclockController extends Controller
                 return "ERROR: Device not found";
             }
 
+            //update last online
+            $device->update(['online' => now()]);
+
             $commands = $device->pendingCommands();
             $lastCommandId = Command::orderBy('id', 'desc')->value('id') ?? 0;
             
