@@ -36,7 +36,7 @@ class Device extends Model
 
     public function getLastAttendance()
     {
-        return Attendance::where('sn', $this->no_sn)->latest()->first();
+        return Attendance::where('sn', $this->no_sn)->orderBy('id', 'desc')->first();
     }
 
     public function commands()
