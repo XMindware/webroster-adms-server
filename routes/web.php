@@ -55,7 +55,7 @@ Route::controller(AgentesController::class)
 Route::get('/iclock/cdata', [iclockController::class, 'handshake']);
 // request dari device
 Route::post('/iclock/cdata', [iclockController::class, 'receiveRecords']);
-
+Route::post('/iclock/devicecmd', [iclockController::class, 'deviceCommand']);
 Route::get('/iclock/test', [iclockController::class, 'test']);
 Route::get('/iclock/getrequest', [iclockController::class, 'getrequest']);
 

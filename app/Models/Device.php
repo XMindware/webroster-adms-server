@@ -46,7 +46,7 @@ class Device extends Model
 
     public function pendingCommands()
     {
-        return $this->commands()->where('executed_at', null)->get();
+        return $this->commands()->pending()->get();
     }
 
     public function populate()

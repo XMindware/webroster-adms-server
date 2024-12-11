@@ -21,6 +21,7 @@ class RequestLogger
         $routesToLog = [
             'iclock/cdata',
             'iclock/getrequest',
+            'iclock/devicecmd',
             // Add more routes here if needed
         ];
 
