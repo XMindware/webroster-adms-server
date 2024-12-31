@@ -5,6 +5,7 @@ use App\Models\Attendance;
 use App\Models\Command;
 use App\Models\Device;
 use App\Models\DeviceLog;
+use App\Models\Fingerprint;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -106,7 +107,22 @@ class iclockController extends Controller
                 'option' => $request->input('option'),
                 'idreloj' => Device::where('serial_number', $request->input('SN'))->first()->idreloj,
             ];
+
             DeviceLog::create($data);
+
+            try {
+                // if data starts with FP, it's a fingerprint record
+                if (strpos($arr[0], 'FP') === 0) {
+                    // save the fingerprint data
+                    Fingerprint::create([
+                        'sn' => $request->input('SN'),
+                        'finger' => $arr[0],
+                        'fullrecord' => $request->getContent(),
+                    ]);
+                }
+            } catch (Throwable $e) {
+                Log::error('receiveRecords save fingerprint ', ['error' => $e]);
+            }
 
             // update status device
             DB::table('devices')->updateOrInsert(
