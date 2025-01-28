@@ -237,7 +237,6 @@ class iclockController extends Controller
                 'data' => "C:{$lastCommandId} SET OPTIONS DateTime=" . $intDateTime,
                 'executed_at' => null
             ]);
-            Loh:info('getrequest SET OPTONS DATETIME');
 
             // Add the newly created command to the collection
             $commands->push($timeCommand);
