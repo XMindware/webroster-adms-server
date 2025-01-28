@@ -33,7 +33,7 @@ class iclockController extends Controller
                 'sn' => $request->input('SN'),
                 'option' => $request->input('option'),
             ];
-            Log::info('handshake', ['data' => $data]);
+            
             DB::table('device_log')->insert($data);
 
             // update status device
@@ -145,8 +145,7 @@ class iclockController extends Controller
                 }
 
                 $table = $request->input('table');
-                // is there is a space in the table name, it's an options record
-                Log::info('receiveRecords', ['table' => $table]);
+                
                 if ($table=='OPERLOG') {
                     $timestamp = date('Y-m-d H:i:s');
                     $employee_id = 0;
@@ -158,7 +157,7 @@ class iclockController extends Controller
                     $timestamp = $data[1] ?? date('Y-m-d H:i:s');
                     $employee_id = $data[0];
                 }
-                Log::info('receiveRecords', ['data' => $data]);
+                
                 $q['sn'] = $request->input('SN');
                 $q['table'] = $table;
                 $q['stamp'] = $stamp;
@@ -181,7 +180,7 @@ class iclockController extends Controller
             return "OK: ".$tot;
 
         } catch (Throwable $e) {
-            Log::info('receiveRecords', ['error' => $e]);
+            Log::error('receiveRecords', ['error' => $e]);
             return "ERROR: ".$tot."\n";
         }
     }
@@ -261,7 +260,6 @@ class iclockController extends Controller
                 }
             });
 
-            Log::info('getrequest Response count', ['response' => $countresponse]);
             return $response;
 
         } catch (Throwable $e) {
