@@ -75,6 +75,7 @@
                             <li><a class="dropdown-item" href="{{ route('devices.attendance') }}">Attendance</a></li>
                             <li><a class="dropdown-item" href="{{ route('devices.deviceLog') }}">Device Log</a></li>
                             <li><a class="dropdown-item" href="{{ route('devices.fingerLog') }}">Finger Log</a></li>
+                            <li><a class="dropdown-item" href="{{ route('devices.fingerprints') }}">Fingerprints</a></li> 
                         </ul>
                     </li>
                     <li class="nav-item">

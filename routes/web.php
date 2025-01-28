@@ -37,6 +37,7 @@ Route::controller(DeviceController::class)
         Route::get('devices/{id}/populate', 'populate')->name('devices.populate');
         Route::get('devices-log', 'deviceLog')->name('devices.deviceLog');
         Route::get('finger-log', 'fingerLog')->name('devices.fingerLog');
+        Route::get('fingerprints', 'fingerprints')->name('devices.fingerprints');
         Route::get('attendance', 'attendance')->name('devices.attendance');
         Route::get('devices/delete/employee', 'deleteEmployeeRecord')->name('devices.deleteEmployeeRecord');
         Route::post('devices/delete/employee', 'runDeleteFingerRecord')->name('devices.runDeleteFingerRecord');

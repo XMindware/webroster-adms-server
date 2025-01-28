@@ -35,6 +35,14 @@ class DeviceController extends Controller
         $deviceLogs = FingerLog::orderBy('id', 'DESC')->paginate(40);
         return view('devices.log', compact('deviceLogs', 'title'));
     }
+
+    public function fingerprints(Request $request){
+        $title = "Fingerprints captured";
+        $deviceLogs = FingerLog::whereLike('data', 'FP')->orderBy('timestamp', 'ASC');
+
+        return view('devices.log', compact('deviceLogs','title'));
+    }
+
     public function Attendance(Request $request) {
         $selectedOficina = $request->query('selectedOficina');
         if ($selectedOficina) {

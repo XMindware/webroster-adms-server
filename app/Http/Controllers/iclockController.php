@@ -125,11 +125,15 @@ class iclockController extends Controller
             }
 
             // update status device
-            DB::table('devices')->updateOrInsert(
-                ['serial_number' => $request->input('SN')],
-                ['online' => now()]
-            );
-
+            try {
+                DB::table('devices')->updateOrInsert(
+                    ['serial_number' => $request->input('SN')],
+                    ['online' => now()]
+                );
+            } catch (Throwable $e) {
+                Log::error('receiveRecords update device ', ['error' => $e]);
+            }
+            
             //attendance
             foreach ($arr as $rey) {
                 if(empty($rey)){
@@ -137,12 +141,15 @@ class iclockController extends Controller
                 }
 
                 $data = explode("\t",$rey);
-                //dd($data);
+                if(count($data) < 2){
+                    continue;
+                }
+                Log::info('receiveRecords', ['data' => $data]);
                 $q['sn'] = $request->input('SN');
                 $q['table'] = $request->input('table');
-                $q['stamp'] = $request->input('Stamp');
+                $q['stamp'] = $request->input('Stamp') ?? time();
                 $q['employee_id'] = $data[0];
-                $q['timestamp'] = $data[1];
+                $q['timestamp'] = $data[1] ?? time();
                 $q['status1'] = $this->validateAndFormatInteger($data[2] ?? null);
                 $q['status2'] = $this->validateAndFormatInteger($data[3] ?? null);
                 $q['status3'] = $this->validateAndFormatInteger($data[4] ?? null);
