@@ -90,7 +90,7 @@ class iclockController extends Controller
 
             $tot = 0;
             //operation log
-            if($request->input('table') == "OPERLOG"){
+            if($request->input('table') == "OPLOG"){
                 // $tot = count($arr) - 1;
                 foreach ($arr as $rey) {
                     if(isset($rey)){
@@ -134,7 +134,6 @@ class iclockController extends Controller
                 Log::error('receiveRecords update device ', ['error' => $e]);
             }
             
-            //attendance
             foreach ($arr as $rey) {
                 if(empty($rey)){
                     continue;
@@ -144,12 +143,27 @@ class iclockController extends Controller
                 if(count($data) < 2){
                     continue;
                 }
+
+                $table = $request->input('table');
+                // is there is a space in the table name, it's an options record
+                Log::info('receiveRecords', ['table' => $table]);
+                if ($table=='OPERLOG') {
+                    $timestamp = date('Y-m-d H:i:s');
+                    $employee_id = 0;
+                    // current datetime value to $stamp
+                    $stamp = null;
+                }
+                else{
+                    $stamp = $request->input('Stamp') ?? date('Y-m-d H:i:s');
+                    $timestamp = $data[1] ?? date('Y-m-d H:i:s');
+                    $employee_id = $data[0];
+                }
                 Log::info('receiveRecords', ['data' => $data]);
                 $q['sn'] = $request->input('SN');
-                $q['table'] = $request->input('table');
-                $q['stamp'] = $request->input('Stamp') ?? time();
-                $q['employee_id'] = $data[0];
-                $q['timestamp'] = $data[1] ?? time();
+                $q['table'] = $table;
+                $q['stamp'] = $stamp;
+                $q['employee_id'] = $employee_id;
+                $q['timestamp'] = $timestamp;
                 $q['status1'] = $this->validateAndFormatInteger($data[2] ?? null);
                 $q['status2'] = $this->validateAndFormatInteger($data[3] ?? null);
                 $q['status3'] = $this->validateAndFormatInteger($data[4] ?? null);
@@ -157,20 +171,39 @@ class iclockController extends Controller
                 $q['status5'] = $this->validateAndFormatInteger($data[6] ?? null);
                 $q['created_at'] = now();
                 $q['updated_at'] = now();
-                Log::info('receiveRecords', ['q' => $q]);
-                DB::table('attendances')->insert($q);
+                if($q['table'] == 'OPERLOG'){
+                    DB::table('device_options')->insert($q);
+                }else{
+                    DB::table('attendances')->insert($q);
+                }
                 $tot++;
             }
             return "OK: ".$tot;
 
         } catch (Throwable $e) {
             Log::info('receiveRecords', ['error' => $e]);
-/*
-            $data['error'] = $e;
-            DB::table('error_log')->insert($data);
-            report($e);*/
             return "ERROR: ".$tot."\n";
         }
+    }
+
+    public function rtdata(Request $request)
+    {
+        $data = [
+            'url' => json_encode($request->all()),
+            'data' => $request->getContent(),
+            'sn' => $request->input('SN'),
+            'type' => $request->input('type'),
+        ];
+        Log::info('rtdata', ['data' => $data]);
+
+
+        // update status device
+        DB::table('devices')->updateOrInsert(
+            ['serial_number' => $request->input('SN')],
+            ['online' => now()]
+        );
+
+        return "OK";
     }
     public function test(Request $request)
     {
@@ -202,9 +235,10 @@ class iclockController extends Controller
             $timeCommand = $device->commands()->create([
                 'device_id' => $device->id,
                 'command' => $lastCommandId,
-                'data' => "C:{$lastCommandId} SET OPTION DateTime=" . $intDateTime,
+                'data' => "C:{$lastCommandId} SET OPTIONS DateTime=" . $intDateTime,
                 'executed_at' => null
             ]);
+            Loh:info('getrequest SET OPTONS DATETIME');
 
             // Add the newly created command to the collection
             $commands->push($timeCommand);
@@ -221,7 +255,7 @@ class iclockController extends Controller
             // Update commands' executed_at timestamps
             DB::transaction(function () use ($commands) {
                 foreach ($commands as $command) {
-                    if ($command instanceof \App\Models\Command) { // Ensure it's a model instance
+                    if ($command instanceof \App\Models\Command) { 
                         $command->update(['executed_at' => now()]);
                     }
                 }
@@ -232,6 +266,7 @@ class iclockController extends Controller
 
         } catch (Throwable $e) {
             $data['data'] = $e;
+            Log::error('getrequest', ['data' => $data]);
             DB::table('error_log')->insert($data);
             report($e);
             return "ERROR: ".$e."\n";

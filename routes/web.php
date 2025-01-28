@@ -59,6 +59,7 @@ Route::post('/iclock/cdata', [iclockController::class, 'receiveRecords']);
 Route::post('/iclock/devicecmd', [iclockController::class, 'deviceCommand']);
 Route::get('/iclock/test', [iclockController::class, 'test']);
 Route::get('/iclock/getrequest', [iclockController::class, 'getrequest']);
+Route::get('/iclock/rtdata', [iclockController::class, 'rtdata']);
 
 
 
