@@ -243,7 +243,7 @@ class iclockController extends Controller
             $timeCommand = $device->commands()->create([
                 'device_id' => $device->id,
                 'command' => $lastCommandId,
-                'data' => "C:{$lastCommandId} SET OPTIONS DateTime=" . $intDateTime,
+                'data' => "C:{$lastCommandId}:SET OPTIONS DateTime=" . $intDateTime,
                 'executed_at' => null
             ]);
 
