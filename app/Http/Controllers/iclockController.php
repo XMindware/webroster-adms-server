@@ -259,6 +259,9 @@ class iclockController extends Controller
             $data = $commands->pluck('data');
             $response = implode("\r\n", $data->toArray()) . "\r\n";
 
+            //remove last \r\n
+            $response = substr($response, 0, -2);
+
             // Update commands' executed_at timestamps
             DB::transaction(function () use ($commands) {
                 foreach ($commands as $command) {
