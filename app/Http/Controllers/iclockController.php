@@ -217,10 +217,11 @@ class iclockController extends Controller
     public function getrequest(Request $request)
     {
         Log::info('call getrequest', ['request' => $request->all()]);
-        
+
         try {
             $device = Device::where('serial_number', $request->input('SN'))->first();
             if (!$device) {
+                Log::error('getrequest', ['error' => 'Device not found']);
                 return "ERROR: Device not found";
             }
 
@@ -250,12 +251,12 @@ class iclockController extends Controller
             $commands->push($timeCommand);
 
             if ($commands->isEmpty()) {
+                Log::info('getrequest', ['info' => 'No pending commands']);
                 return "OK";
             }
 
             // Collect and concatenate all command data
             $data = $commands->pluck('data');
-            $countresponse = $data->count();
             $response = implode("\r\n", $data->toArray()) . "\r\n";
 
             // Update commands' executed_at timestamps
@@ -267,6 +268,7 @@ class iclockController extends Controller
                 }
             });
 
+            Log::info('getrequest', ['response' => $response]);
             return $response;
 
         } catch (Throwable $e) {
