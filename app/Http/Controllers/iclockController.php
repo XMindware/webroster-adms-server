@@ -24,7 +24,7 @@ class iclockController extends Controller
     // handshake
     public function handshake(Request $request)
     {
-
+        Log::info('call handshake ', ['request' => $request->all()]);
         try{
             
             $data = [
@@ -73,6 +73,7 @@ class iclockController extends Controller
 
     public function deviceCommand(Request $request)
     {
+        Log::info('call deviceCommand', ['request' => $request->all()]);
         // save the content of the request into the Log
         $allLog = json_encode($request->all());
 
@@ -81,6 +82,7 @@ class iclockController extends Controller
 
     public function receiveRecords(Request $request)
     {      
+        Log::info('call receiveRecords', ['request' => $request->all()]);
         $content['url'] = json_encode($request->all());
         $content['data'] = $request->getContent();
 
@@ -187,6 +189,8 @@ class iclockController extends Controller
 
     public function rtdata(Request $request)
     {
+        Log::info('call rtdata', ['request' => $request->all()]);
+
         $data = [
             'url' => json_encode($request->all()),
             'data' => $request->getContent(),
@@ -206,10 +210,14 @@ class iclockController extends Controller
     }
     public function test(Request $request)
     {
+        Log::info('call test', ['request' => $request->all()]);
+
         return "OK";
     }
     public function getrequest(Request $request)
     {
+        Log::info('call getrequest', ['request' => $request->all()]);
+        
         try {
             $device = Device::where('serial_number', $request->input('SN'))->first();
             if (!$device) {
