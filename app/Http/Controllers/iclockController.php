@@ -240,7 +240,7 @@ class iclockController extends Controller
                 Carbon::now('America/Mexico_City')->second
             );
             // Add a set time command to the database
-            $timeCommand = $device->commands()->create([
+            $device->commands()->create([
                 'device_id' => $device->id,
                 'command' => $lastCommandId,
                 'data' => "C:{$lastCommandId}:SET OPTIONS DateTime=" . $intDateTime,
