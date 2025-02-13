@@ -47,7 +47,7 @@ class DeviceController extends Controller
         $selectedOficina = $request->query('selectedOficina');
         if ($selectedOficina) {
             $attendances = Attendance::where('idoficina', $selectedOficina)
-                ->sortBy('timestamp', 'DESC')
+                ->orderBy('timestamp', 'DESC')
                 ->paginate(40);
         } else {
             $attendances = Attendance::orderBy('timestamp', 'DESC')

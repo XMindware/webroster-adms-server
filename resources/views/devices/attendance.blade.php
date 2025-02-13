@@ -11,7 +11,7 @@
     @endif
     <div class="form-group">
         <label for="oficina">Offices</label>
-        <form method="GET" action="{{ route('agentes.index', ['selectedOficina' => $selectedOficina]) }}" id="oficinaForm">
+        <form method="GET" action="{{ route('devices.attendance', ['selectedOficina' => $selectedOficina]) }}" id="oficinaForm">
             <select name="selectedOficina" class="form-control" id="selectedOficina">
                 @foreach ($oficinas as $oficina)
                     <option value="{{ $oficina->idoficina }}" 
@@ -55,4 +55,14 @@
         {{ $attendances->links() }}  
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+    $(document).ready(function() {
+        $('#selectedOficina').change(function() {
+            $('#oficinaForm').submit();
+        });
+    });
+</script>
 @endsection

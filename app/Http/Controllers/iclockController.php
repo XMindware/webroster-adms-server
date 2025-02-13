@@ -189,7 +189,11 @@ class iclockController extends Controller
 
     public function rtdata(Request $request)
     {
-        Log::info('call rtdata', ['request' => $request->all()]);
+        // log header and content
+        Log::info('rtdata', ['url' => json_encode($request->all())]);
+        Log::info('rtdata', ['data' => $request->getContent()]);
+        // log SN and type
+
 
         $data = [
             'url' => json_encode($request->all()),
@@ -206,7 +210,20 @@ class iclockController extends Controller
             ['online' => now()]
         );
 
-        return "OK";
+        $intDateTime = $this->oldEncodeTime(
+            Carbon::now('GMT')->year,
+            Carbon::now('GMT')->month,
+            Carbon::now('GMT')->day,
+            Carbon::now('GMT')->hour,
+            Carbon::now('GMT')->minute,
+            Carbon::now('GMT')->second
+        );
+
+        $response = "DateTime=" . $intDateTime . ",ServerTZ=+0600";
+
+        Log::info('rtdata', ['response' => $response]);
+
+        return "ok";//$response;
     }
     public function test(Request $request)
     {
@@ -247,8 +264,7 @@ class iclockController extends Controller
                 'executed_at' => null
             ]);
 
-            // Add the newly created command to the collection
-            $commands->push($timeCommand);
+            Log::info('getrequest commands', ['commands' => count($commands)]);
 
             if ($commands->isEmpty()) {
                 Log::info('getrequest', ['info' => 'No pending commands']);
