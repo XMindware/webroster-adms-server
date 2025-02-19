@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Models\Device;
 use App\Models\Oficina;
 use App\Models\Attendance;
+use App\Models\Command;
 use App\Models\FingerLog;
 use DB;
 
@@ -102,6 +103,25 @@ class DeviceController extends Controller
         $device->idempresa = $oficina->idempresa;
         $device->save();
       return redirect()->route('devices.index')->with('success', 'Biométrico actualizado correctamente');
+    }
+
+    public function restart(Request $request, $id)
+    {
+        Log::info('Restart', ['id' => $id]);
+        $device = Device::find($id);
+        try {
+            $lastCommandId = Command::orderBy('id', 'desc')->value('id') ?? 0;
+
+            $device->commands()->create([
+                'device_id' => $device->id,
+                'command' => $lastCommandId,
+                'data' => "C:{$lastCommandId}:CONTROL DEVICE 03000000",
+                'executed_at' => null
+            ]);
+            return redirect()->route('devices.index')->with('success', 'Biométrico reiniciado correctamente');
+        } catch (\Exception $e) {
+            return redirect()->route('devices.index')->with('error', 'Error al reiniciar biométrico');
+        }
     }
 
     public function Populate(Request $request, $id)

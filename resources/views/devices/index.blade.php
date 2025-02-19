@@ -43,7 +43,8 @@
                         <td>{{ $d->getLastAttendance() ? $d->getLastAttendance()->created_at->diffForHumans() : 'unknown' }}</td>
                         <td>
                             <a href="{{ route('devices.populate', ['id' => $d->id ]) }}" class="btn btn-info">Update Employees</a>                            
-                            <a href="{{ route('devices.edit', ['id' => $d->id ]) }}" class="btn btn-primary">Edit</a>                            
+                            <a href="{{ route('devices.edit', ['id' => $d->id ]) }}" class="btn btn-primary">Edit</a>
+                            <a href="{{ route('devices.restart', ['id' => $d->id ]) }}" class="btn btn-primary">Push Restart</a>
                         </td>
                     </tr>
                 @endforeach
