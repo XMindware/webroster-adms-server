@@ -78,6 +78,8 @@ class iclockController extends Controller
         $allLog = json_encode($request->all());
 
         Log::info('deviceCommand', ['allLog' => $allLog]);
+
+        return "OK";
     }
 
     public function receiveRecords(Request $request)
