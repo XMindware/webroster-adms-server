@@ -39,5 +39,9 @@ return [
             'base_url' => env('API_UACUN_BASE_URL', 'https://unitedmex.test.mindware.com.mx'),
             'token' => env('API_UACUN_TOKEN', ''),
         ],
+        '5' => [
+            'base_url' => env('API_UAPVR_BASE_URL', 'https://unitedpvr.mindware.com.mx'),
+            'token' => env('API_UAPVR_TOKEN', ''),
+        ],
     ],
 ];
