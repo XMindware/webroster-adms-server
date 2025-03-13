@@ -33,6 +33,8 @@
                     <th>Employee ID</th>
                     <th>Employee</th>
                     <th>Timestamp</th>
+                    <th>Updated at</th>
+                    <th>Diff</th>
                     <th>Checada Uniqueid</th>
                 </tr>
             </thead>
@@ -44,6 +46,8 @@
                         <td>{{ $attendance->employee_id }}</td>
                         <td>{!! $attendance->getEmployee()?->fullname ?? '<em>Unknown</em>' !!}</td>
                         <td>{{ $attendance->timestamp }}</td>
+                        <td>{{ $attendance->updated_at }}</td>
+                        <td>{{ $attendance->updated_at->diffForHumans($attendance->timestamp) }}</td>
                         <td>{{ $attendance->response_uniqueid }}</td>
                     </tr>
                 @endforeach
