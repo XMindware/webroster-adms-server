@@ -40,7 +40,7 @@ class DeviceController extends Controller
     public function fingerprints(Request $request){
         $title = "Fingerprints captured";
         $deviceLogs = FingerLog::where('data', 'like', '%FP PIN%')->orderBy('updated_at', 'ASC')->paginate(40);
-        return view('devices.log', compact('deviceLogs','title'));
+        return view('devices.fingerprints', compact('deviceLogs','title'));
     }
 
     public function Attendance(Request $request) {
