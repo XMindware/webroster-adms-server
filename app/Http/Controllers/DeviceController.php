@@ -39,7 +39,14 @@ class DeviceController extends Controller
 
     public function fingerprints(Request $request){
         $title = "Fingerprints captured";
-        $deviceLogs = FingerLog::where('data', 'like', '%FP PIN%')->orderBy('updated_at', 'ASC')->paginate(40);
+        $deviceLogs = FingerLog::where('data', 'like', '%FP PIN%')
+            ->orderBy('updated_at', 'ASC')
+            ->paginate(40)
+            ->through(function ($log) {
+                preg_match('/FP PIN=(\d+)/', $log->data, $matches);
+                $log->idagente = $matches[1] ?? null; // Extracted FP PIN value
+                return $log;
+            });
         return view('devices.fingerprints', compact('deviceLogs','title'));
     }
 
