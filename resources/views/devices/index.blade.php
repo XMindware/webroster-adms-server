@@ -44,7 +44,7 @@
                         <td>
                             <a href="{{ route('devices.populate', ['id' => $d->id ]) }}" class="btn btn-info">Update Employees</a>                            
                             <a href="{{ route('devices.edit', ['id' => $d->id ]) }}" class="btn btn-primary">Edit</a>
-                            <a href="{{ route('devices.restart', ['id' => $d->id ]) }}" class="btn btn-primary restart-btn">Push Restart</a>
+                            <a href="{{ route('devices.restart', ['id' => $d->id ]) }}" class="btn btn-primary restart-btn">Push Restart</a>                            
                         </td>
                     </tr>
                 @endforeach

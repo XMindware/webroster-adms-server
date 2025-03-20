@@ -6,6 +6,7 @@ use App\Models\Command;
 use App\Models\Device;
 use App\Models\DeviceLog;
 use App\Models\Fingerprint;
+use App\Services\CommandIdService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -74,6 +75,9 @@ class iclockController extends Controller
     public function deviceCommand(Request $request)
     {
         Log::info('call deviceCommand', ['request' => $request->all()]);
+        //Log headers and content
+        Log::info('deviceCommand url', ['url' => json_encode($request->all())]);
+        Log::info('deviceCommand content', ['data' => $request->getContent()]);
         // save the content of the request into the Log
         $allLog = json_encode($request->all());
 
@@ -227,6 +231,35 @@ class iclockController extends Controller
 
         return "ok";//$response;
     }
+
+    public function querydata(Request $request)
+    {
+        Log::info('---------call querydata', ['request' => $request->all()]);
+        // log header and content
+        Log::info('querydata', ['url' => json_encode($request->all())]);
+        Log::info('querydata', ['data' => $request->getContent()]);
+        // log SN and table
+        $data = [
+            'url' => json_encode($request->all()),
+            'data' => $request->getContent(),
+            'sn' => $request->input('SN'),
+            'table' => $request->input('table'),
+        ];
+        Log::info('querydata', ['data' => $data]);
+
+        // update status device
+        DB::table('devices')->updateOrInsert(
+            ['serial_number' => $request->input('SN')],
+            ['online' => now()]
+        );
+
+        $response = "OK";
+
+        Log::info('querydata', ['response' => $response]);
+
+        return $response;
+    }
+
     public function test(Request $request)
     {
         Log::info('call test', ['request' => $request->all()]);
@@ -248,7 +281,9 @@ class iclockController extends Controller
             $device->update(['online' => now()]);
 
             $commands = $device->pendingCommands();
-            $lastCommandId = Command::orderBy('id', 'desc')->value('id') ?? 0;
+            $cmdIdService = resolve(CommandIdService::class); 
+            $nextCmdId = $cmdIdService->getNextCmdId();
+            Log::info('Get Request', ['nextCmdId' => $nextCmdId]);
             
             $intDateTime = $this->oldEncodeTime(
                 Carbon::now('America/Mexico_City')->year,
@@ -258,13 +293,14 @@ class iclockController extends Controller
                 Carbon::now('America/Mexico_City')->minute,
                 Carbon::now('America/Mexico_City')->second
             );
+            /*
             // Add a set time command to the database
             $device->commands()->create([
                 'device_id' => $device->id,
-                'command' => $lastCommandId,
-                'data' => "C:{$lastCommandId}:SET OPTIONS DateTime=" . $intDateTime,
+                'command' => $nextCmdId,
+                'data' => "C:{$nextCmdId}:SET OPTIONS DateTime=" . $intDateTime,
                 'executed_at' => null
-            ]);
+            ]);*/
 
             Log::info('getrequest commands', ['commands' => count($commands)]);
 
@@ -289,7 +325,7 @@ class iclockController extends Controller
                 }
             });
 
-            Log::info('getrequest', ['response' => $response]);
+            Log::info('---Get Request', ['response' => $response]);
             return $response;
 
         } catch (Throwable $e) {

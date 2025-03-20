@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\DeviceLog;
 use Log;
 use Yajra\DataTables\Facades\Datatables;
+use App\Services\CommandIdService;
 use Illuminate\Http\Request;
+use App\Models\Agente;
 use App\Models\Device;
 use App\Models\Oficina;
 use App\Models\Attendance;
@@ -45,6 +47,9 @@ class DeviceController extends Controller
             ->through(function ($log) {
                 preg_match('/FP PIN=(\d+)/', $log->data, $matches);
                 $log->idagente = $matches[1] ?? null; // Extracted FP PIN value
+                $data = json_decode($log->url);
+                $log->employee = Agente::where('idagente', $log->idagente)->first();
+                $log->device = Device::where('serial_number', $data->SN)->first();
                 return $log;
             });
         return view('devices.fingerprints', compact('deviceLogs','title'));
@@ -116,12 +121,13 @@ class DeviceController extends Controller
         Log::info('Restart', ['id' => $id]);
         $device = Device::find($id);
         try {
-            $lastCommandId = Command::orderBy('id', 'desc')->value('id') ?? 0;
+            $cmdIdService = resolve(CommandIdService::class); 
+            $nextCmdId = $cmdIdService->getNextCmdId();
 
             $device->commands()->create([
                 'device_id' => $device->id,
-                'command' => $lastCommandId,
-                'data' => "C:{$lastCommandId}:CONTROL DEVICE 03000000",
+                'command' => $nextCmdId,
+                'data' => "C:{$nextCmdId}:CONTROL DEVICE 03000000",
                 'executed_at' => null
             ]);
             return redirect()->route('devices.index')->with('success', 'Biométrico reiniciado correctamente');

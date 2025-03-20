@@ -7,8 +7,8 @@
             <thead>
                 <tr>
                     <th>Id</th>
-                    <th>Url</th>
                     <th>Id Agente</th>
+                    <th>Nombre</th>
                     <th>ID Reloj</th>
                     <th class="w-20">Fecha</th>
                 </tr>
@@ -17,9 +17,9 @@
                 @foreach ($deviceLogs as $d)                
                     <tr>
                         <td>{{ $d->id }}</td>
-                        <td>{{ $d->url }}</td>
                         <td class="text-wrap">{{ $d->idagente}}</td>
-                        <td>{{ $d->idreloj }}</td>
+                        <td>{{ $d->employee?->fullname }}</td>
+                        <td>{{ $d->device?->name }}</td>
                         <td>{{ $d->created_at }}</td>
                     </tr>
                 @endforeach

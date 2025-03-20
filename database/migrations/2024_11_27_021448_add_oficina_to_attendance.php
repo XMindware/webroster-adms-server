@@ -14,7 +14,10 @@ return new class extends Migration
     // Add idoficina as primary key in oficinas table
     Schema::table('oficinas', function (Blueprint $table) {
         if (!Schema::hasColumn('oficinas', 'idoficina')) {
-            $table->unsignedSmallInteger('idoficina')->primary();
+            $table->unsignedSmallInteger('idoficina')->index();
+        }
+        else{
+            $table->index('idoficina');
         }
     });
 
@@ -23,7 +26,7 @@ return new class extends Migration
         if (!Schema::hasColumn('attendances', 'idoficina')) {
             $table->unsignedSmallInteger('idoficina')->nullable();
 
-            $table->foreign('idoficina')->references('idoficina')->on('oficinas');
+            $table->foreign('idoficina')->references('idoficina')->on('oficinas')->onDelete('cascade');
         }
     });
 }
@@ -34,11 +37,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('attendances', function (Blueprint $table) {
-            $indexName = 'attendances_idoficina_index'; // Replace with actual name
-            $indexes = DB::select("SHOW INDEX FROM attendances WHERE Key_name = ?", [$indexName]);
-
-            if (!empty($indexes)) {
-                $table->dropIndex([$indexName]);
+            if (Schema::hasColumn('attendances', 'idoficina')) {
+                $table->dropForeign(['idoficina']);
+                $table->dropColumn('idoficina');
             }
             if(Schema::hasColumn('attendances', 'idoficina')) {
                 $table->dropColumn('idoficina');
