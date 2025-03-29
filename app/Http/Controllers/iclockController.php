@@ -331,9 +331,8 @@ class iclockController extends Controller
         } catch (Throwable $e) {
             $data['data'] = $e;
             Log::error('getrequest', ['data' => $data]);
-            DB::table('error_log')->insert($data);
             report($e);
-            return "ERROR: ".$e."\n";
+            return "OK";
         }
     }
     private function validateAndFormatInteger($value)
