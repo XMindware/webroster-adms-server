@@ -76,7 +76,7 @@ class DeviceController extends Controller
         $range = $request->get('range', '1d'); // Default to 1 day
 
         $query = DeviceLog::select(
-            DB::raw("DATE_FORMAT(created_at, '%Y-%m-%d %H:00:00') as hour"),
+            DB::raw("DATE_FORMAT(DATE_SUB(created_at, INTERVAL MINUTE(created_at) % 10 MINUTE), '%Y-%m-%d %H:%i:00') as time_slot"),
             DB::raw("COUNT(*) as count")
         );
 
@@ -97,7 +97,7 @@ class DeviceController extends Controller
         $query->where('sn', function ($query) use ($id) {
             $query->select('serial_number')->from('devices')->where('id', $id);
         });
-        $data = $query->groupBy('hour')->orderBy('hour')->get();
+        $data = $query->groupBy('time_slot')->orderBy('time_slot')->get();
 
         return view('devices.activity', [
             'data' => $data,

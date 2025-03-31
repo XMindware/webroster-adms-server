@@ -20,7 +20,7 @@
     <script>
         const ctx = document.getElementById('deviceChart').getContext('2d');
 
-        const labels = {!! json_encode($data->pluck('hour')) !!};
+        const labels = {!! json_encode($data->pluck('time_slot')) !!};
         const counts = {!! json_encode($data->pluck('count')) !!};
 
         const chart = new Chart(ctx, {
@@ -28,19 +28,28 @@
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Reports per Hour',
+                    label: 'Reports per 10 Minutes',
                     data: counts,
                     borderWidth: 2,
                     fill: false,
                     borderColor: 'blue',
                     tension: 0.3,
-                    pointRadius: 3,
+                    pointRadius: 2,
                 }]
             },
             options: {
                 scales: {
-                    x: { title: { display: true, text: 'Hour' } },
-                    y: { title: { display: true, text: 'Reports' }, beginAtZero: true }
+                    x: {
+                        title: { display: true, text: 'Time (every 10 min)' },
+                        ticks: {
+                            maxRotation: 90,
+                            minRotation: 45
+                        }
+                    },
+                    y: {
+                        title: { display: true, text: 'Number of Reports' },
+                        beginAtZero: true
+                    }
                 }
             }
         });
