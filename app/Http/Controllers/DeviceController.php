@@ -71,6 +71,37 @@ class DeviceController extends Controller
         
     }
 
+    public function devicesActivity(Request $request) 
+    {
+        $range = $request->get('range', '1d'); // Default to 1 day
+
+        $query = DeviceLog::select(
+            DB::raw("DATE_FORMAT(created_at, '%Y-%m-%d %H:00:00') as hour"),
+            DB::raw("COUNT(*) as count")
+        );
+
+        if ($range === '1h') {
+            $query->where('created_at', '>=', now()->subHour());
+        } elseif ($range === '6h') {
+            $query->where('created_at', '>=', now()->subHours(6));
+        } elseif ($range === '1d') {
+            $query->where('created_at', '>=', now()->subDay());
+        } elseif ($range === '7d') {
+            $query->where('created_at', '>=', now()->subWeek());
+        } elseif ($range === '30d') {
+            $query->where('created_at', '>=', now()->subMonth());
+        } elseif ($range === '90d') {
+            $query->where('created_at', '>=', now()->subDays(90));
+        }
+
+        $data = $query->groupBy('hour')->orderBy('hour')->get();
+
+        return view('devices.activity', [
+            'data' => $data,
+            'range' => $range
+        ]);
+    }
+
     public function editAttendance(int $id, Request $request) {
         $attendanceRecord = Attendance::find($id);
         return view('attendance.edit', compact('attendanceRecord'));

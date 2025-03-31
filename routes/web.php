@@ -45,6 +45,7 @@ Route::controller(DeviceController::class)
         Route::get('devices/retrieve/fingerdata', 'retrieveFingerData')->name('devices.retrieveFingerData');
         Route::get('devices/retrieve/attendance/{id}', 'editAttendance')->name('devices.attendance.edit');
         Route::post('devices/retrieve/attendance', 'updateAttendance')->name('devices.attendance.update');
+        Route::get('/devices/activity', 'devicesActivity')->name('devices.activity');
     });
 
 Route::controller(AgentesController::class)
