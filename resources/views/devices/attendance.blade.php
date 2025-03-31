@@ -36,6 +36,7 @@
                     <th>Updated at</th>
                     <th>Diff</th>
                     <th>Checada Uniqueid</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -51,6 +52,9 @@
                             {{ $attendance->updated_at->diffForHumans($attendance->timestamp) }}
                         </td>
                         <td>{{ $attendance->response_uniqueid }}</td>
+                        <td>
+                            <a href="{{ route('devices.attendance.edit', $attendance->id) }}" class="btn btn-primary">Edit</a>
+                        </td>
                     </tr>
                 @endforeach
             </tbody>

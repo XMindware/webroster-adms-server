@@ -65,9 +65,22 @@ class DeviceController extends Controller
             $attendances = Attendance::orderBy('timestamp', 'DESC')
                 ->paginate(40);
         }
+
         $oficinas = Oficina::all();
         return view('devices.attendance', compact('attendances', 'oficinas', 'selectedOficina'));
         
+    }
+
+    public function editAttendance(int $id, Request $request) {
+        $attendanceRecord = Attendance::find($id);
+        return view('attendance.edit', compact('attendanceRecord'));
+    }
+
+    public function updateAttendance(Request $request) {
+        $attendanceRecord = Attendance::find($request->input('id'));
+        $attendanceRecord->timestamp = $request->input('timestamp');
+        $attendanceRecord->save();
+        return redirect()->route('devices.attendance')->with('success', 'Registro de asistencia actualizado correctamente');
     }
 
     public function create()

@@ -43,6 +43,8 @@ Route::controller(DeviceController::class)
         Route::get('devices/delete/employee', 'deleteEmployeeRecord')->name('devices.deleteEmployeeRecord');
         Route::post('devices/delete/employee', 'runDeleteFingerRecord')->name('devices.runDeleteFingerRecord');
         Route::get('devices/retrieve/fingerdata', 'retrieveFingerData')->name('devices.retrieveFingerData');
+        Route::get('devices/retrieve/attendance/{id}', 'editAttendance')->name('devices.attendance.edit');
+        Route::post('devices/retrieve/attendance', 'updateAttendance')->name('devices.attendance.update');
     });
 
 Route::controller(AgentesController::class)
