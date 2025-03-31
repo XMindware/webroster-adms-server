@@ -29,7 +29,7 @@
             <thead class="thead-dark">
                 <tr>
                     <th>ID</th>
-                    <th>SN</th>
+                    <th>Device</th>
                     <th>Employee ID</th>
                     <th>Employee</th>
                     <th>Timestamp</th>
@@ -42,7 +42,7 @@
                 @foreach($attendances as $attendance)
                     <tr>
                         <td>{{ $attendance->id }}</td>
-                        <td>{{ $attendance->sn }}</td>
+                        <td>{{ $attendance->device->name }}</td>
                         <td>{{ $attendance->employee_id }}</td>
                         <td>{!! $attendance->getEmployee()?->fullname ?? '<em>Unknown</em>' !!}</td>
                         <td>{{ $attendance->timestamp }}</td>
