@@ -71,7 +71,7 @@ class DeviceController extends Controller
         
     }
 
-    public function devicesActivity(Request $request) 
+    public function devicesActivity(int $id, Request $request) 
     {
         $range = $request->get('range', '1d'); // Default to 1 day
 
@@ -94,11 +94,15 @@ class DeviceController extends Controller
             $query->where('created_at', '>=', now()->subDays(90));
         }
 
+        $query->where('sn', function ($query) use ($id) {
+            $query->select('serial_number')->from('devices')->where('id', $id);
+        });
         $data = $query->groupBy('hour')->orderBy('hour')->get();
 
         return view('devices.activity', [
             'data' => $data,
-            'range' => $range
+            'range' => $range,
+            'id' => $id
         ]);
     }
 

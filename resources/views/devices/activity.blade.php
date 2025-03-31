@@ -1,13 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Device Reports Per Hour</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-    <h2>Device Reports Per Hour</h2>
+@extends('layouts.app')
 
-    <form method="GET" action="{{ route('devices.activity') }}">
+@section('content')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <form method="GET" action="{{ route('devices.activity', ['id' => $id ]) }}">
         <label for="range">Select Time Range:</label>
         <select name="range" id="range" onchange="this.form.submit()">
             <option value="1h" {{ $range === '1h' ? 'selected' : '' }}>Last 1 Hour</option>
@@ -20,7 +15,7 @@
         </select>
     </form>
 
-    <canvas id="deviceChart" width="400" height="200"></canvas>
+    <canvas id="deviceChart" width="400" height="140"></canvas>
 
     <script>
         const ctx = document.getElementById('deviceChart').getContext('2d');
@@ -50,5 +45,4 @@
             }
         });
     </script>
-</body>
-</html>
+@endsection
