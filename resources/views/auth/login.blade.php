@@ -46,7 +46,7 @@
                             @enderror
                         </span>
                     </div>
-
+                    <input type="checkbox" name="remember"> Remember Me
                     <br>
                     <div class="form-group">
                         <button type="submit" class="btn btn-block btn-success">Login</button>                        
