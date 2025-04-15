@@ -11,7 +11,8 @@
     @endif
     <div class="form-group">
         <label for="oficina">Offices</label>
-        <form method="GET" action="{{ route('devices.attendance', ['selectedOficina' => $selectedOficina]) }}" id="oficinaForm">
+        <form method="GET" action="{{ route('devices.attendance') }}" id="oficinaForm">
+            <input type="hidden" name="page" value="{{ request('page', 1) }}">
             <select name="selectedOficina" class="form-control" id="selectedOficina">
                 @foreach ($oficinas as $oficina)
                     <option value="{{ $oficina->idoficina }}" 
