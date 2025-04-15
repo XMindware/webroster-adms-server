@@ -57,6 +57,8 @@ class DeviceController extends Controller
 
     public function Attendance(Request $request) {
         $selectedOficina = $request->query('selectedOficina');
+        $page = $request->query('page', 1); // Default to page 1 if not provided
+
         if ($selectedOficina) {
             $attendances = Attendance::whereIn('sn', function ($query) use ($selectedOficina) {
                 $query->select('serial_number')
@@ -64,15 +66,14 @@ class DeviceController extends Controller
                     ->where('idoficina', $selectedOficina);
             })
                 ->orderBy('timestamp', 'DESC')
-                ->paginate(40);
+                ->paginate(40, ['*'], 'page', $page);
         } else {
             $attendances = Attendance::orderBy('timestamp', 'DESC')
-                ->paginate(40);
+                ->paginate(40, ['*'], 'page', $page);
         }
 
         $oficinas = Oficina::all();
         return view('devices.attendance', compact('attendances', 'oficinas', 'selectedOficina'));
-        
     }
 
     public function devicesActivity(int $id, Request $request) 
