@@ -73,7 +73,7 @@ class DeviceController extends Controller
         }
 
         $oficinas = Oficina::all();
-        return view('devices.attendance', compact('attendances', 'oficinas', 'selectedOficina'));
+        return view('devices.attendance', compact('attendances', 'oficinas', 'selectedOficina', 'page'));
     }
 
     public function devicesActivity(int $id, Request $request) 
