@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DeviceLog;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Log;
 use Yajra\DataTables\Facades\Datatables;
 use App\Services\CommandIdService;
@@ -57,7 +58,7 @@ class DeviceController extends Controller
 
     public function Attendance(Request $request) {
         $selectedOficina = $request->query('selectedOficina');
-        $page = $request->query('page', 1); // Default to page 1 if not provided
+        $page = $request->query('page', 1);
     
         $query = Attendance::query();
     
@@ -69,20 +70,23 @@ class DeviceController extends Controller
             });
         }
     
-        $query->orderBy('timestamp', 'DESC');
+        $query->orderBy('updated_at', 'DESC'); // <--- Siempre se ordena por updated_at DESC
     
-        // Si se requiere filtrar por desfasados
-        if ($request->input('desfasados') == 'on') {
-            $attendances = $query->get()->filter(function ($attendance) {
+        if ($request->input('desfasados') === 'on') {
+            // Primero obtenemos todos los registros y luego filtramos
+            $filtered = $query->get()->filter(function ($attendance) {
                 return $attendance->updated_at->diffInMinutes($attendance->timestamp) > 20;
             });
     
-            // Manual pagination for a collection
-            $attendances = $attendances->slice(($page - 1) * 40, 40)->values();
-            $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
-                $attendances,
-                $attendances->count(),
-                40,
+            // Ordenamos la colección nuevamente (por si acaso)
+            $filtered = $filtered->sortByDesc('created_at')->values();
+    
+            $perPage = 40;
+            $currentPageItems = $filtered->slice(($page - 1) * $perPage, $perPage)->values();
+            $paginator = new LengthAwarePaginator(
+                $currentPageItems,
+                $filtered->count(),
+                $perPage,
                 $page,
                 ['path' => url()->current()]
             );
