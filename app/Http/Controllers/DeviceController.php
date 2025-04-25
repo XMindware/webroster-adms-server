@@ -79,7 +79,7 @@ class DeviceController extends Controller
             });
     
             // Ordenamos la colección nuevamente (por si acaso)
-            $filtered = $filtered->sortByDesc('created_at')->values();
+            $filtered = $filtered->sortByDesc('updated_at')->values();
     
             $perPage = 40;
             $currentPageItems = $filtered->slice(($page - 1) * $perPage, $perPage)->values();
