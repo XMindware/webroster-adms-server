@@ -18,40 +18,40 @@
     <canvas id="deviceChart" width="400" height="140"></canvas>
 
     <script>
-        const ctx = document.getElementById('deviceChart').getContext('2d');
+    const ctx = document.getElementById('deviceChart').getContext('2d');
 
-        const labels = {!! json_encode($data->pluck('time_slot')) !!};
-        const counts = {!! json_encode($data->pluck('count')) !!};
+    const labels = {!! json_encode(array_keys($data)) !!};
+    const counts = {!! json_encode(array_values($data)) !!};
 
-        const chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Reports per 10 Minutes',
-                    data: counts,
-                    borderWidth: 2,
-                    fill: false,
-                    borderColor: 'blue',
-                    tension: 0.3,
-                    pointRadius: 2,
-                }]
-            },
-            options: {
-                scales: {
-                    x: {
-                        title: { display: true, text: 'Time (every 10 min)' },
-                        ticks: {
-                            maxRotation: 90,
-                            minRotation: 45
-                        }
-                    },
-                    y: {
-                        title: { display: true, text: 'Number of Reports' },
-                        beginAtZero: true
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Reports per {{ $range === "1h" || $range === "6h" || $range === "1d" ? "Minute" : ($range === "7d" ? "Hour" : "Day") }}',
+                data: counts,
+                borderWidth: 2,
+                fill: false,
+                borderColor: 'blue',
+                tension: 0.3,
+                pointRadius: 2,
+            }]
+        },
+        options: {
+            scales: {
+                x: {
+                    title: { display: true, text: 'Time' },
+                    ticks: {
+                        maxRotation: 90,
+                        minRotation: 45
                     }
+                },
+                y: {
+                    title: { display: true, text: 'Number of Reports' },
+                    beginAtZero: true
                 }
             }
-        });
+        }
+    });
     </script>
 @endsection

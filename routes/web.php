@@ -26,8 +26,8 @@ Route::controller(AuthController::class)->group(function(){
     Route::get('/logout','logout')->name('logout');
 });
 
-Route::controller(DeviceController::class)
-    ->middleware('isLoggedIn')
+Route::middleware(['auth'])
+    ->controller(DeviceController::class)
     ->group(function () {
         Route::get('devices', 'index')->name('devices.index');
         Route::get('devices/create', 'create')->name('devices.create');
@@ -48,8 +48,8 @@ Route::controller(DeviceController::class)
         Route::get('/devices/activity/{id}', 'devicesActivity')->name('devices.activity');
     });
 
-Route::controller(AgentesController::class)
-    ->middleware('isLoggedIn')
+Route::middleware(['auth'])
+    ->controller(AgentesController::class)
     ->group(function(){    
         Route::get('agentes', 'index')->name('agentes.index');
         Route::get('agentes/pull', 'pullAgentes')->name('agentes.pull');

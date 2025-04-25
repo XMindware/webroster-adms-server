@@ -91,49 +91,105 @@ class DeviceController extends Controller
                 ['path' => url()->current()]
             );
         } else {
-            $attendances = Attendance::orderBy('timestamp', 'DESC')
-                ->paginate(40);
+            $paginator = $query->paginate(40, ['*'], 'page', $page);
         }
-
+    
         $oficinas = Oficina::all();
-        return view('devices.attendance', compact('attendances', 'oficinas', 'selectedOficina'));
-        
-    }
-
-    public function devicesActivity(int $id, Request $request) 
-    {
-        $range = $request->get('range', '1d'); // Default to 1 day
-
-        $query = DeviceLog::select(
-            DB::raw("DATE_FORMAT(DATE_SUB(created_at, INTERVAL MINUTE(created_at) % 10 MINUTE), '%Y-%m-%d %H:%i:00') as time_slot"),
-            DB::raw("COUNT(*) as count")
-        );
-
-        if ($range === '1h') {
-            $query->where('created_at', '>=', now()->subHour());
-        } elseif ($range === '6h') {
-            $query->where('created_at', '>=', now()->subHours(6));
-        } elseif ($range === '1d') {
-            $query->where('created_at', '>=', now()->subDay());
-        } elseif ($range === '7d') {
-            $query->where('created_at', '>=', now()->subWeek());
-        } elseif ($range === '30d') {
-            $query->where('created_at', '>=', now()->subMonth());
-        } elseif ($range === '90d') {
-            $query->where('created_at', '>=', now()->subDays(90));
-        }
-
-        $query->where('sn', function ($query) use ($id) {
-            $query->select('serial_number')->from('devices')->where('id', $id);
-        });
-        $data = $query->groupBy('time_slot')->orderBy('time_slot')->get();
-
-        return view('devices.activity', [
-            'data' => $data,
-            'range' => $range,
-            'id' => $id
+    
+        return view('devices.attendance', [
+            'attendances' => $paginator,
+            'oficinas' => $oficinas,
+            'selectedOficina' => $selectedOficina,
+            'page' => $page,
         ]);
     }
+    
+
+    public function devicesActivity(int $id, Request $request) 
+{
+    $range = $request->get('range', '1d'); // Default to 1 day
+
+    // 1. Determine the start time and interval
+    $now = now();
+    switch ($range) {
+        case '1h':
+            $start = $now->copy()->subHour();
+            $interval = 'minute';
+            break;
+        case '6h':
+            $start = $now->copy()->subHours(6);
+            $interval = 'minute';
+            break;
+        case '1d':
+            $start = $now->copy()->subDay();
+            $interval = 'minute';
+            break;
+        case '7d':
+            $start = $now->copy()->subDays(7);
+            $interval = 'hour';
+            break;
+        case '30d':
+            $start = $now->copy()->subDays(30);
+            $interval = 'day';
+            break;
+        case '90d':
+            $start = $now->copy()->subDays(90);
+            $interval = 'day';
+            break;
+        default:
+            $start = $now->copy()->subDay();
+            $interval = 'minute';
+    }
+
+    // 2. Get the resolution format for groupBy
+    $format = [
+        'minute' => '%Y-%m-%d %H:%i:00',
+        'hour' => '%Y-%m-%d %H:00:00',
+        'day' => '%Y-%m-%d 00:00:00',
+    ][$interval];
+
+    // 3. Get the serial number
+    $serial = Device::where('id', $id)->value('serial_number');
+    if (!$serial) {
+        abort(404, 'Device not found');
+    }
+
+    // 4. Query DB for logs
+    $logs = DeviceLog::select(
+        DB::raw("DATE_FORMAT(created_at, '$format') as time_slot"),
+        DB::raw("COUNT(*) as count")
+    )
+    ->where('sn', $serial)
+    ->where('url', 'like', '%cdata%')
+    ->where('created_at', '>=', $start)
+    ->groupBy('time_slot')
+    ->orderBy('time_slot')
+    ->pluck('count', 'time_slot');
+
+    // 5. Generate full time slot range
+    $fullData = [];
+    $cursor = $start->copy();
+    while ($cursor < $now) {
+        $key = $cursor->format(str_replace(['%Y', '%m', '%d', '%H', '%i'], ['Y', 'm', 'd', 'H', 'i'], $format));
+        $fullData[$key] = $logs[$key] ?? 0;
+
+        // Advance cursor correctly
+        if ($interval === 'minute') {
+            $cursor->addMinute();
+        } elseif ($interval === 'hour') {
+            $cursor->addHour();
+        } elseif ($interval === 'day') {
+            $cursor->addDay();
+        }
+    }
+
+    return view('devices.activity', [
+        'data' => $fullData,
+        'range' => $range,
+        'id' => $id,
+    ]);
+}
+
 
     public function editAttendance(int $id, Request $request) {
         $attendanceRecord = Attendance::find($id);
