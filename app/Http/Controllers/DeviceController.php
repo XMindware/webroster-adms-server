@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DeviceLog;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Log;
 use Yajra\DataTables\Facades\Datatables;
 use App\Services\CommandIdService;
@@ -57,10 +58,38 @@ class DeviceController extends Controller
 
     public function Attendance(Request $request) {
         $selectedOficina = $request->query('selectedOficina');
+        $page = $request->query('page', 1);
+    
+        $query = Attendance::query();
+    
         if ($selectedOficina) {
-            $attendances = Attendance::where('idoficina', $selectedOficina)
-                ->orderBy('timestamp', 'DESC')
-                ->paginate(40);
+            $query->whereIn('sn', function ($q) use ($selectedOficina) {
+                $q->select('serial_number')
+                  ->from('devices')
+                  ->where('idoficina', $selectedOficina);
+            });
+        }
+    
+        $query->orderBy('updated_at', 'DESC'); // <--- Siempre se ordena por updated_at DESC
+    
+        if ($request->input('desfasados') === 'on') {
+            // Primero obtenemos todos los registros y luego filtramos
+            $filtered = $query->get()->filter(function ($attendance) {
+                return $attendance->updated_at->diffInMinutes($attendance->timestamp) > 20;
+            });
+    
+            // Ordenamos la colección nuevamente (por si acaso)
+            $filtered = $filtered->sortByDesc('created_at')->values();
+    
+            $perPage = 40;
+            $currentPageItems = $filtered->slice(($page - 1) * $perPage, $perPage)->values();
+            $paginator = new LengthAwarePaginator(
+                $currentPageItems,
+                $filtered->count(),
+                $perPage,
+                $page,
+                ['path' => url()->current()]
+            );
         } else {
             $attendances = Attendance::orderBy('timestamp', 'DESC')
                 ->paginate(40);
