@@ -58,23 +58,48 @@ class DeviceController extends Controller
     public function Attendance(Request $request) {
         $selectedOficina = $request->query('selectedOficina');
         $page = $request->query('page', 1); // Default to page 1 if not provided
-
+    
+        $query = Attendance::query();
+    
         if ($selectedOficina) {
-            $attendances = Attendance::whereIn('sn', function ($query) use ($selectedOficina) {
-                $query->select('serial_number')
-                    ->from('devices')
-                    ->where('idoficina', $selectedOficina);
-            })
-                ->orderBy('timestamp', 'DESC')
-                ->paginate(40, ['*'], 'page', $page);
-        } else {
-            $attendances = Attendance::orderBy('timestamp', 'DESC')
-                ->paginate(40, ['*'], 'page', $page);
+            $query->whereIn('sn', function ($q) use ($selectedOficina) {
+                $q->select('serial_number')
+                  ->from('devices')
+                  ->where('idoficina', $selectedOficina);
+            });
         }
-
+    
+        $query->orderBy('timestamp', 'DESC');
+    
+        // Si se requiere filtrar por desfasados
+        if ($request->input('desfasados') == 'on') {
+            $attendances = $query->get()->filter(function ($attendance) {
+                return $attendance->updated_at->diffInMinutes($attendance->timestamp) > 20;
+            });
+    
+            // Manual pagination for a collection
+            $attendances = $attendances->slice(($page - 1) * 40, 40)->values();
+            $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                $attendances,
+                $attendances->count(),
+                40,
+                $page,
+                ['path' => url()->current()]
+            );
+        } else {
+            $paginator = $query->paginate(40, ['*'], 'page', $page);
+        }
+    
         $oficinas = Oficina::all();
-        return view('devices.attendance', compact('attendances', 'oficinas', 'selectedOficina', 'page'));
+    
+        return view('devices.attendance', [
+            'attendances' => $paginator,
+            'oficinas' => $oficinas,
+            'selectedOficina' => $selectedOficina,
+            'page' => $page,
+        ]);
     }
+    
 
     public function devicesActivity(int $id, Request $request) 
 {
