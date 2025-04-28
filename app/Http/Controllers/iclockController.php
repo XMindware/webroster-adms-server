@@ -277,6 +277,15 @@ class iclockController extends Controller
                 return "ERROR: Device not found";
             }
 
+            // add to device logs
+            $data = [
+                'url' => json_encode($request->all()),
+                'data' => $request->getContent(),
+                'sn' => $request->input('SN'),
+                'option' => $request->input('option'),
+            ];
+            DB::table('device_log')->insert($data);
+            Log::debug("inserted data ", $data);
             //update last online
             $device->update(['online' => now()]);
 
