@@ -21,7 +21,7 @@ use App\Http\Controllers\AgentesController;
 Route::controller(AuthController::class)->group(function(){
     Route::get('/registration','registration')->middleware('isLoggedIn');
     Route::post('/registration-user','registerUser')->name('isLoggedIn');
-    Route::get('/login','login')->middleware('alreadyLoggedIn');
+    Route::get('/login','login')->middleware('alreadyLoggedIn')->name('login');
     Route::post('/login-user','loginUser')->name('login-user');
     Route::get('/logout','logout')->name('logout');
 });
