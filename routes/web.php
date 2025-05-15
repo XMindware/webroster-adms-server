@@ -65,6 +65,7 @@ Route::get('/iclock/test', [iclockController::class, 'test']);
 Route::get('/iclock/getrequest', [iclockController::class, 'getrequest']);
 Route::get('/iclock/rtdata', [iclockController::class, 'rtdata']);
 Route::post('/iclock/querydata', [iclockController::class, 'querydata']);
+Route::post('/iclock/upload-log', [iclockController::class, 'uploadLog']);
 
 
 
