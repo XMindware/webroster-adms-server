@@ -344,6 +344,36 @@ class iclockController extends Controller
             return "OK";
         }
     }
+
+    public function uploadLog(Request $request)
+    {
+        Log::info('📥 Received uploadLog', ['inputs' => $request->all()]);
+
+        if (!$request->hasFile('file') || !$request->file('file')->isValid()) {
+            return response()->json(['error' => 'Invalid log file'], 400);
+        }
+
+        $sn = $request->input('sn', 'UNKNOWN');
+        $file = $request->file('file');
+        $lines = file($file->getRealPath());
+
+        foreach ($lines as $line) {
+            $timestamp = now(); // fallback
+
+            // Try to extract timestamp from log line: "2025-05-13 10:32:55 - INFO - ..."
+            if (preg_match('/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/', $line, $matches)) {
+                $timestamp = $matches[1];
+            }
+
+            LogEntry::create([
+                'sn' => $sn,
+                'log_time' => $timestamp,
+                'message' => trim($line),
+            ]);
+        }
+
+        return response()->json(['status' => 'OK']);
+    }
     private function validateAndFormatInteger($value)
     {
         return isset($value) && $value !== '' ? (int)$value : null;
