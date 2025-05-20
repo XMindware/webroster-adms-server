@@ -91,7 +91,8 @@ class DeviceController extends Controller
                 ['path' => url()->current()]
             );
         } else {
-            $paginator = $query->paginate(40, ['*'], 'page', $page);
+            $paginator = $query->paginate(40, ['*'], 'page', $page)
+                    ->appends(request()->except('page'));
         }
     
         $oficinas = Oficina::all();
