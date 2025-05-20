@@ -73,28 +73,30 @@ class DeviceController extends Controller
         $query->orderBy('updated_at', 'DESC'); // <--- Siempre se ordena por updated_at DESC
     
         if ($request->input('desfasados') === 'on') {
-            // Primero obtenemos todos los registros y luego filtramos
             $filtered = $query->get()->filter(function ($attendance) {
                 return $attendance->updated_at->diffInMinutes($attendance->timestamp) > 20;
             });
-    
-            // Ordenamos la colección nuevamente (por si acaso)
+        
             $filtered = $filtered->sortByDesc('updated_at')->values();
-    
+        
             $perPage = 40;
             $currentPageItems = $filtered->slice(($page - 1) * $perPage, $perPage)->values();
+        
             $paginator = new LengthAwarePaginator(
                 $currentPageItems,
                 $filtered->count(),
                 $perPage,
                 $page,
-                ['path' => url()->current()]
+                [
+                    'path' => url()->current(),
+                    'query' => request()->query(), // 👈 This appends the current query parameters
+                ]
             );
         } else {
             $paginator = $query->paginate(40, ['*'], 'page', $page)
                     ->appends(request()->except('page'));
         }
-    
+        
         $oficinas = Oficina::all();
     
         return view('devices.attendance', [
