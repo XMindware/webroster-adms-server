@@ -92,7 +92,7 @@ class DeviceController extends Controller
             );
         } else {
             $paginator = $query->paginate(40, ['*'], 'page', $page)
-                    ->appends(request()->query());
+                    ->appends(request()->except('page'));
         }
     
         $oficinas = Oficina::all();
