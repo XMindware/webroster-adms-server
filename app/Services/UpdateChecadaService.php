@@ -9,7 +9,7 @@ class UpdateChecadaService
 {
     protected $baseUrls;
     
-    protected $endpoint = '/checador/updateChecadaFromADMS';
+    protected $endpoint = '/checador/updateChecadaADMS';
 
     public function __construct()
     {
