@@ -44,6 +44,7 @@ Route::middleware(['auth'])
         Route::post('devices/delete/employee', 'runDeleteFingerRecord')->name('devices.runDeleteFingerRecord');
         Route::get('devices/retrieve/fingerdata', 'retrieveFingerData')->name('devices.retrieveFingerData');
         Route::get('devices/retrieve/attendance/{id}', 'editAttendance')->name('devices.attendance.edit');
+        Route::get('devices/retrieve/attendance/fix/{id}', 'fixAttendance')->name('devices.attendance.fix');
         Route::post('devices/retrieve/attendance', 'updateAttendance')->name('devices.attendance.update');
         Route::get('/devices/activity/{id}', 'devicesActivity')->name('devices.activity');
     });

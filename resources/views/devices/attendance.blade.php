@@ -60,6 +60,9 @@
                         <td>
                             <a href="{{ route('devices.attendance.edit', $attendance->id) }}" class="btn btn-primary">Edit</a>
                         </td>
+                        <td>
+                            <a href="{{ route('devices.attendance.fix', $attendance->id) }}" class="btn btn-primary">Fix</a>
+                        </td>
                     </tr>
                 @endforeach
             </tbody>
