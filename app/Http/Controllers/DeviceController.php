@@ -7,6 +7,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Log;
 use Yajra\DataTables\Facades\Datatables;
 use App\Services\CommandIdService;
+use App\Services\UpdateChecadaService;
 use Illuminate\Http\Request;
 use App\Models\Agente;
 use App\Models\Device;
@@ -196,6 +197,46 @@ class DeviceController extends Controller
 
     public function editAttendance(int $id, Request $request) {
         $attendanceRecord = Attendance::find($id);
+        return view('attendance.edit', compact('attendanceRecord'));
+    }
+
+    public function fixAttendance(int $id, Request $request) {
+        $attendanceRecord = Attendance::find($id);
+
+
+        $data = [
+            'uniqueid' => $attendanceRecord->uniqueid,            
+            'timestamp' => $attendanceRecord->timestamp,
+            'serial_number' => $attendanceRecord->serial_number,
+            'idreloj' => $attendanceRecord->device->idreloj,
+            'status1' => $attendanceRecord->status1,
+            'status2' => $attendanceRecord->status2,
+            'status3' => $attendanceRecord->status3,
+            'status4' => $attendanceRecord->status4,
+            'status5' => $attendanceRecord->status5,
+            'idoficina' => $attendanceRecord->device->oficina->idoficina,
+        ];
+
+        // use the UpdateChecadaService to send the data
+        $updateChecada = app()->make(UpdateChecadaService::class);
+
+        $response = (object)$updateChecada->postData($data); // Adjust the endpoint as necessary
+        // if response is empty json
+        if (empty($response)) {
+            $this->error("Failed to process record ID {$attendanceRecord->id}. No response from API.");
+            return redirect()->route('devices.attendance')->with('error', 'Error al procesar el registro de asistencia');
+        }
+        if (!$response) {
+            $this->error("Failed to process record ID {$attendanceRecord->id}. No response from API.");
+            return redirect()->route('devices.attendance')->with('error', 'Error al procesar el registro de asistencia');
+        }
+        if (property_exists($response, 'status') && $response->status == 'failed') {
+            $this->error("Failed to process record ID {$attendanceRecord->id}. " . $response->message);
+            return redirect()->route('devices.attendance')->with('error', 'Error al procesar el registro de asistencia');
+        }
+        $this->info("Processed record ID {$attendanceRecord->id}. ");       
+        $this->updateRecord($attendanceRecord, $response); 
+    
         return view('attendance.edit', compact('attendanceRecord'));
     }
 

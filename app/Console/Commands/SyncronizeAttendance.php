@@ -35,6 +35,10 @@ class SyncronizeAttendance extends Command
 
         // Loop through the data and call the API for each record
         foreach ($records as $record) {
+            if(!$record->device->oficina){
+                $this->error("No office found for record ID {$record->id}");
+                continue;
+            }
             $data = $this->prepareData($record);
             $response = (object)$this->apiServices->postData($data); // Adjust the endpoint as necessary
             if ($response->status == 'failed') {
