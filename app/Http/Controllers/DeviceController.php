@@ -234,9 +234,6 @@ class DeviceController extends Controller
             $this->error("Failed to process record ID {$attendanceRecord->id}. " . $response->message);
             return redirect()->route('devices.attendance')->with('error', 'Error al procesar el registro de asistencia');
         }
-        $this->info("Processed record ID {$attendanceRecord->id}. ");       
-        $this->updateRecord($attendanceRecord, $response); 
-    
         return view('attendance.edit', compact('attendanceRecord'));
     }
 
