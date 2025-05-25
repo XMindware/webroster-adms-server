@@ -40,6 +40,13 @@ class UpdateChecadaService
             ];
             $response = Http::withHeaders($headers)
                 ->post($currentAPI->base_url . $this->endpoint, $data);
+            Log::info("UpdateChecadaService: Response from API", [
+                'status' => $response->status(),
+                'data' => $response->json()
+            ]);
+            if ($response->failed()) {
+                throw new \Exception("API request failed with status: " . $response->status());
+            }
             return (object)$response->json();
         } catch (\Exception $e) {
             return (object)[
