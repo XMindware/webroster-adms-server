@@ -205,7 +205,7 @@ class DeviceController extends Controller
 
 
         $data = [
-            'uniqueid' => $attendanceRecord->uniqueid,            
+            'uniqueid' => $id,            
             'timestamp' => $attendanceRecord->timestamp,
             'serial_number' => $attendanceRecord->serial_number,
             'idreloj' => $attendanceRecord->device->idreloj,
@@ -234,7 +234,7 @@ class DeviceController extends Controller
             $this->error("Failed to process record ID {$attendanceRecord->id}. " . $response->message);
             return redirect()->route('devices.attendance')->with('error', 'Error al procesar el registro de asistencia');
         }
-        return view('attendance.edit', compact('attendanceRecord'));
+        return redirect()->route('devices.attendance')->with('success', 'Registro de asistencia corregido correctamente');
     }
 
     public function updateAttendance(Request $request) {
