@@ -217,6 +217,9 @@ class DeviceController extends Controller
             'idoficina' => $attendanceRecord->device->oficina->idoficina,
         ];
 
+        // log $data
+        Log::info('Fixing attendance record', ['data' => $data]);
+
         // use the UpdateChecadaService to send the data
         $updateChecada = app()->make(UpdateChecadaService::class);
 
