@@ -205,7 +205,7 @@ class DeviceController extends Controller
 
 
         $data = [
-            'uniqueid' => $id,            
+            'uniqueid' => $attendanceRecord->response_uniqueid,
             'timestamp' => $attendanceRecord->updated_at->format('Y-m-d H:i:s'),
             'serial_number' => $attendanceRecord->serial_number,
             'idreloj' => $attendanceRecord->device->idreloj,
