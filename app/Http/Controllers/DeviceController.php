@@ -80,7 +80,7 @@ class DeviceController extends Controller
         
             $filtered = $filtered->sortByDesc('updated_at')->values();
         
-            $perPage = 40;
+            $perPage = 100;
             $currentPageItems = $filtered->slice(($page - 1) * $perPage, $perPage)->values();
         
             $paginator = new LengthAwarePaginator(
@@ -94,7 +94,7 @@ class DeviceController extends Controller
                 ]
             );
         } else {
-            $paginator = $query->paginate(40, ['*'], 'page', $page)
+            $paginator = $query->paginate(100, ['*'], 'page', $page)
                     ->appends(request()->except('page'));
         }
         
