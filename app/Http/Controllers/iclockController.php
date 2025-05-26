@@ -33,13 +33,12 @@ class iclockController extends Controller
             // add to device logs
             $data = [
                 'url' => $endpoint,
-                'data' => "handshake " . json_encode($request->getContent()),
+                'data' => json_encode($request->getContent()),
                 'sn' => $request->input('SN'),
-                'option' => $request->input('option'),
+                'option' => $request->input('option') ?? "handshake ",
             ];
             
-            DB::table('device_log')->insert($data);
-
+            DeviceLog::create($data);
             // update status device
             DB::table('devices')->updateOrInsert(
                 ['serial_number' => $request->input('SN')],
