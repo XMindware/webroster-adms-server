@@ -279,12 +279,12 @@ class iclockController extends Controller
 
             // add to device logs
             $data = [
-                'url' => json_encode($request->all()),
-                'data' => $request->getContent(),
+                'url' => json_encode($request->url()),
+                'data' => $request->all(),
                 'sn' => $request->input('SN'),
                 'option' => $request->input('option'),
             ];
-            DB::table('device_log')->insert($data);
+            DeviceLog::create($data);
             Log::debug("inserted data ", $data);
             //update last online
             $device->update(['online' => now()]);
