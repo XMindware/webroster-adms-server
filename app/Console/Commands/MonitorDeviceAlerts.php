@@ -16,28 +16,22 @@ class MonitorDeviceAlerts extends Command
     {
         $threshold = now()->subMinutes(3);
 
-        // 🔌 OFFLINE ALERTS
-        Device::where('online', false)
-            ->where('online', '<', $threshold)
-            ->get()
-            ->each(function ($device) {
-                Log::error("🔌 Device `{$device->name}` (ID: {$device->id}) has been offline since {$device->last_online_at}.");
-                if (!$device->last_alert_sent_at || $device->last_alert_sent_at->lt($device->last_online_at)) {
-                    Log::channel('slack')->warning("🔌 Device `{$device->name}` (ID: {$device->id}) has been offline since {$device->last_online_at}.");
-                    $device->last_alert_sent_at = now();
-                    $device->save();
-                }
-            });
+        // 🔌 Devices that have been offline for more than 3 minutes
+        Device::where('online', '<', $threshold)->get()->each(function ($device) {
+            if (!$device->last_alert_sent_at || $device->last_alert_sent_at->lt($device->online)) {
+                Log::channel('slack')->warning("🔌 Device `{$device->name}` (ID: {$device->id}) has been offline since {$device->online}.");
+                $device->last_alert_sent_at = now();
+                $device->save();
+            }
+        });
 
-        // ✅ BACK ONLINE ALERTS
-        Device::where('online', true)
-            ->get()
-            ->each(function ($device) {
-                if ($device->last_alert_sent_at && $device->last_alert_sent_at->gt($device->last_online_at)) {
-                    Log::channel('slack')->info("✅ Device `{$device->name}` (ID: {$device->id}) is back online as of {$device->last_online_at}.");
-                    $device->last_alert_sent_at = null;
-                    $device->save();
-                }
-            });
+        // ✅ Devices back online after being previously offline
+        Device::where('online', '>=', $threshold)->get()->each(function ($device) {
+            if ($device->last_alert_sent_at && $device->last_alert_sent_at->gt($device->online)) {
+                Log::channel('slack')->info("✅ Device `{$device->name}` (ID: {$device->id}) is back online as of {$device->online}.");
+                $device->last_alert_sent_at = null;
+                $device->save();
+            }
+        });
     }
 }
