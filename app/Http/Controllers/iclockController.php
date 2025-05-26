@@ -280,7 +280,7 @@ class iclockController extends Controller
             // add to device logs
             $data = [
                 'url' => json_encode($request->url()),
-                'data' => $request->all(),
+                'data' => $request->getContent(),
                 'sn' => $request->input('SN'),
                 'option' => $request->input('option'),
             ];
