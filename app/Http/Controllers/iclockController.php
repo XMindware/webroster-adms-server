@@ -28,9 +28,12 @@ class iclockController extends Controller
         Log::info('call handshake ', ['request' => $request->all()]);
         try{
             
+            $endpoint = parse_url($request->url(), PHP_URL_PATH);
+
+            // add to device logs
             $data = [
-                'url' => json_encode($request->all()),
-                'data' => $request->getContent(),
+                'url' => $endpoint,
+                'data' => "handshake " . json_encode($request->getContent()),
                 'sn' => $request->input('SN'),
                 'option' => $request->input('option'),
             ];
@@ -55,7 +58,7 @@ class iclockController extends Controller
                 "ResLogDay=18250\r\n" .
                 "ResLogDelCount=10000\r\n" .
                 "ResLogCount=50000\r\n" .
-                "TransTimes=00:00;14:05\r\n" .
+                //"TransTimes=00:00;14:05\r\n" .
                 "TransInterval=4\r\n" .
                 "TransFlag=1111000000\r\n" .
                 "TimeZone=-6\r\n" .
@@ -337,8 +340,6 @@ class iclockController extends Controller
                     }
                 }
             });
-
-            Log::info('---Get Request', ['response' => $response]);
             return $response;
 
         } catch (Throwable $e) {
