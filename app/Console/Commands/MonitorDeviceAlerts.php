@@ -21,6 +21,7 @@ class MonitorDeviceAlerts extends Command
             ->where('online', '<', $threshold)
             ->get()
             ->each(function ($device) {
+                Log::error("🔌 Device `{$device->name}` (ID: {$device->id}) has been offline since {$device->last_online_at}.");
                 if (!$device->last_alert_sent_at || $device->last_alert_sent_at->lt($device->last_online_at)) {
                     Log::channel('slack')->warning("🔌 Device `{$device->name}` (ID: {$device->id}) has been offline since {$device->last_online_at}.");
                     $device->last_alert_sent_at = now();
