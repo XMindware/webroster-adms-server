@@ -277,9 +277,12 @@ class iclockController extends Controller
                 return "ERROR: Device not found";
             }
 
+            //extract endpoint from request->url
+            $endpoint = parse_url($request->url(), PHP_URL_PATH);
+
             // add to device logs
             $data = [
-                'url' => json_encode($request->url()),
+                'url' => $endpoint,
                 'data' => $request->getContent(),
                 'sn' => $request->input('SN'),
                 'option' => $request->input('option'),
