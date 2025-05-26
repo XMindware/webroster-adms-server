@@ -18,7 +18,7 @@ class MonitorDeviceAlerts extends Command
 
         // 🔌 OFFLINE ALERTS
         Device::where('online', false)
-            ->where('last_online_at', '<', $threshold)
+            ->where('online', '<', $threshold)
             ->get()
             ->each(function ($device) {
                 if (!$device->last_alert_sent_at || $device->last_alert_sent_at->lt($device->last_online_at)) {
