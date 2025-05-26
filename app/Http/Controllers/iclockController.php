@@ -238,10 +238,12 @@ class iclockController extends Controller
         // log header and content
         Log::info('querydata', ['url' => json_encode($request->all())]);
         Log::info('querydata', ['data' => $request->getContent()]);
-        // log SN and table
+        $endpoint = parse_url($request->url(), PHP_URL_PATH);
+
+        // add to device logs
         $data = [
-            'url' => json_encode($request->url()),
-            'data' => $request->all(),
+            'url' => $endpoint,
+            'data' => json_encode($request->all()),
             'sn' => $request->input('SN'),
             'table' => $request->input('table'),
         ];
@@ -277,13 +279,12 @@ class iclockController extends Controller
                 return "ERROR: Device not found";
             }
 
-            //extract endpoint from request->url
             $endpoint = parse_url($request->url(), PHP_URL_PATH);
 
             // add to device logs
             $data = [
                 'url' => $endpoint,
-                'data' => $request->getContent(),
+                'data' => json_encode($request->all()),
                 'sn' => $request->input('SN'),
                 'option' => $request->input('option'),
             ];
