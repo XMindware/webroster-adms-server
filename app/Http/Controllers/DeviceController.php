@@ -64,6 +64,8 @@ class DeviceController extends Controller
         } else {
             $attendances = Attendance::orderBy('timestamp', 'DESC')
                 ->paginate(40);
+            $paginator = $query->paginate(100, ['*'], 'page', $page)
+                    ->appends(request()->except('page'));
         }
         $oficinas = Oficina::all();
         return view('devices.attendance', compact('attendances', 'oficinas', 'selectedOficina'));
