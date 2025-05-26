@@ -110,8 +110,11 @@ class iclockController extends Controller
                 return "OK: ".$tot;
             }
 
+            $endpoint = parse_url($request->url(), PHP_URL_PATH);
+
+            // add to device logs
             $data = [
-                'url' => json_encode($request->url()),
+                'url' => $endpoint,
                 'data' => json_encode($request->all()),
                 'sn' => $request->input('SN'),
                 'option' => $request->input('option'),
