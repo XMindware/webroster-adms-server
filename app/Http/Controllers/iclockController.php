@@ -240,8 +240,8 @@ class iclockController extends Controller
         Log::info('querydata', ['data' => $request->getContent()]);
         // log SN and table
         $data = [
-            'url' => json_encode($request->all()),
-            'data' => $request->getContent(),
+            'url' => json_encode($request->url()),
+            'data' => $request->all(),
             'sn' => $request->input('SN'),
             'table' => $request->input('table'),
         ];
