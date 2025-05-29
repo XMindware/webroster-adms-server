@@ -13,6 +13,7 @@
                     <th>Ubicacion</th>
                     <th>Online</th>
                     <th>Ultima checada</th>
+                    <th>Desfases hoy</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -42,9 +43,16 @@
                         </td>
                         <td>{{ $d->getLastAttendance() ? $d->getLastAttendance()->created_at->diffForHumans() : 'unknown' }}</td>
                         <td>
-                            <a href="{{ route('devices.populate', ['id' => $d->id ]) }}" class="btn btn-info">Update Employees</a>                            
+                        @if (!$d->hayDesfasesHoy())
+                                <i class="fas fa-check-circle text-success"></i>                                
+                        @else
+                            <i class="fas fa-times-circle text-danger"></i>
+                        @endif                    
+                        </td>
+                        <td>
+                            <a href="{{ route('devices.populate', ['id' => $d->id ]) }}" class="btn btn-info">Employees</a>                            
                             <a href="{{ route('devices.edit', ['id' => $d->id ]) }}" class="btn btn-primary">Edit</a>
-                            <a href="{{ route('devices.restart', ['id' => $d->id ]) }}" class="btn btn-primary restart-btn">Push Restart</a>
+                            <a href="{{ route('devices.restart', ['id' => $d->id ]) }}" class="btn btn-primary restart-btn">Restart</a>                            
                             <a href="{{ route('devices.activity', ['id' => $d->id ]) }}" class="btn btn-warning">
                                 <i class="fas fa-chart-line"></i>
                             </a>
@@ -100,6 +108,11 @@
             document.getElementById('cancelModal').addEventListener('click', function () {
                 $('#confirmModal').modal('hide');
             });
+
+            // refresh data-table every 25 seconds
+            setInterval(function () {
+                window.location.reload();
+            }, 25000);
         });
     </script>
 @endsection
