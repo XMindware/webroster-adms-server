@@ -27,7 +27,7 @@ class MonitorDeviceAlerts extends Command
 
         // ✅ Devices back online after being previously offline
         Device::where('online', '>=', $threshold)->get()->each(function ($device) {
-            if ($device->last_alert_sent_at && $device->last_alert_sent_at->gt($device->online)) {
+            if ($device->last_alert_sent_at && Carbon::parse($device->last_alert_sent_at)->gt($device->online)) {
                 Log::channel('slack')->info("✅ Device `{$device->name}` (ID: {$device->id}) is back online as of {$device->online}.");
                 $device->last_alert_sent_at = null;
                 $device->save();
