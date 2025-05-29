@@ -59,7 +59,7 @@ class UpdateChecadaService
 
     public function getStationAgents(Oficina $oficina)
     {
-        $currentAPI = (object)$this->baseUrls['uamex'];
+        $currentAPI = (object)$this->baseUrls[$oficina->idoficina];
         $headers = [
             'Authorization' => $currentAPI->token,
             'Content-Type' => 'multipart/form-data',
