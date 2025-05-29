@@ -39,6 +39,29 @@ class Device extends Model
         return Attendance::where('sn', $this->serial_number)->orderBy('id', 'desc')->first();
     }
 
+    public function hayDesfasesHoy()
+    {
+
+        $checadasHoy = Attendance::where('sn', $this->serial_number)
+            ->whereDate('created_at', now()->toDateString())
+            ->get();
+        $lastAttendance = $checadasHoy->last();
+        $hayDesfases = false;
+        
+        // go through the attendances and check if there are difference between created_at and timestamp for more than 20min
+        foreach ($checadasHoy as $attendance) {
+            if ($attendance->created_at->diffInMinutes($attendance->timestamp) > 20) {
+                $hayDesfases = true;
+                break;
+            }
+        }
+        if (!$hayDesfases) {
+            return false;
+        }
+
+        return true;
+    }
+
     public function commands()
     {
         return $this->hasMany(Command::class);
