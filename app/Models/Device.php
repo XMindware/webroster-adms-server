@@ -25,6 +25,7 @@ class Device extends Model
     ];
 
     protected $casts = [
+        'last_alert_sent_at' => 'datetime',
         'updated_at' => 'datetime',
         'online' => 'datetime',
     ];
