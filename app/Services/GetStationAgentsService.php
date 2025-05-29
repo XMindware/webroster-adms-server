@@ -22,7 +22,7 @@ class GetStationAgentsService
     public function getStationAgents(Oficina $oficina)
     {
         Log::info('getStationAgents', ['job' => self::class]);
-        $currentAPI = (object)$this->baseUrls['uamex'];
+        $currentAPI = (object)$this->baseUrls[$oficina->idoficina];
         $headers = [
             'Authorization' => $currentAPI->token,
             'Content-Type' => 'multipart/form-data',
