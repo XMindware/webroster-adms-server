@@ -4,6 +4,18 @@
     <div class="container">
         <h2>{{ $title }}</h2>
         <a href="{{ route('devices.create') }}" class="btn btn-primary mb-3">Create Device</a>
+        <!-- success message -->
+        @if(session('success'))
+            <div class="alert alert-success">
+                {{ session('success') }}
+            </div>
+        @endif
+        <!-- error message -->
+        @if(session('error'))
+            <div class="alert alert-danger">
+                {{ session('error') }}
+            </div>
+        @endif
         <table class="table table-bordered data-table" id="devices">
             <thead>
                 <tr>

@@ -32,6 +32,9 @@
             </div>
             <br/>
             <button type="submit" class="btn btn-primary">Update</button>
+            <!-- remove device -->
+            <a href="{{ route('devices.delete', ['id' => $device->id ]) }}" class="btn btn-danger">Delete</a>
+            <a href="{{ route('devices.index') }}" class="btn btn-secondary">Cancel</a>
         </form>
     </div>
 @endsection

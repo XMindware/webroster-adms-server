@@ -32,6 +32,7 @@ Route::middleware(['auth'])
         Route::get('devices', 'index')->name('devices.index');
         Route::get('devices/create', 'create')->name('devices.create');
         Route::post('devices/store', 'store')->name('devices.store');
+        Route::get('devices/delete', 'deleteDevice')->name('devices.delete');
         Route::get('devices/{id}/edit', 'edit')->name('devices.edit');
         Route::post('devices/{id}/update', 'update')->name('devices.update');
         Route::get('devices/{id}/populate', 'populate')->name('devices.populate');

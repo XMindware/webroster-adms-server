@@ -33,6 +33,22 @@ class DeviceController extends Controller
         $deviceLogs = DeviceLog::orderBy('id', 'DESC')->paginate(40);
         return view('devices.log', compact('deviceLogs', 'title'));
     }
+
+    public function deleteDevice(Request $request)
+    {
+        $device = Device::find($request->input('id'));
+        if ($device) {
+            // check for pending commands and delete them
+            $pendingCommands = Command::where('device_id', $device->id)->get();
+            foreach ($pendingCommands as $command) {
+                $command->delete();
+            }
+            $device->delete();
+            return redirect()->route('devices.index')->with('success', 'Biométrico eliminado correctamente');
+        } else {
+            return redirect()->route('devices.index')->with('error', 'Biométrico no encontrado');
+        }
+    }
     
     public function FingerLog(Request $request)
     {
