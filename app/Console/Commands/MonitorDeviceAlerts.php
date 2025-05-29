@@ -18,7 +18,7 @@ class MonitorDeviceAlerts extends Command
 
         // 🔌 Devices that have been offline for more than 3 minutes
         Device::where('online', '<', $threshold)->get()->each(function ($device) {
-            if (!$device->last_alert_sent_at || Carbon::parse($device->last_alert_sent_at)->lt($device->online)) {
+            if (!$device->last_alert_sent_at || $device->last_alert_sent_at->lt($device->online)) {
                 Log::channel('slack')->warning("🔌 Device `{$device->name}` (ID: {$device->id}) has been offline since {$device->online}.");
                 $device->last_alert_sent_at = now();
                 $device->save();
