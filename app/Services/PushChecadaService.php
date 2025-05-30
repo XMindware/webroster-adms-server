@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Oficina;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class PushChecadaService
 {
@@ -30,7 +31,8 @@ class PushChecadaService
     public function postData($data): object
     {
         try{
-            
+            // send debug data to slack
+            Log::info("PushChecadaService: Data to be sent", ['data' => $data]);
             $currentAPI = (object)$this->baseUrls[$data['idoficina']];
             // set headers
             $headers = [
