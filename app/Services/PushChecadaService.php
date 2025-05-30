@@ -30,10 +30,13 @@ class PushChecadaService
 
     public function postData($data): object
     {
-        try{
-            // send debug data to slack
-            Log::info("PushChecadaService: Data to be sent", ['data' => $data]);
+        try{            
             $currentAPI = (object)$this->baseUrls[$data['idoficina']];
+
+            Log::info("PushChecadaService: Posting data to API", [
+                'endpoint' => $currentAPI->base_url . $this->endpoint,
+                'data' => $data
+            ]);
             // set headers
             $headers = [
                 'Authorization' => $currentAPI->token,
