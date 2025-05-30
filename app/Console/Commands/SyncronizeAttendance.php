@@ -40,6 +40,7 @@ class SyncronizeAttendance extends Command
                 continue;
             }
             $data = $this->prepareData($record);
+            Log::info("Processing record ID {$record->id} with data: ", $data);
             $response = (object)$this->apiServices->postData($data); // Adjust the endpoint as necessary
             if ($response->status == 'failed') {
                 $this->error("Failed to process record ID {$record->id}. " . $response->message);
