@@ -73,6 +73,75 @@ class DeviceController extends Controller
         return view('devices.fingerprints', compact('deviceLogs','title'));
     }
 
+    // get oficinas list
+    public function Oficinas(Request $request)
+    {
+        $oficinas = Oficina::all();
+        $title = "Oficinas";
+        return  view('oficinas.index', compact('oficinas','title'));
+    }
+
+    public function createOficina(Request $request)
+    {
+        return view('oficinas.create');
+    }
+
+    public function storeOficina(Request $request)
+    {
+        $oficina = new Oficina();
+        $oficina->nombre = $request->input('nombre');
+        $oficina->idempresa = $request->input('idempresa');
+        $oficina->save();
+
+        return redirect()->route('oficinas.index')->with('success', 'Oficina creada correctamente');
+    }
+
+    public function editOficina($id)
+    {
+        $oficina = Oficina::find($id);
+        if (!$oficina) {
+            return redirect()->route('devices.oficinas')->with('error', 'Oficina no encontrada');
+        }
+        return view('oficinas.edit', compact('oficina'));
+    }
+
+    public function updateOficina(Request $request, $id)
+    {
+        $oficina = Oficina::find($id);
+        if (!$oficina) {
+            return redirect()->route('devices.oficinas')->with('error', 'Oficina no encontrada');
+        }
+        $oficina->ubicacion = $request->input('ubicacion');
+        $oficina->idempresa = $request->input('idempresa');
+        $oficina->idoficina = $request->input('idoficina');
+        // add the missing fields from this list  id | idempresa | idoficina | ubicacion       | public_url                        | iatacode | city_timezone     | timezone
+        $oficina->city_timezone = $request->input('city_timezone');
+        $oficina->public_url = $request->input('public_url');
+        $oficina->iatacode = $request->input('iatacode');
+        $oficina->timezone = $request->input('timezone'); 
+
+        $oficina->save();
+
+        return redirect()->route('devices.oficinas')->with('success', 'Oficina actualizada correctamente');
+    }
+
+
+    public function deleteOficina(Request $request)
+    {
+        $oficina = Oficina::find($request->input('id'));
+        if ($oficina) {
+            // Check if there are devices associated with this oficina
+            $devices = Device::where('idoficina', $oficina->idoficina)->get();
+            foreach ($devices as $device) {
+                $device->delete();
+            }
+            $oficina->delete();
+            return redirect()->route('devices.oficinas')->with('success', 'Oficina eliminada correctamente');
+        } else {
+            return redirect()->route('devices.oficinas')->with('error', 'Oficina no encontrada');
+        }
+    }
+
     public function Attendance(Request $request) {
         $selectedOficina = $request->query('selectedOficina');
         $page = $request->query('page', 1);

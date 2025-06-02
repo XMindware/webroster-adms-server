@@ -16,12 +16,18 @@ class Oficina extends Model
         'idoficina',        
         'ubicacion',
         'iatacode',
+        'city_timezone',
+        'timezone',
         'public_url',
+    ];
+
+    public $timestamps = [
+        'created_at',
+        'updated_at',
     ];
 
     public function public_url()
     {
         return $this->public_url;
     }
-
 }

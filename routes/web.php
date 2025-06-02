@@ -48,6 +48,13 @@ Route::middleware(['auth'])
         Route::get('devices/retrieve/attendance/fix/{id}', 'fixAttendance')->name('devices.attendance.fix');
         Route::post('devices/retrieve/attendance', 'updateAttendance')->name('devices.attendance.update');
         Route::get('/devices/activity/{id}', 'devicesActivity')->name('devices.activity');
+
+        Route::get('oficinas', 'oficinas')->name('devices.oficinas');
+        Route::get('oficinas/create', 'createOficina')->name('oficinas.create');
+        Route::post('oficinas/store', 'storeOficina')->name('oficinas.store');
+        Route::get('oficinas/{id}/edit', 'editOficina')->name('oficinas.edit');
+        Route::post('oficinas/{id}/update', 'updateOficina')->name('oficinas.update');
+        Route::get('oficinas/delete', 'deleteOficina')->name('oficinas.delete');
     });
 
 Route::middleware(['auth'])

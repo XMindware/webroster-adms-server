@@ -73,6 +73,7 @@
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                             <li><a class="dropdown-item" href="{{ route('devices.attendance') }}">Attendance</a></li>
+                            <li><a class="dropdown-item" href="{{ route('devices.oficinas') }}">Oficinas</a></li>
                             <li><a class="dropdown-item" href="{{ route('devices.deviceLog') }}">Device Log</a></li>
                             <li><a class="dropdown-item" href="{{ route('devices.fingerLog') }}">Finger Log</a></li>
                             <li><a class="dropdown-item" href="{{ route('devices.fingerprints') }}">Fingerprints</a></li> 
