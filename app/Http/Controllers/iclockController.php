@@ -44,8 +44,18 @@ class iclockController extends Controller
                 ['serial_number' => $request->input('SN')],
                 ['online' => now()]
             );
+
+            // get timezone from office
+            $device = Device::where('serial_number', $request->input('SN'))->first();
+            if (!$device) {
+                Log::error('handshake', ['error' => 'Device not found']);
+                return "ERROR: Device not found";
+            }
+            $cityTimezone = $device->oficina ? $device->oficina->timezone : 'America/Mexico_City';
+            $timezone = $device->oficina ? $device->oficina->timezone : 'America/Mexico_City';
+
             // set time() to gmt -6
-            $date = Carbon::now('America/Mexico_City');
+            $date = Carbon::now($cityTimezone);
             $format = 'Y-m-d H:i:s';
             $localTime = $date->format($format);
 
@@ -60,7 +70,7 @@ class iclockController extends Controller
                 //"TransTimes=00:00;14:05\r\n" .
                 "TransInterval=4\r\n" .
                 "TransFlag=1111000000\r\n" .
-                "TimeZone=-6\r\n" .
+                "TimeZone=". $timezone . "\r\n" .
                 "Realtime=1\r\n" .
                 "Encrypt=0";
 

@@ -33,10 +33,6 @@ class PushChecadaService
         try{            
             $currentAPI = (object)$this->baseUrls[$data['idoficina']];
 
-            Log::info("PushChecadaService: Posting data to API", [
-                'endpoint' => $currentAPI->base_url . $this->endpoint,
-                'data' => $data
-            ]);
             // set headers
             $headers = [
                 'Authorization' => $currentAPI->token,
