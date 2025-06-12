@@ -19,6 +19,10 @@ use DB;
 
 class DeviceController extends Controller
 {
+    const EXCLUDED_EMPLOYEES = [
+        '300101', // Exclude employee 300101 admin
+    ];
+
     // Menampilkan daftar device
     public function index(Request $request)
     {
@@ -152,6 +156,7 @@ class DeviceController extends Controller
             $query->whereIn('sn', function ($q) use ($selectedOficina) {
                 $q->select('serial_number')
                   ->from('devices')
+                  ->whereNotIn('employee_id', self::EXCLUDED_EMPLOYEES) // Exclude devices with idreloj 999999 or 0
                   ->where('idoficina', $selectedOficina);
             });
         }
