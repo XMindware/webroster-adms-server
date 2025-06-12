@@ -48,10 +48,10 @@ class Device extends Model
             ->get();
         $lastAttendance = $checadasHoy->last();
         $hayDesfases = false;
-        
+    
         // go through the attendances and check if there are difference between created_at and timestamp for more than 20min
         foreach ($checadasHoy as $attendance) {
-            if ($attendance->office->first()->timezone<6) {
+            if ($attendance->office && $attendance->first()->timezone<6) {
                 $attendance->timestamp = $attendance->timestamp->subHours(1);
             }
             if ($attendance->created_at->diffInMinutes($attendance->timestamp) > 20) {
