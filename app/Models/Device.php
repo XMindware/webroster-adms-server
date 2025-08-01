@@ -46,12 +46,11 @@ class Device extends Model
         $checadasHoy = Attendance::where('sn', $this->serial_number)
             ->whereDate('created_at', now()->toDateString())
             ->get();
-        $lastAttendance = $checadasHoy->last();
         $hayDesfases = false;
     
         // go through the attendances and check if there are difference between created_at and timestamp for more than 20min
         foreach ($checadasHoy as $attendance) {
-            if ($attendance->office && $attendance->first()->timezone<-6) {
+            if ($attendance->office && $attendance->first()->timezone<$this->oficina->timezone) {
                 $attendance->timestamp = $attendance->timestamp->subHours(1);
             }
             if ($attendance->created_at->diffInMinutes($attendance->timestamp) > 20) {
