@@ -3,7 +3,12 @@
 @section('content')
     <div class="container">
         <h2>{{ $title }}</h2>
-        <a href="{{ route('devices.create') }}" class="btn btn-primary mb-3">Create Device</a>
+        <div class="d-flex gap-2 mb-3">
+            <a href="{{ route('devices.create') }}" class="btn btn-primary">Create Device</a>
+            <a href="{{ route('devices.monitor') }}" class="btn btn-success">
+                <i class="fas fa-traffic-light"></i> Monitor Status
+            </a>
+        </div>
         <!-- success message -->
         @if(session('success'))
             <div class="alert alert-success">

@@ -284,6 +284,36 @@ class DeviceController extends Controller
     ]);
 }
 
+public function monitor()
+{
+    try {
+        $devices = Device::with(['oficina'])->get();
+        
+        // Get the last attendance for each device
+        foreach ($devices as $device) {
+            try {
+                $lastAttendance = $device->getLastAttendance();
+                if ($lastAttendance && $lastAttendance->timestamp) {
+                    $device->last_attendance_time = $lastAttendance->timestamp;
+                    $device->last_attendance_human = $lastAttendance->timestamp->format('H:i');
+                } else {
+                    $device->last_attendance_time = null;
+                    $device->last_attendance_human = 'N/A';
+                }
+            } catch (\Exception $e) {
+                \Log::error("Error processing device {$device->id}: " . $e->getMessage());
+                $device->last_attendance_time = null;
+                $device->last_attendance_human = 'Error';
+            }
+        }
+
+        return view('devices.monitor', compact('devices'));
+    } catch (\Exception $e) {
+        \Log::error("Error in monitor method: " . $e->getMessage());
+        return redirect()->route('devices.index')->with('error', 'Error loading monitor: ' . $e->getMessage());
+    }
+}
+
 
     public function editAttendance(int $id, Request $request) {
         $attendanceRecord = Attendance::find($id);

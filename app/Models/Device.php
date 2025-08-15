@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 use App\Models\Command;
 use App\Models\Oficina;
+use App\Models\Attendance;
 use App\Services\PopulateEmployeesService;
 
 class Device extends Model

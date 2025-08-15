@@ -65,6 +65,11 @@
                         <a class="nav-link" href="{{ route('devices.index') }}">Device</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="{{ route('devices.monitor') }}">
+                            <i class="fas fa-traffic-light"></i> Monitor
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="{{ route('agentes.index') }}">Employees</a>
                     </li>
                     <li class="nav-item dropdown">

@@ -48,6 +48,7 @@ Route::middleware(['auth'])
         Route::get('devices/retrieve/attendance/fix/{id}', 'fixAttendance')->name('devices.attendance.fix');
         Route::post('devices/retrieve/attendance', 'updateAttendance')->name('devices.attendance.update');
         Route::get('/devices/activity/{id}', 'devicesActivity')->name('devices.activity');
+        Route::get('/devices/monitor', 'monitor')->name('devices.monitor');
 
         Route::get('oficinas', 'oficinas')->name('devices.oficinas');
         Route::get('oficinas/create', 'createOficina')->name('oficinas.create');
@@ -75,6 +76,7 @@ Route::get('/iclock/getrequest', [iclockController::class, 'getrequest']);
 Route::get('/iclock/rtdata', [iclockController::class, 'rtdata']);
 Route::post('/iclock/querydata', [iclockController::class, 'querydata']);
 Route::post('/iclock/upload-log', [iclockController::class, 'uploadLog']);
+Route::get('/api/test', [iclockController::class, 'quickStatus']);
 
 
 

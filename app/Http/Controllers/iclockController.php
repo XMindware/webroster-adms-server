@@ -363,6 +363,39 @@ class iclockController extends Controller
         }
     }
 
+    public function quickStatus(Request $request)
+    {
+        Log::info('call quickStatus', ['request' => $request->all()]);
+
+        $lastError = DB::table('error_log')
+            ->orderBy('created_at', 'desc')
+            ->first();
+        $data = [];
+
+        if ($lastError) {
+            Log::info('quickStatus', ['lastError' => $lastError]);
+            $data = [
+                'status' => 'error',
+                'message' => substr($lastError->data, 0, 16),
+                'error' => substr($lastError->data, 0, 30),
+                'timestamp' => $lastError->created_at ? $lastError->created_at->toIso8601String() : '',
+            ];
+        }
+        else {
+            Log::info('quickStatus', ['status' => 'ok']);
+            $data = [
+                'status' => 'ok',
+                'message' => 'No errors found',
+            ];
+        }
+        $response = response()->json($data);
+        // Forzar que no se use Transfer-Encoding: chunked
+        $response->header('Content-Length', strlen($response->getContent()));
+        $response->header('Connection', 'close');
+    
+        return $response;
+    }
+
     public function uploadLog(Request $request)
     {
         Log::info('📥 Received uploadLog', ['inputs' => $request->all()]);
