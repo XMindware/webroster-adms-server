@@ -75,6 +75,19 @@
                         <span class="label">Last Check-in:</span>
                         <span class="time">{{ $device->last_attendance_human }}</span>
                     </div>
+                    <div class="office-time">
+                        <span class="label">Office Time:</span>
+                        <span class="time">{{ $device->office_time_display }}</span>
+                        @if($device->office_timezone)
+                            <small class="timezone">({{ $device->office_timezone }})</small>
+                        @endif
+                    </div>
+                    @if($device->discrepancy_count > 0)
+                    <div class="discrepancy-alert">
+                        <span class="label">⚠️ Time Discrepancies Today:</span>
+                        <span class="count">{{ $device->discrepancy_count }}</span>
+                    </div>
+                    @endif
                     <div class="device-details">
                         <small class="text-muted">
                             ID: {{ $device->idreloj }} | 
@@ -199,6 +212,54 @@
     font-weight: 600;
     color: #2c3e50;
     font-size: 1.1rem;
+}
+
+.office-time {
+    background: #e3f2fd;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.office-time .label {
+    font-size: 0.8rem;
+    color: #1976d2;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.office-time .time {
+    font-weight: 600;
+    color: #1976d2;
+    font-size: 1.1rem;
+}
+
+.office-time .timezone {
+    color: #64b5f6;
+    font-size: 0.75rem;
+    margin-left: 5px;
+}
+
+.discrepancy-alert {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    padding: 6px 10px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.discrepancy-alert .label {
+    font-size: 0.75rem;
+    color: #856404;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.discrepancy-alert .count {
+    font-weight: 600;
+    color: #856404;
+    font-size: 1rem;
 }
 
 .device-details {

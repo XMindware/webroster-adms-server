@@ -300,10 +300,23 @@ public function monitor()
                     $device->last_attendance_time = null;
                     $device->last_attendance_human = 'N/A';
                 }
+                
+                // Get current office time and timezone info
+                $device->current_office_time = $device->getCurrentOfficeTime();
+                $device->office_timezone = $device->oficina ? $device->oficina->timezone : null;
+                $device->office_time_display = $device->current_office_time ? $device->current_office_time->format('H:i') : 'N/A';
+                
+                // Get timezone discrepancy count
+                $device->discrepancy_count = $device->getTimezoneDiscrepancyCount();
+                
             } catch (\Exception $e) {
                 \Log::error("Error processing device {$device->id}: " . $e->getMessage());
                 $device->last_attendance_time = null;
                 $device->last_attendance_human = 'Error';
+                $device->current_office_time = null;
+                $device->office_timezone = null;
+                $device->office_time_display = 'Error';
+                $device->discrepancy_count = 0;
             }
         }
 

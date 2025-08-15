@@ -40,6 +40,69 @@
                 left: 0;
             }
 
+            /* Fix dropdown positioning on mobile */
+            .navbar-collapse .dropdown-menu {
+                position: static !important;
+                float: none;
+                width: 100%;
+                background-color: transparent;
+                border: 0;
+                border-radius: 0;
+                box-shadow: none;
+                margin: 0;
+                padding: 0;
+            }
+
+            .navbar-collapse .dropdown-item {
+                color: #6c757d;
+                padding: 8px 15px;
+                border-left: 3px solid transparent;
+                transition: all 0.2s ease;
+                margin: 2px 0;
+                border-radius: 4px;
+            }
+
+            .navbar-collapse .dropdown-item:hover {
+                background-color: #e9ecef;
+                color: #495057;
+                border-left-color: #007bff;
+            }
+
+            /* Ensure dropdown is visible when open */
+            .navbar-collapse .dropdown.show .dropdown-menu {
+                display: block !important;
+                background-color: rgba(248, 249, 250, 0.95);
+                border-radius: 8px;
+                margin: 8px 0;
+                padding: 8px 0;
+            }
+
+            /* Additional mobile dropdown styling */
+            .navbar-collapse .dropdown {
+                position: relative;
+            }
+
+            .navbar-collapse .dropdown-menu {
+                max-height: none;
+                overflow: visible;
+            }
+
+            /* Prevent dropdown from being cut off */
+            .navbar-collapse {
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+
+            /* Animate dropdown chevron */
+            .navbar-collapse .dropdown.show .dropdown-toggle .fa-chevron-down {
+                transform: rotate(180deg);
+                transition: transform 0.2s ease;
+            }
+
+            .navbar-collapse .dropdown-toggle .fa-chevron-down {
+                transition: transform 0.2s ease;
+            }
+
             body.menu-open {
                 overflow: hidden;
             }
@@ -74,7 +137,7 @@
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Utilities
+                            Utilities <i class="fas fa-chevron-down ms-1"></i>
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                             <li><a class="dropdown-item" href="{{ route('devices.attendance') }}">Attendance</a></li>
@@ -110,10 +173,49 @@
                 $('body').toggleClass('menu-open');
             });
 
-            $('.nav-link').on('click', function() {
+            // Handle mobile dropdown toggling
+            $('.dropdown-toggle').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const $dropdown = $(this).closest('.dropdown');
+                const $dropdownMenu = $dropdown.find('.dropdown-menu');
+                
+                // Close other open dropdowns
+                $('.dropdown').not($dropdown).removeClass('show');
+                $('.dropdown-menu').not($dropdownMenu).removeClass('show');
+                
+                // Toggle current dropdown
+                $dropdown.toggleClass('show');
+                $dropdownMenu.toggleClass('show');
+            });
+
+            // Handle dropdown item clicks
+            $('.dropdown-item').on('click', function() {
+                if ($(window).width() < 992) {
+                    // Close navbar after selecting an item on mobile
+                    setTimeout(() => {
+                        $('.navbar-collapse').removeClass('show');
+                        $('body').removeClass('menu-open');
+                        $('.dropdown').removeClass('show');
+                        $('.dropdown-menu').removeClass('show');
+                    }, 100);
+                }
+            });
+
+            // Close navbar when clicking on regular nav links (not dropdowns)
+            $('.nav-link:not(.dropdown-toggle)').on('click', function() {
                 if ($(window).width() < 992) {
                     $('.navbar-collapse').removeClass('show');
                     $('body').removeClass('menu-open');
+                }
+            });
+
+            // Close dropdowns when clicking outside
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.dropdown').length) {
+                    $('.dropdown').removeClass('show');
+                    $('.dropdown-menu').removeClass('show');
                 }
             });
         });
