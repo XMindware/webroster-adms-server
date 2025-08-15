@@ -4,12 +4,13 @@ namespace App\Services;
 
 use App\Models\Oficina;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class UpdateChecadaService
 {
     protected $baseUrls;
     
-    protected $endpoint = '/checador/updateChecadaFromADMS';
+    protected $endpoint = '/checador/updateChecadaADMS';
 
     public function __construct()
     {
@@ -40,6 +41,13 @@ class UpdateChecadaService
             ];
             $response = Http::withHeaders($headers)
                 ->post($currentAPI->base_url . $this->endpoint, $data);
+            Log::info("UpdateChecadaService: Response from API", [
+                'status' => $response->status(),
+                'data' => $response->json()
+            ]);
+            if ($response->failed()) {
+                throw new \Exception("API request failed with status: " . $response->status());
+            }
             return (object)$response->json();
         } catch (\Exception $e) {
             return (object)[
@@ -51,7 +59,7 @@ class UpdateChecadaService
 
     public function getStationAgents(Oficina $oficina)
     {
-        $currentAPI = (object)$this->baseUrls['uamex'];
+        $currentAPI = (object)$this->baseUrls[$oficina->idoficina];
         $headers = [
             'Authorization' => $currentAPI->token,
             'Content-Type' => 'multipart/form-data',

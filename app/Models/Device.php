@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 use App\Models\Command;
 use App\Models\Oficina;
+use App\Models\Attendance;
 use App\Services\PopulateEmployeesService;
 
 class Device extends Model
@@ -25,6 +26,7 @@ class Device extends Model
     ];
 
     protected $casts = [
+        'last_alert_sent_at' => 'datetime',
         'updated_at' => 'datetime',
         'online' => 'datetime',
     ];
@@ -37,6 +39,31 @@ class Device extends Model
     public function getLastAttendance()
     {
         return Attendance::where('sn', $this->serial_number)->orderBy('id', 'desc')->first();
+    }
+
+    public function hayDesfasesHoy()
+    {
+
+        $checadasHoy = Attendance::where('sn', $this->serial_number)
+            ->whereDate('created_at', now()->toDateString())
+            ->get();
+        $hayDesfases = false;
+    
+        // go through the attendances and check if there are difference between created_at and timestamp for more than 20min
+        foreach ($checadasHoy as $attendance) {
+            if ($attendance->office && $attendance->first()->timezone<$this->oficina->timezone) {
+                $attendance->timestamp = $attendance->timestamp->subHours(1);
+            }
+            if ($attendance->created_at->diffInMinutes($attendance->timestamp) > 20) {
+                $hayDesfases = true;
+                break;
+            }
+        }
+        if (!$hayDesfases) {
+            return false;
+        }
+
+        return true;
     }
 
     public function commands()

@@ -28,22 +28,34 @@ class iclockController extends Controller
         Log::info('call handshake ', ['request' => $request->all()]);
         try{
             
+            $endpoint = parse_url($request->url(), PHP_URL_PATH);
+
+            // add to device logs
             $data = [
-                'url' => json_encode($request->all()),
-                'data' => $request->getContent(),
+                'url' => $endpoint,
+                'data' => json_encode($request->getContent()),
                 'sn' => $request->input('SN'),
-                'option' => $request->input('option'),
+                'option' => $request->input('option') ?? "handshake ",
             ];
             
-            DB::table('device_log')->insert($data);
-
+            DeviceLog::create($data);
             // update status device
             DB::table('devices')->updateOrInsert(
                 ['serial_number' => $request->input('SN')],
                 ['online' => now()]
             );
+
+            // get timezone from office
+            $device = Device::where('serial_number', $request->input('SN'))->first();
+            if (!$device) {
+                Log::error('handshake', ['error' => 'Device not found']);
+                return "ERROR: Device not found";
+            }
+            $cityTimezone = $device->oficina ? $device->oficina->timezone : 'America/Mexico_City';
+            $timezone = $device->oficina ? $device->oficina->timezone : 'America/Mexico_City';
+
             // set time() to gmt -6
-            $date = Carbon::now('America/Mexico_City');
+            $date = Carbon::now($cityTimezone);
             $format = 'Y-m-d H:i:s';
             $localTime = $date->format($format);
 
@@ -55,10 +67,10 @@ class iclockController extends Controller
                 "ResLogDay=18250\r\n" .
                 "ResLogDelCount=10000\r\n" .
                 "ResLogCount=50000\r\n" .
-                "TransTimes=00:00;14:05\r\n" .
+                //"TransTimes=00:00;14:05\r\n" .
                 "TransInterval=4\r\n" .
                 "TransFlag=1111000000\r\n" .
-                "TimeZone=-6\r\n" .
+                "TimeZone=". $timezone . "\r\n" .
                 "Realtime=1\r\n" .
                 "Encrypt=0";
 
@@ -108,8 +120,11 @@ class iclockController extends Controller
                 return "OK: ".$tot;
             }
 
+            $endpoint = parse_url($request->url(), PHP_URL_PATH);
+
+            // add to device logs
             $data = [
-                'url' => json_encode($request->url()),
+                'url' => $endpoint,
                 'data' => json_encode($request->all()),
                 'sn' => $request->input('SN'),
                 'option' => $request->input('option'),
@@ -171,6 +186,7 @@ class iclockController extends Controller
                 $q['stamp'] = $stamp;
                 $q['employee_id'] = $employee_id;
                 $q['timestamp'] = $timestamp;
+                $q['idoficina'] = Device::where('serial_number', $request->input('SN'))->first()->oficina->idoficina ?? null;
                 $q['status1'] = $this->validateAndFormatInteger($data[2] ?? null);
                 $q['status2'] = $this->validateAndFormatInteger($data[3] ?? null);
                 $q['status3'] = $this->validateAndFormatInteger($data[4] ?? null);
@@ -238,10 +254,12 @@ class iclockController extends Controller
         // log header and content
         Log::info('querydata', ['url' => json_encode($request->all())]);
         Log::info('querydata', ['data' => $request->getContent()]);
-        // log SN and table
+        $endpoint = parse_url($request->url(), PHP_URL_PATH);
+
+        // add to device logs
         $data = [
-            'url' => json_encode($request->all()),
-            'data' => $request->getContent(),
+            'url' => $endpoint,
+            'data' => json_encode($request->all()),
             'sn' => $request->input('SN'),
             'table' => $request->input('table'),
         ];
@@ -277,14 +295,16 @@ class iclockController extends Controller
                 return "ERROR: Device not found";
             }
 
+            $endpoint = parse_url($request->url(), PHP_URL_PATH);
+
             // add to device logs
             $data = [
-                'url' => json_encode($request->all()),
-                'data' => $request->getContent(),
+                'url' => $endpoint,
+                'data' => json_encode($request->all()),
                 'sn' => $request->input('SN'),
                 'option' => $request->input('option'),
             ];
-            DB::table('device_log')->insert($data);
+            DeviceLog::create($data);
             Log::debug("inserted data ", $data);
             //update last online
             $device->update(['online' => now()]);
@@ -333,8 +353,6 @@ class iclockController extends Controller
                     }
                 }
             });
-
-            Log::info('---Get Request', ['response' => $response]);
             return $response;
 
         } catch (Throwable $e) {
@@ -343,6 +361,39 @@ class iclockController extends Controller
             report($e);
             return "OK";
         }
+    }
+
+    public function quickStatus(Request $request)
+    {
+        Log::info('call quickStatus', ['request' => $request->all()]);
+
+        $lastError = DB::table('error_log')
+            ->orderBy('created_at', 'desc')
+            ->first();
+        $data = [];
+
+        if ($lastError) {
+            Log::info('quickStatus', ['lastError' => $lastError]);
+            $data = [
+                'status' => 'error',
+                'message' => substr($lastError->data, 0, 16),
+                'error' => substr($lastError->data, 0, 30),
+                'timestamp' => $lastError->created_at ? $lastError->created_at->toIso8601String() : '',
+            ];
+        }
+        else {
+            Log::info('quickStatus', ['status' => 'ok']);
+            $data = [
+                'status' => 'ok',
+                'message' => 'No errors found',
+            ];
+        }
+        $response = response()->json($data);
+        // Forzar que no se use Transfer-Encoding: chunked
+        $response->header('Content-Length', strlen($response->getContent()));
+        $response->header('Connection', 'close');
+    
+        return $response;
     }
 
     public function uploadLog(Request $request)

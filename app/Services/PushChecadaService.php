@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Oficina;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class PushChecadaService
 {
@@ -29,9 +30,9 @@ class PushChecadaService
 
     public function postData($data): object
     {
-        try{
-            
+        try{            
             $currentAPI = (object)$this->baseUrls[$data['idoficina']];
+
             // set headers
             $headers = [
                 'Authorization' => $currentAPI->token,
@@ -51,7 +52,7 @@ class PushChecadaService
 
     public function getStationAgents(Oficina $oficina)
     {
-        $currentAPI = (object)$this->baseUrls['uamex'];
+        $currentAPI = (object)$this->baseUrls[$oficina->idoficina];
         $headers = [
             'Authorization' => $currentAPI->token,
             'Content-Type' => 'multipart/form-data',

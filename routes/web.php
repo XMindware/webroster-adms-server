@@ -32,6 +32,7 @@ Route::middleware(['auth'])
         Route::get('devices', 'index')->name('devices.index');
         Route::get('devices/create', 'create')->name('devices.create');
         Route::post('devices/store', 'store')->name('devices.store');
+        Route::get('devices/delete', 'deleteDevice')->name('devices.delete');
         Route::get('devices/{id}/edit', 'edit')->name('devices.edit');
         Route::post('devices/{id}/update', 'update')->name('devices.update');
         Route::get('devices/{id}/populate', 'populate')->name('devices.populate');
@@ -47,6 +48,14 @@ Route::middleware(['auth'])
         Route::get('devices/retrieve/attendance/fix/{id}', 'fixAttendance')->name('devices.attendance.fix');
         Route::post('devices/retrieve/attendance', 'updateAttendance')->name('devices.attendance.update');
         Route::get('/devices/activity/{id}', 'devicesActivity')->name('devices.activity');
+        Route::get('/devices/monitor', 'monitor')->name('devices.monitor');
+
+        Route::get('oficinas', 'oficinas')->name('devices.oficinas');
+        Route::get('oficinas/create', 'createOficina')->name('oficinas.create');
+        Route::post('oficinas/store', 'storeOficina')->name('oficinas.store');
+        Route::get('oficinas/{id}/edit', 'editOficina')->name('oficinas.edit');
+        Route::post('oficinas/{id}/update', 'updateOficina')->name('oficinas.update');
+        Route::get('oficinas/delete', 'deleteOficina')->name('oficinas.delete');
     });
 
 Route::middleware(['auth'])
@@ -67,6 +76,7 @@ Route::get('/iclock/getrequest', [iclockController::class, 'getrequest']);
 Route::get('/iclock/rtdata', [iclockController::class, 'rtdata']);
 Route::post('/iclock/querydata', [iclockController::class, 'querydata']);
 Route::post('/iclock/upload-log', [iclockController::class, 'uploadLog']);
+Route::get('/api/test', [iclockController::class, 'quickStatus']);
 
 
 

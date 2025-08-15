@@ -65,6 +65,11 @@
                         <a class="nav-link" href="{{ route('devices.index') }}">Device</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="{{ route('devices.monitor') }}">
+                            <i class="fas fa-traffic-light"></i> Monitor
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="{{ route('agentes.index') }}">Employees</a>
                     </li>
                     <li class="nav-item dropdown">
@@ -73,6 +78,7 @@
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                             <li><a class="dropdown-item" href="{{ route('devices.attendance') }}">Attendance</a></li>
+                            <li><a class="dropdown-item" href="{{ route('devices.oficinas') }}">Oficinas</a></li>
                             <li><a class="dropdown-item" href="{{ route('devices.deviceLog') }}">Device Log</a></li>
                             <li><a class="dropdown-item" href="{{ route('devices.fingerLog') }}">Finger Log</a></li>
                             <li><a class="dropdown-item" href="{{ route('devices.fingerprints') }}">Fingerprints</a></li> 

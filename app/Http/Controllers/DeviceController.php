@@ -19,6 +19,10 @@ use DB;
 
 class DeviceController extends Controller
 {
+    const EXCLUDED_EMPLOYEES = [
+        '300101', // Exclude employee 300101 admin
+    ];
+
     // Menampilkan daftar device
     public function index(Request $request)
     {
@@ -32,6 +36,22 @@ class DeviceController extends Controller
         $title = "Devices Log";
         $deviceLogs = DeviceLog::orderBy('id', 'DESC')->paginate(40);
         return view('devices.log', compact('deviceLogs', 'title'));
+    }
+
+    public function deleteDevice(Request $request)
+    {
+        $device = Device::find($request->input('id'));
+        if ($device) {
+            // check for pending commands and delete them
+            $pendingCommands = Command::where('device_id', $device->id)->get();
+            foreach ($pendingCommands as $command) {
+                $command->delete();
+            }
+            $device->delete();
+            return redirect()->route('devices.index')->with('success', 'Biométrico eliminado correctamente');
+        } else {
+            return redirect()->route('devices.index')->with('error', 'Biométrico no encontrado');
+        }
     }
     
     public function FingerLog(Request $request)
@@ -57,6 +77,75 @@ class DeviceController extends Controller
         return view('devices.fingerprints', compact('deviceLogs','title'));
     }
 
+    // get oficinas list
+    public function Oficinas(Request $request)
+    {
+        $oficinas = Oficina::all();
+        $title = "Oficinas";
+        return  view('oficinas.index', compact('oficinas','title'));
+    }
+
+    public function createOficina(Request $request)
+    {
+        return view('oficinas.create');
+    }
+
+    public function storeOficina(Request $request)
+    {
+        $oficina = new Oficina();
+        $oficina->nombre = $request->input('nombre');
+        $oficina->idempresa = $request->input('idempresa');
+        $oficina->save();
+
+        return redirect()->route('oficinas.index')->with('success', 'Oficina creada correctamente');
+    }
+
+    public function editOficina($id)
+    {
+        $oficina = Oficina::find($id);
+        if (!$oficina) {
+            return redirect()->route('devices.oficinas')->with('error', 'Oficina no encontrada');
+        }
+        return view('oficinas.edit', compact('oficina'));
+    }
+
+    public function updateOficina(Request $request, $id)
+    {
+        $oficina = Oficina::find($id);
+        if (!$oficina) {
+            return redirect()->route('devices.oficinas')->with('error', 'Oficina no encontrada');
+        }
+        $oficina->ubicacion = $request->input('ubicacion');
+        $oficina->idempresa = $request->input('idempresa');
+        $oficina->idoficina = $request->input('idoficina');
+        // add the missing fields from this list  id | idempresa | idoficina | ubicacion       | public_url                        | iatacode | city_timezone     | timezone
+        $oficina->city_timezone = $request->input('city_timezone');
+        $oficina->public_url = $request->input('public_url');
+        $oficina->iatacode = $request->input('iatacode');
+        $oficina->timezone = $request->input('timezone'); 
+
+        $oficina->save();
+
+        return redirect()->route('devices.oficinas')->with('success', 'Oficina actualizada correctamente');
+    }
+
+
+    public function deleteOficina(Request $request)
+    {
+        $oficina = Oficina::find($request->input('id'));
+        if ($oficina) {
+            // Check if there are devices associated with this oficina
+            $devices = Device::where('idoficina', $oficina->idoficina)->get();
+            foreach ($devices as $device) {
+                $device->delete();
+            }
+            $oficina->delete();
+            return redirect()->route('devices.oficinas')->with('success', 'Oficina eliminada correctamente');
+        } else {
+            return redirect()->route('devices.oficinas')->with('error', 'Oficina no encontrada');
+        }
+    }
+
     public function Attendance(Request $request) {
         $selectedOficina = $request->query('selectedOficina');
         $page = $request->query('page', 1);
@@ -67,6 +156,7 @@ class DeviceController extends Controller
             $query->whereIn('sn', function ($q) use ($selectedOficina) {
                 $q->select('serial_number')
                   ->from('devices')
+                  ->whereNotIn('employee_id', self::EXCLUDED_EMPLOYEES) // Exclude devices with idreloj 999999 or 0
                   ->where('idoficina', $selectedOficina);
             });
         }
@@ -80,7 +170,7 @@ class DeviceController extends Controller
         
             $filtered = $filtered->sortByDesc('updated_at')->values();
         
-            $perPage = 40;
+            $perPage = 100;
             $currentPageItems = $filtered->slice(($page - 1) * $perPage, $perPage)->values();
         
             $paginator = new LengthAwarePaginator(
@@ -94,7 +184,7 @@ class DeviceController extends Controller
                 ]
             );
         } else {
-            $paginator = $query->paginate(40, ['*'], 'page', $page)
+            $paginator = $query->paginate(100, ['*'], 'page', $page)
                     ->appends(request()->except('page'));
         }
         
@@ -194,6 +284,36 @@ class DeviceController extends Controller
     ]);
 }
 
+public function monitor()
+{
+    try {
+        $devices = Device::with(['oficina'])->get();
+        
+        // Get the last attendance for each device
+        foreach ($devices as $device) {
+            try {
+                $lastAttendance = $device->getLastAttendance();
+                if ($lastAttendance && $lastAttendance->timestamp) {
+                    $device->last_attendance_time = $lastAttendance->timestamp;
+                    $device->last_attendance_human = $lastAttendance->timestamp->format('H:i');
+                } else {
+                    $device->last_attendance_time = null;
+                    $device->last_attendance_human = 'N/A';
+                }
+            } catch (\Exception $e) {
+                \Log::error("Error processing device {$device->id}: " . $e->getMessage());
+                $device->last_attendance_time = null;
+                $device->last_attendance_human = 'Error';
+            }
+        }
+
+        return view('devices.monitor', compact('devices'));
+    } catch (\Exception $e) {
+        \Log::error("Error in monitor method: " . $e->getMessage());
+        return redirect()->route('devices.index')->with('error', 'Error loading monitor: ' . $e->getMessage());
+    }
+}
+
 
     public function editAttendance(int $id, Request $request) {
         $attendanceRecord = Attendance::find($id);
@@ -205,8 +325,8 @@ class DeviceController extends Controller
 
 
         $data = [
-            'uniqueid' => $attendanceRecord->uniqueid,            
-            'timestamp' => $attendanceRecord->timestamp,
+            'uniqueid' => $attendanceRecord->response_uniqueid,
+            'timestamp' => $attendanceRecord->updated_at->format('Y-m-d H:i:s'),
             'serial_number' => $attendanceRecord->serial_number,
             'idreloj' => $attendanceRecord->device->idreloj,
             'status1' => $attendanceRecord->status1,
@@ -216,6 +336,9 @@ class DeviceController extends Controller
             'status5' => $attendanceRecord->status5,
             'idoficina' => $attendanceRecord->device->oficina->idoficina,
         ];
+
+        // log $data
+        Log::info('Fixing attendance record', ['data' => $data]);
 
         // use the UpdateChecadaService to send the data
         $updateChecada = app()->make(UpdateChecadaService::class);
@@ -234,10 +357,7 @@ class DeviceController extends Controller
             $this->error("Failed to process record ID {$attendanceRecord->id}. " . $response->message);
             return redirect()->route('devices.attendance')->with('error', 'Error al procesar el registro de asistencia');
         }
-        $this->info("Processed record ID {$attendanceRecord->id}. ");       
-        $this->updateRecord($attendanceRecord, $response); 
-    
-        return view('attendance.edit', compact('attendanceRecord'));
+        return redirect()->route('devices.attendance')->with('success', 'Registro de asistencia corregido correctamente');
     }
 
     public function updateAttendance(Request $request) {
