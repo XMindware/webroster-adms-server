@@ -45,8 +45,9 @@ class SyncronizeAttendance extends Command
             if ($response->status == 'failed') {
                 $this->error("Failed to process record ID {$record->id}. " . $response->message);
                 continue;
-            }
-            if($response->id == null){
+            }            
+            // if id is undefined
+            if(property_exists($response, 'id') && $response->id == null){
                 $this->error("Failed to process record ID {$record->id}. ID is null.");
                 continue;
             }
