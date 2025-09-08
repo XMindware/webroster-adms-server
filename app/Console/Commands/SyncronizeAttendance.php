@@ -46,11 +46,11 @@ class SyncronizeAttendance extends Command
                 $this->error("Failed to process record ID {$record->id}. " . $response->message);
                 continue;
             }            
-            // if id is undefined
-            if(!property_exists($response, 'id') || $response->id == null){
-                $this->error("Failed to process record ID {$record->id}. ID is null.");
+            if($response->status == 'dropped'){
+                $this->error("Failed to process record ID {$record->id}. " . $response->message);
                 continue;
             }
+            
             $this->info("Processed record ID {$record->id}. " . $response->id);       
             $this->updateRecord($record, $response); 
         }
