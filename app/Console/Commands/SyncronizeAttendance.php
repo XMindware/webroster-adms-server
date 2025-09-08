@@ -47,7 +47,7 @@ class SyncronizeAttendance extends Command
                 continue;
             }            
             // if id is undefined
-            if(property_exists($response, 'id') && $response->id == null){
+            if(!property_exists($response, 'id') || $response->id == null){
                 $this->error("Failed to process record ID {$record->id}. ID is null.");
                 continue;
             }
