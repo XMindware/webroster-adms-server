@@ -46,6 +46,10 @@ class SyncronizeAttendance extends Command
                 $this->error("Failed to process record ID {$record->id}. " . $response->message);
                 continue;
             }
+            if($response->id == null){
+                $this->error("Failed to process record ID {$record->id}. ID is null.");
+                continue;
+            }
             $this->info("Processed record ID {$record->id}. " . $response->id);       
             $this->updateRecord($record, $response); 
         }
