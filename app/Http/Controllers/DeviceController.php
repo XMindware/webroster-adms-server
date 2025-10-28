@@ -336,6 +336,13 @@ public function monitor()
     public function fixAttendance(int $id, Request $request) {
         $attendanceRecord = Attendance::find($id);
 
+        if (!$attendanceRecord) {
+            $message = 'Registro no encontrado';
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => $message], 404);
+            }
+            return view('attendance.fix', ['success' => false, 'message' => $message]);
+        }
 
         $data = [
             'uniqueid' => $attendanceRecord->response_uniqueid,
@@ -357,20 +364,42 @@ public function monitor()
         $updateChecada = app()->make(UpdateChecadaService::class);
 
         $response = (object)$updateChecada->postData($data); // Adjust the endpoint as necessary
-        // if response is empty json
+        
+        // Check for errors
         if (empty($response)) {
-            $this->error("Failed to process record ID {$attendanceRecord->id}. No response from API.");
-            return redirect()->route('devices.attendance')->with('error', 'Error al procesar el registro de asistencia');
+            $errorMsg = "Failed to process record ID {$attendanceRecord->id}. No response from API.";
+            Log::error($errorMsg);
+            $message = 'Error al procesar el registro de asistencia: No respuesta de la API';
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => $message]);
+            }
+            return view('attendance.fix', ['success' => false, 'message' => $message]);
         }
         if (!$response) {
-            $this->error("Failed to process record ID {$attendanceRecord->id}. No response from API.");
-            return redirect()->route('devices.attendance')->with('error', 'Error al procesar el registro de asistencia');
+            $errorMsg = "Failed to process record ID {$attendanceRecord->id}. No response from API.";
+            Log::error($errorMsg);
+            $message = 'Error al procesar el registro de asistencia';
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => $message]);
+            }
+            return view('attendance.fix', ['success' => false, 'message' => $message]);
         }
         if (property_exists($response, 'status') && $response->status == 'failed') {
-            $this->error("Failed to process record ID {$attendanceRecord->id}. " . $response->message);
-            return redirect()->route('devices.attendance')->with('error', 'Error al procesar el registro de asistencia');
+            $errorMsg = "Failed to process record ID {$attendanceRecord->id}. " . $response->message;
+            Log::error($errorMsg);
+            $message = 'Error al procesar el registro de asistencia: ' . ($response->message ?? 'Estado fallido');
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => $message]);
+            }
+            return view('attendance.fix', ['success' => false, 'message' => $message]);
         }
-        return redirect()->route('devices.attendance')->with('success', 'Registro de asistencia corregido correctamente');
+        
+        // Success response
+        $message = 'Registro de asistencia corregido correctamente';
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => $message]);
+        }
+        return view('attendance.fix', ['success' => true, 'message' => $message]);
     }
 
     public function updateAttendance(Request $request) {
