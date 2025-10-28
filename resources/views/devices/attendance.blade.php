@@ -61,7 +61,7 @@
                             <a href="{{ route('devices.attendance.edit', $attendance->id) }}" class="btn btn-primary">Edit</a>
                         </td>
                         <td>
-                            <a href="{{ route('devices.attendance.fix', $attendance->id) }}" class="btn btn-primary">Fix</a>
+                            <button onclick="fixAttendance({{ $attendance->id }})" class="btn btn-primary">Fix</button>
                         </td>
                     </tr>
                 @endforeach
@@ -73,4 +73,31 @@
         {{ $attendances->links() }}  
     </div>
 </div>
+
+<script>
+function fixAttendance(id) {
+    // Open in new tab
+    const newWindow = window.open('{{ url("devices/retrieve/attendance/fix") }}/' + id, '_blank');
+    
+    // Poll to check when the new window has loaded content
+    const checkLoaded = setInterval(() => {
+        try {
+            // Check if window is accessible and has finished
+            if (!newWindow || newWindow.closed) {
+                clearInterval(checkLoaded);
+                return;
+            }
+        } catch (e) {
+            // Cross-origin restrictions
+        }
+    }, 1000);
+    
+    // Also reload the parent page after a delay to refresh data
+    setTimeout(() => {
+        if (newWindow.closed) {
+            window.location.reload();
+        }
+    }, 3000);
+}
+</script>
 @endsection
