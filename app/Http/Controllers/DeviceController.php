@@ -93,7 +93,7 @@ class DeviceController extends Controller
     public function storeOficina(Request $request)
     {
         $oficina = new Oficina();
-        $oficina->ubicacion = $request->input('nombre');
+        $oficina->ubicacion = $request->input('ubicacion');
         $oficina->idempresa = $request->input('idempresa');
         $oficina->idoficina = $request->input('idoficina');
         $oficina->public_url = $request->input('public_url');
