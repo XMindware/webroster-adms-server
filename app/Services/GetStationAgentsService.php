@@ -22,20 +22,17 @@ class GetStationAgentsService
     public function getStationAgents(Oficina $oficina)
     {
         Log::info('getStationAgents', ['job' => self::class]);
-        $currentAPI = (object)$this->baseUrls[$oficina->idoficina];
-        $headers = [
-            'Authorization' => $currentAPI->token,
-            'Content-Type' => 'multipart/form-data',
-            'Accept' => 'application/json',
-        ];
-
-        $form = [
-            'idempresa' => $oficina->idempresa,
-            'idoficina' => $oficina->idoficina,
-        ];
-        Log::info('getStationAgents form', ['form' => $form]);
-        Log::info('url ' . $oficina->public_url() . '/agentes/getstationagents');
-        try {
+        try{
+            $currentAPI = (object)$this->baseUrls[$oficina->idoficina];
+            $headers = [
+                'Authorization' => $currentAPI->token,
+                'Content-Type' => 'multipart/form-data',
+                'Accept' => 'application/json',
+            ];
+            $form = [
+                'idempresa' => $oficina->idempresa,
+                'idoficina' => $oficina->idoficina,
+            ];
             $response = Http::withHeaders($headers)
                 ->withBody(json_encode($form), 'application/json')
                 ->post($oficina->public_url() . '/agentes/getstationagents');
