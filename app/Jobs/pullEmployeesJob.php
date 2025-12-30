@@ -33,14 +33,14 @@ class pullEmployeesJob implements ShouldQueue
         Log::info('Job started', ['job' => self::class]);
 
         $agents = $service->getStationAgents($this->data);
-        Log::info('Agents retrieved', ['agents' => $agents]);
-        if (!$agents) {
-            Log::error('Failed to get agents', ['job' => self::class]);
+        if ($agents->status == 'failed') {
+            Log::error('Failed to get agents', ['job' => self::class, 'error' => $agents->message]);
             return;
         }
+        Log::info('Agents retrieved', ['agents' => $agents]);
         
         // populate the agents table
-        foreach ($agents as $agent) {
+        foreach ($agents->data as $agent) {
             
             // check if agent exists
             $agent = Agente::updateOrCreate(
