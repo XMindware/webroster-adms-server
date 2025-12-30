@@ -418,7 +418,8 @@ public function monitor()
 
     public function create()
     {
-        return view('devices.create');
+		$oficinas = Oficina::all();
+		return view('devices.create', compact('oficinas'));
     }
 
     public function store(Request $request)
@@ -427,6 +428,13 @@ public function monitor()
         $device->name = $request->input('name');
         $device->serial_number = $request->input('no_sn');
         $device->idreloj = $request->input('idreloj');
+		if ($request->filled('idoficina')) {
+			$oficina = Oficina::where('idoficina', $request->input('idoficina'))->first();
+			if ($oficina) {
+				$device->idoficina = $oficina->idoficina;
+				$device->idempresa = $request->input('idempresa') ?? $oficina->idempresa;
+			}
+		}
         $device->save();
 
          return redirect()->route('devices.index')->with('success', 'Biometrico actualizado correctamente');
@@ -457,7 +465,7 @@ public function monitor()
         $device->serial_number = $request->input('serial_number');
         $device->idreloj = $request->input('idreloj') ?? '999999';
         $device->idoficina = $oficina->idoficina;
-        $device->idempresa = $oficina->idempresa;
+		$device->idempresa = $request->input('idempresa') ?? $oficina->idempresa;
         $device->save();
       return redirect()->route('devices.index')->with('success', 'Biométrico actualizado correctamente');
     }

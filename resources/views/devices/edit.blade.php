@@ -22,10 +22,11 @@
                 <label for="idoficina">Oficina</label>
                 <select name="idoficina" class="form-control" id="idoficina">
                     @foreach ($oficinas as $oficina)
-                        <option value="{{ $oficina->idoficina }}" @if($device->idoficina == $oficina->idoficina) selected @endif>{{ $oficina->ubicacion }}</option>
+                        <option value="{{ $oficina->idoficina }}" data-idempresa="{{ $oficina->idempresa }}" @if($device->idoficina == $oficina->idoficina) selected @endif>{{ $oficina->ubicacion }}</option>
                     @endforeach
                 </select>
             </div>   
+            <input type="hidden" name="idempresa" id="idempresa" value="{{ $device->idempresa }}">
             <div class="form-group">
                 <label for="online">Online</label>
                 <input type="text" name="online" class="form-control" id="online" value="{{ $device->online }}">
@@ -37,4 +38,19 @@
             <a href="{{ route('devices.index') }}" class="btn btn-secondary">Cancel</a>
         </form>
     </div>
+    <script>
+        (function(){
+            var select = document.getElementById('idoficina');
+            var inputEmpresa = document.getElementById('idempresa');
+            function syncEmpresa() {
+                var opt = select.options[select.selectedIndex];
+                if (opt && opt.dataset && opt.dataset.idempresa) {
+                    inputEmpresa.value = opt.dataset.idempresa;
+                }
+            }
+            select.addEventListener('change', syncEmpresa);
+            // ensure initial sync on load
+            syncEmpresa();
+        })();
+    </script>
 @endsection
