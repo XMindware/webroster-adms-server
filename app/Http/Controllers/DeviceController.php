@@ -103,7 +103,7 @@ class DeviceController extends Controller
         $oficina->timezone = $request->input('timezone');
         $oficina->save();
 
-        return redirect()->route('devices.oficinas')->with('success', 'Oficina creada correctamente');
+        return redirect()->route('oficinas.index')->with('success', 'Oficina creada correctamente');
     }
 
     public function editOficina($id)
