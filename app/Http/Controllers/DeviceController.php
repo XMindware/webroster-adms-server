@@ -82,7 +82,7 @@ class DeviceController extends Controller
     {
         $oficinas = Oficina::all();
         $title = "Oficinas";
-        return  view('oficinas.index', compact('oficinas','title'));
+        return  view('devices.oficinas', compact('oficinas','title'));
     }
 
     public function createOficina(Request $request)
@@ -102,7 +102,7 @@ class DeviceController extends Controller
         $oficina->timezone = $request->input('timezone');
         $oficina->save();
 
-        return redirect()->route('oficinas.index')->with('success', 'Oficina creada correctamente');
+        return redirect()->route('devices.oficinas')->with('success', 'Oficina creada correctamente');
     }
 
     public function editOficina($id)
