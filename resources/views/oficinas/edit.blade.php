@@ -23,6 +23,10 @@
                 <input type="text" name="public_url" class="form-control" id="public_url" value="{{ $oficina->public_url }}">
             </div>
             <div class="form-group">
+                <label for="token">Token</label>
+                <input type="text" name="token" class="form-control" id="token" value="{{ $oficina->token }}">
+            </div>
+            <div class="form-group">
                 <label for="iatacode">IATA Code</label>
                 <input type="text" name="iatacode" class="form-control" id="iatacode" value="{{ $oficina->iatacode }}">
             </div>

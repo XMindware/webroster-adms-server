@@ -19,6 +19,7 @@ class Oficina extends Model
         'city_timezone',
         'timezone',
         'public_url',
+        'token',
     ];
 
     public $timestamps = [

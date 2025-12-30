@@ -97,6 +97,7 @@ class DeviceController extends Controller
         $oficina->idempresa = $request->input('idempresa');
         $oficina->idoficina = $request->input('idoficina');
         $oficina->public_url = $request->input('public_url');
+		$oficina->token = $request->input('token');
         $oficina->iatacode = $request->input('iatacode');
         $oficina->city_timezone = $request->input('city_timezone');
         $oficina->timezone = $request->input('timezone');
@@ -126,6 +127,7 @@ class DeviceController extends Controller
         // add the missing fields from this list  id | idempresa | idoficina | ubicacion       | public_url                        | iatacode | city_timezone     | timezone
         $oficina->city_timezone = $request->input('city_timezone');
         $oficina->public_url = $request->input('public_url');
+		$oficina->token = $request->input('token');
         $oficina->iatacode = $request->input('iatacode');
         $oficina->timezone = $request->input('timezone'); 
 
