@@ -8,24 +8,16 @@ use Illuminate\Support\Facades\Log;
 
 class GetStationAgentsService
 {
-    protected $baseUrls;
-
     public function __construct()
     {
-        $this->baseUrls = config('services.apis');
-        
-        if (!$this->baseUrls) {
-            throw new \Exception("API configuration for not found.");
-        }
     }
 
     public function getStationAgents(Oficina $oficina)
     {
         Log::info('getStationAgents', ['job' => self::class]);
         try{
-            $currentAPI = (object)$this->baseUrls[$oficina->idoficina];
             $headers = [
-                'Authorization' => $currentAPI->token,
+                'Authorization' => $oficina->token,
                 'Content-Type' => 'multipart/form-data',
                 'Accept' => 'application/json',
             ];
