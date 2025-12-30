@@ -294,7 +294,7 @@ class DeviceController extends Controller
 public function monitor()
 {
     try {
-        $devices = Device::with(['oficina'])->get();
+		$devices = Device::all();
         
         // Get the last attendance for each device
         foreach ($devices as $device) {

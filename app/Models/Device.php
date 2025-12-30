@@ -33,7 +33,9 @@ class Device extends Model
 
     public function oficina()
     {
-        return $this->belongsTo(Oficina::class, 'idoficina', 'idoficina');
+		// Link by both idoficina and idempresa
+		return $this->belongsTo(Oficina::class, 'idoficina', 'idoficina')
+			->whereColumn('oficinas.idempresa', $this->getTable() . '.idempresa');
     }
 
     public function getLastAttendance()
