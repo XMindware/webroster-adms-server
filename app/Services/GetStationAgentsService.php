@@ -29,7 +29,7 @@ class GetStationAgentsService
                 ->withBody(json_encode($form), 'application/json')
                 ->post($oficina->public_url() . '/agentes/getstationagents');
         
-            return $response->json();
+            return (object)$response->json();
         } catch (\Exception $e) {
             Log::error('getStationAgents error', ['error' => $e->getMessage()]);
             return (object)[

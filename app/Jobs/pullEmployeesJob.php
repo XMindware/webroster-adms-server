@@ -41,7 +41,7 @@ class pullEmployeesJob implements ShouldQueue
         Log::info('Agents retrieved', ['agents' => $agents]);
         
         // populate the agents table
-        foreach ($agents->data as $agent) {
+        foreach ($agents as $agent) {
             
             // check if agent exists
             $agent = Agente::updateOrCreate(
