@@ -33,9 +33,10 @@ class Device extends Model
 
     public function oficina()
     {
-		// Link by both idoficina and idempresa
+		// Link by both idoficina and idempresa (using value, not column)
+		// Note: avoid eager loading with this constraint; prefer lazy loading.
 		return $this->belongsTo(Oficina::class, 'idoficina', 'idoficina')
-			->whereColumn('oficinas.idempresa', $this->getTable() . '.idempresa');
+			->where('oficinas.idempresa', $this->idempresa);
     }
 
     public function getLastAttendance()
