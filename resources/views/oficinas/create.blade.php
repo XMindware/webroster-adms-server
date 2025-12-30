@@ -10,6 +10,10 @@
                 <input type="text" name="idempresa" class="form-control" id="idempresa" value="{{ old('idempresa') }}">
             </div>
             <div class="form-group">
+                <label for="idoficina">ID Oficina</label>
+                <input type="text" name="idoficina" class="form-control" id="idoficina" value="{{ old('idoficina') }}">
+            </div>
+            <div class="form-group">
                 <label for="ubicacion">Ubicación</label>
                 <input type="text" name="ubicacion" class="form-control" id="ubicacion" value="{{ old('ubicacion') }}">
             </div>

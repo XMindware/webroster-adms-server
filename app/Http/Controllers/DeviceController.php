@@ -95,6 +95,11 @@ class DeviceController extends Controller
         $oficina = new Oficina();
         $oficina->ubicacion = $request->input('nombre');
         $oficina->idempresa = $request->input('idempresa');
+        $oficina->idoficina = $request->input('idoficina');
+        $oficina->public_url = $request->input('public_url');
+        $oficina->iatacode = $request->input('iatacode');
+        $oficina->city_timezone = $request->input('city_timezone');
+        $oficina->timezone = $request->input('timezone');
         $oficina->save();
 
         return redirect()->route('oficinas.index')->with('success', 'Oficina creada correctamente');
