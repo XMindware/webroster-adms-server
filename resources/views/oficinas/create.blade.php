@@ -31,7 +31,7 @@
             </div>
             <br/>
             <button type="submit" class="btn btn-primary">Create</button>
-            <a href="{{ route('oficinas.index') }}" class="btn btn-secondary">Cancel</a>
+            <a href="{{ route('devices.oficinas') }}" class="btn btn-secondary">Cancel</a>
         </form>
     </div>
 @endsection
