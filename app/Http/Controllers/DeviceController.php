@@ -155,6 +155,7 @@ class DeviceController extends Controller
 
     public function Attendance(Request $request) {
         $selectedOficina = $request->query('selectedOficina');
+		$selectedDate = $request->query('selectedDate'); // YYYY-MM-DD
         $page = $request->query('page', 1);
     
         $query = Attendance::query();
@@ -167,6 +168,9 @@ class DeviceController extends Controller
                   ->where('idoficina', $selectedOficina);
             });
         }
+		if ($selectedDate) {
+			$query->whereDate('timestamp', $selectedDate);
+		}
     
         $query->orderBy('updated_at', 'DESC'); // <--- Siempre se ordena por updated_at DESC
     
@@ -201,6 +205,7 @@ class DeviceController extends Controller
             'attendances' => $paginator,
             'oficinas' => $oficinas,
             'selectedOficina' => $selectedOficina,
+			'selectedDate' => $selectedDate,
             'page' => $page,
         ]);
     }

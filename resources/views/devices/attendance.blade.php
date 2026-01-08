@@ -21,6 +21,10 @@
                     </option>
                 @endforeach
             </select>
+            <div class="mt-2">
+                <label for="selectedDate" class="form-label">Fecha</label>
+                <input type="date" name="selectedDate" id="selectedDate" class="form-control" value="{{ $selectedDate }}">
+            </div>
             <input type="checkbox" name="desfasados" id="desfasados" 
                 {{ request('desfasados') ? 'checked' : '' }}>
             <label for="desfasados">Diff>20min</label><br>
