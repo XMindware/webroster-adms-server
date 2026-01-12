@@ -156,16 +156,20 @@ class DeviceController extends Controller
     public function Attendance(Request $request) {
         $selectedOficina = $request->query('selectedOficina');
 		$selectedDate = $request->query('selectedDate'); // YYYY-MM-DD
+		$idempresa = $request->query('idempresa');
         $page = $request->query('page', 1);
     
         $query = Attendance::query();
     
         if ($selectedOficina) {
-            $query->whereIn('sn', function ($q) use ($selectedOficina) {
+			$query->whereIn('sn', function ($q) use ($selectedOficina, $idempresa) {
                 $q->select('serial_number')
                   ->from('devices')
                   ->whereNotIn('employee_id', self::EXCLUDED_EMPLOYEES) // Exclude devices with idreloj 999999 or 0
                   ->where('idoficina', $selectedOficina);
+				if (!empty($idempresa)) {
+					$q->where('idempresa', $idempresa);
+				}
             });
         }
 		if ($selectedDate) {
@@ -205,6 +209,7 @@ class DeviceController extends Controller
             'attendances' => $paginator,
             'oficinas' => $oficinas,
             'selectedOficina' => $selectedOficina,
+			'idempresa' => $idempresa,
 			'selectedDate' => $selectedDate,
             'page' => $page,
         ]);

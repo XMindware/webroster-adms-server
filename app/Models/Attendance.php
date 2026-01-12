@@ -18,6 +18,7 @@ class Attendance extends Model
         'employee_id',
         'timestamp',
         'sn',
+        'idempresa',
         'idreloj',
         'idoficina',
         'status1',
