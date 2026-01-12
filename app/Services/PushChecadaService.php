@@ -52,6 +52,7 @@ class PushChecadaService
         } catch (\Exception $e) {
             return (object)[
                 'status' => 'failed',
+                'public_url' => $oficina->public_url(),
                 'message' => $e->getMessage()
             ];
         }
