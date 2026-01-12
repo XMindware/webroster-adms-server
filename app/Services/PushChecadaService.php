@@ -39,6 +39,7 @@ class PushChecadaService
                     'message' => 'Oficina no encontrada para enviar checada'
                 ];
             }
+            Log::info('oficina', ['oficina' => $oficina]);
 
             // set headers
             $headers = [
