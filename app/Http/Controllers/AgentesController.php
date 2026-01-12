@@ -12,9 +12,13 @@ class AgentesController extends Controller
     public function index(Request $request)
     {        
         $selectedOficina = $request->query('selectedOficina');
+		$idempresa = $request->query('idempresa');
         if ($selectedOficina) {
-            $agentes = Agente::where('idoficina', $selectedOficina)->get()
-                    ->sortBy('idagente');
+			$q = Agente::where('idoficina', $selectedOficina);
+			if (!empty($idempresa)) {
+				$q->where('idempresa', $idempresa);
+			}
+			$agentes = $q->get()->sortBy('idagente');
         } else {
             $agentes = Agente::all()->sortBy('idagente');
         }
