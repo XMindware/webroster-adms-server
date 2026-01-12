@@ -13,9 +13,10 @@
         <label for="oficina">Offices</label>
         <form method="GET" action="{{ route('devices.attendance') }}" id="oficinaForm">
             <input type="hidden" name="page" value="{{ request('page', 1) }}">
+            <input type="hidden" name="idempresa" id="idempresa" value="{{ $idempresa ?? '' }}">
             <select name="selectedOficina" class="form-control" id="selectedOficina">
                 @foreach ($oficinas as $oficina)
-                    <option value="{{ $oficina->idoficina }}" 
+                    <option value="{{ $oficina->idoficina }}" data-idempresa="{{ $oficina->idempresa }}" 
                         {{ $oficina->idoficina == $selectedOficina ? 'selected' : '' }}>
                         {{ $oficina->ubicacion }}
                     </option>
@@ -107,6 +108,22 @@
 <div id="floating-messages" class="floating-messages"></div>
 
 <script>
+// Sync idempresa based on selected office
+(function(){
+    var select = document.getElementById('selectedOficina');
+    var inputEmpresa = document.getElementById('idempresa');
+    function syncEmpresa() {
+        var opt = select.options[select.selectedIndex];
+        if (opt && opt.dataset && opt.dataset.idempresa) {
+            inputEmpresa.value = opt.dataset.idempresa;
+        }
+    }
+    if (select && inputEmpresa) {
+        select.addEventListener('change', syncEmpresa);
+        syncEmpresa();
+    }
+})();
+
 function showFloatingMessage(message, isSuccess) {
     const container = document.getElementById('floating-messages');
     if (!container) return;
