@@ -28,12 +28,12 @@
         <table class="table table-bordered data-table" id="employees">
             <thead>
                 <tr>
-                    <th>ID Empresa</th>
-                    <th>ID Oficina</th>
-                    <th>ID Agente</th>
-                    <th>Shortname</th>
-                    <th>Full Name</th>
-                    <th>Last update</th>
+                    <th>{{ __('agentes.id_empresa') }}</th>
+                    <th>{{ __('agentes.id_oficina') }}</th>
+                    <th>{{ __('agentes.id_agente') }}</th>
+                    <th>{{ __('agentes.shortname') }}</th>
+                    <th>{{ __('agentes.fullname') }}</th>
+                    <th>{{ __('agentes.last_update') }}</th>
                 </tr>
             </thead>
             <tbody>

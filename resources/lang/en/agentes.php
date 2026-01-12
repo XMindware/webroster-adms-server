@@ -11,4 +11,12 @@ return [
     // Messages
     'pulled_successfully' => 'Employees pulled successfully.',
     'error_pulling' => 'Error pulling employees from device.',
+
+    // Tables
+    'id_empresa' => 'ID Company',
+    'id_oficina' => 'ID Official',
+    'id_agente' => 'ID Agent',
+    'shortname' => 'Shortname',
+    'fullname' => 'Fullname',
+    'last_update' => 'Last Update',
 ];
