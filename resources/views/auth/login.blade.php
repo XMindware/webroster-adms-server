@@ -15,7 +15,7 @@
         </div>
         <div class="row">
             <div class="col-md-col-md-offset-4">                
-                <h2>Login</h2>
+                <h2>{{ __('auth.login') }}</h2>
                 <form action="{{route('login-user')}}" method="post" enctype="multipart/form-data">
                     @csrf
                     @if (Session::has('success'))
@@ -29,7 +29,7 @@
                     </div>
                 @endif
                     <div class="form-group">
-                        <label for="email">Email</label>
+                        <label for="email">{{ __('auth.email') }}</label>
                         <input type="email" name="email" class="form-control">
                         <span class="text-danger">
                             @error('email')
@@ -38,7 +38,7 @@
                         </span>
                     </div>
                     <div class="form-group">
-                        <label for="password">Password</label>
+                        <label for="password">{{ __('auth.password') }}</label>
                         <input type="password" name="password" class="form-control">
                         <span class="text-danger">
                             @error('password')
@@ -46,10 +46,10 @@
                             @enderror
                         </span>
                     </div>
-                    <input type="checkbox" name="remember"> Remember Me
+                    <input type="checkbox" name="remember"> {{ __('auth.remember_me') }}
                     <br>
                     <div class="form-group">
-                        <button type="submit" class="btn btn-block btn-success">Login</button>                        
+                        <button type="submit" class="btn btn-block btn-success">{{ __('auth.login') }}</button>                        
                     </div>
                     <br>
                 </form>

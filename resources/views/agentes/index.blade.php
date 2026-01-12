@@ -2,8 +2,8 @@
 
 @section('content')
     <div class="container">
-        <h2>Employee list</h2>
-        <a href="{{ route('agentes.pull') }}" class="btn btn-primary mb-3">Pull Employees</a>
+        <h2>{{ __('agentes.title') }}</h2>
+        <a href="{{ route('agentes.pull') }}" class="btn btn-primary mb-3">{{ __('agentes.pull_employees') }}</a>
 
         @if(session('status'))
             <div class="alert alert-success">
@@ -11,7 +11,7 @@
             </div>
         @endif
         <div class="form-group">
-            <label for="oficina">Offices</label>
+            <label for="oficina">{{ __('navigation.oficinas') }}</label>
             <form method="GET" action="{{ route('agentes.index', ['selectedOficina' => $selectedOficina]) }}" id="oficinaForm">
                 <input type="hidden" name="idempresa" id="idempresa" value="{{ request('idempresa') }}">
                 <select name="selectedOficina" class="form-control" id="selectedOficina">
