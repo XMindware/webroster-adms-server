@@ -9,11 +9,26 @@
                 <label for="oficina">Offices</label>
                 <select name="oficina" class="form-control" id="oficina">
                     @foreach ($oficinas as $oficina)
-                        <option value="{{ $oficina->idoficina }}">{{ $oficina->ubicacion }}</option>
+                        <option value="{{ $oficina->idoficina }}" data-idempresa="{{ $oficina->idempresa }}">{{ $oficina->ubicacion }}</option>
                     @endforeach
                 </select>
-            </div>            
+            </div>
+            <input type="hidden" name="idempresa" id="idempresa" value="">
             <button type="submit" class="btn btn-primary">Run Request</button>
         </form>
     </div>
+    <script>
+        (function(){
+            var select = document.getElementById('oficina');
+            var inputEmpresa = document.getElementById('idempresa');
+            function syncEmpresa() {
+                var opt = select.options[select.selectedIndex];
+                if (opt && opt.dataset && opt.dataset.idempresa) {
+                    inputEmpresa.value = opt.dataset.idempresa;
+                }
+            }
+            select.addEventListener('change', syncEmpresa);
+            syncEmpresa();
+        })();
+    </script>
 @endsection

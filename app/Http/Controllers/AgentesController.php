@@ -30,8 +30,13 @@ class AgentesController extends Controller
 
     public function runPullAgentes(Request $request)
     {
-        $idoficina = $request->input('oficina');
-        $oficina = Oficina::where('idoficina', $idoficina)->first();
+		$idoficina = $request->input('oficina');
+		$idempresa = $request->input('idempresa');
+		$oficinaQuery = Oficina::where('idoficina', $idoficina);
+		if (!empty($idempresa)) {
+			$oficinaQuery->where('idempresa', $idempresa);
+		}
+		$oficina = $oficinaQuery->first();
                 
         pullEmployeesJob::dispatch($oficina);
         // add message to session
