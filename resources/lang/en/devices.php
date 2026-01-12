@@ -11,13 +11,11 @@ return [
     
     // Table headers
     'id' => 'ID',
-    'oficina' => 'Oficina',
-    'ubicacion' => 'Ubicacion',
-    'location' => 'Location',
+    'oficina' => 'Office',
+    'ubicacion' => 'Location',
     'online' => 'Online',
     'last_attendance' => 'Last Attendance',
-    'desfases_hoy' => 'Desfases hoy',
-    'today_issues' => 'Today Issues',
+    'desfases_hoy' => 'Today Issues',
     
     // Form fields
     'device_name' => 'Device Name',
