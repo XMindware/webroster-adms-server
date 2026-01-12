@@ -13,4 +13,17 @@ return [
     'fixed_successfully' => 'Kehadiran berhasil diperbaiki.',
     'error_updating' => 'Gagal memperbarui kehadiran.',
     'error_fixing' => 'Gagal memperbaiki kehadiran.',
+
+    // Table
+    'office' => 'Kantor',
+    'fecha' => 'Tanggal',
+    'employee_id' => 'ID Karyawan',
+    'employee' => 'Karyawan',
+    'timestamp' => 'Timestamp',
+    'updated_at' => 'Diperbarui',
+    'diff' => 'Selisih',
+    'response_uniqueid' => 'ID Kehadiran Unik',
+    'action' => 'Aksi',
+    'filter' => 'Saring',
+    'device' => 'Mesin'
 ];

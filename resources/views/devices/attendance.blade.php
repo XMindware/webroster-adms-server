@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container">
-    <h2 class="mb-4">Checadas</h2>
+    <h2 class="mb-4">{{ __('attendance.title') }}</h2>
 
     @if(session('status'))
         <div class="alert alert-success">
@@ -10,7 +10,7 @@
         </div>
     @endif
     <div class="form-group">
-        <label for="oficina">Offices</label>
+        <label for="oficina">{{ __('attendance.office') }}</label>
         <form method="GET" action="{{ route('devices.attendance') }}" id="oficinaForm">
             <input type="hidden" name="page" value="{{ request('page', 1) }}">
             <select name="selectedOficina" class="form-control" id="selectedOficina">
@@ -22,13 +22,13 @@
                 @endforeach
             </select>
             <div class="mt-2">
-                <label for="selectedDate" class="form-label">Fecha</label>
+                <label for="selectedDate" class="form-label">{{ __('attendance.fecha') }}</label>
                 <input type="date" name="selectedDate" id="selectedDate" class="form-control" value="{{ $selectedDate }}">
             </div>
             <input type="checkbox" name="desfasados" id="desfasados" 
                 {{ request('desfasados') ? 'checked' : '' }}>
-            <label for="desfasados">Diff>20min</label><br>
-            <button type="submit" class="btn btn-primary mt-2">Filter</button>
+            <label for="desfasados">{{ __('attendance.diff') }}>20min</label><br>
+            <button type="submit" class="btn btn-primary mt-2">{{ __('attendance.filter') }}</button>
         </form>
     </div>
     <br>
@@ -38,14 +38,14 @@
             <thead class="thead-dark">
                 <tr>
                     <th>ID</th>
-                    <th>Device</th>
-                    <th>Employee ID</th>
-                    <th>Employee</th>
-                    <th>Timestamp</th>
-                    <th>Updated at</th>
-                    <th>Diff</th>
-                    <th>Checada Uniqueid</th>
-                    <th>Action</th>
+                    <th>{{ __('attendance.device') }}</th>
+                    <th>{{ __('attendance.employee_id') }}</th>
+                    <th>{{ __('attendance.employee') }}</th>
+                    <th>{{ __('attendance.timestamp') }}</th>
+                    <th>{{ __('attendance.updated_at') }}</th>
+                    <th>{{ __('attendance.diff') }}</th>
+                    <th>{{ __('attendance.response_uniqueid') }}</th>
+                    <th>{{ __('attendance.action') }}</th>
                 </tr>
             </thead>
             <tbody>
