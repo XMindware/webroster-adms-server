@@ -59,12 +59,13 @@ class AuthController extends Controller
         return back()->with('fail', 'Email or password is incorrect.');
     }
     ///Logout
-    public function logout()
+    public function logout(Request $request)
     {
-        $data = array();
-        if(Session::has('loginId')){
-            Session::pull('loginId');
-            return redirect('login');
-        }
+        Auth::logout();
+        
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        
+        return redirect('login')->with('success', 'You have been logged out successfully.');
     }
 }

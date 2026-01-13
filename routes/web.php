@@ -24,6 +24,12 @@ Route::controller(AuthController::class)->group(function(){
     Route::get('/login','login')->middleware('alreadyLoggedIn')->name('login');
     Route::post('/login-user','loginUser')->name('login-user');
     Route::get('/logout','logout')->name('logout');
+    Route::get('/language/{locale}', function ($locale) {
+        if (in_array($locale, config('app.available_locales'))) {
+            session(['locale' => $locale]);
+        }
+        return redirect()->back();
+    })->name('language.switch');
 });
 
 Route::middleware(['auth'])

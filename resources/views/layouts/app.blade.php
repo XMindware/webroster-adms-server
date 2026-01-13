@@ -125,30 +125,48 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('devices.index') }}">Device</a>
+                        <a class="nav-link" href="{{ route('devices.index') }}">{{ __('navigation.device') }}</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('devices.monitor') }}">
-                            <i class="fas fa-traffic-light"></i> Monitor
+                            <i class="fas fa-traffic-light"></i> {{ __('navigation.monitor') }}
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('agentes.index') }}">Employees</a>
+                        <a class="nav-link" href="{{ route('agentes.index') }}">{{ __('navigation.employees') }}</a>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Utilities <i class="fas fa-chevron-down ms-1"></i>
+                            {{ __('navigation.utilities') }} <i class="fas fa-chevron-down ms-1"></i>
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="{{ route('devices.attendance') }}">Attendance</a></li>
-                            <li><a class="dropdown-item" href="{{ route('devices.oficinas') }}">Oficinas</a></li>
-                            <li><a class="dropdown-item" href="{{ route('devices.deviceLog') }}">Device Log</a></li>
-                            <li><a class="dropdown-item" href="{{ route('devices.fingerLog') }}">Finger Log</a></li>
-                            <li><a class="dropdown-item" href="{{ route('devices.fingerprints') }}">Fingerprints</a></li> 
+                            <li><a class="dropdown-item" href="{{ route('devices.attendance') }}">{{ __('navigation.attendance') }}</a></li>
+                            <li><a class="dropdown-item" href="{{ route('devices.oficinas') }}">{{ __('navigation.oficinas') }}</a></li>
+                            <li><a class="dropdown-item" href="{{ route('devices.deviceLog') }}">{{ __('navigation.device_log') }}</a></li>
+                            <li><a class="dropdown-item" href="{{ route('devices.fingerLog') }}">{{ __('navigation.finger_log') }}</a></li>
+                            <li><a class="dropdown-item" href="{{ route('devices.fingerprints') }}">{{ __('navigation.fingerprints') }}</a></li> 
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-globe"></i> 
+                            @if(app()->getLocale() == 'en')
+                                English
+                            @elseif(app()->getLocale() == 'es')
+                                Español
+                            @elseif(app()->getLocale() == 'id')
+                                Indonesia
+                            @endif
+                            <i class="fas fa-chevron-down ms-1"></i>
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="languageDropdown">
+                            <li><a class="dropdown-item" href="{{ route('language.switch', ['locale' => 'en']) }}">🇬🇧 English</a></li>
+                            <li><a class="dropdown-item" href="{{ route('language.switch', ['locale' => 'es']) }}">🇪🇸 Español</a></li>
+                            <li><a class="dropdown-item" href="{{ route('language.switch', ['locale' => 'id']) }}">🇮🇩 Indonesia</a></li>
                         </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('logout') }}">Logout</a>
+                        <a class="nav-link" href="{{ route('logout') }}">{{ __('navigation.logout') }}</a>
                     </li>
                 </ul>
             </div>
