@@ -20,7 +20,8 @@ class PopulateEmployeesService
     {
         Log::info('PopulateEmployeesService', ['job' => self::class]);
         
-        $employees = Agente::where('idoficina', $this->device->idoficina)->get();
+        $employees = Agente::where('idempresa', $this->device->idempresa)
+                            ->where('idoficina', $this->device->idoficina)->get();
         Log::info('Employees retrieved', ['employees' => $employees]);
 
         $lastCommand = $this->device->commands()->latest()->first();

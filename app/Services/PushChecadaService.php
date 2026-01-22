@@ -8,43 +8,52 @@ use Illuminate\Support\Facades\Log;
 
 class PushChecadaService
 {
-    protected $baseUrls;
-    
     protected $endpoint = '/checador/pushChecadaFromADMS';
 
     public function __construct()
     {
-        $this->baseUrls = config('services.apis');
-        
-        if (!$this->baseUrls) {
-            throw new \Exception("API configuration for not found.");
-        }
     }
 
     public function getData()
     {
-
-        $response = Http::get($this->baseUrls[0] . $this->endpoint);
+        $oficina = Oficina::first();
+        if (!$oficina) {
+            throw new \Exception("No hay oficinas configuradas.");
+        }
+        $response = Http::get($oficina->public_url() . $this->endpoint);
         return $response->json();
     }
 
     public function postData($data): object
     {
         try{            
-            $currentAPI = (object)$this->baseUrls[$data['idoficina']];
+            // Resolve oficina by idoficina (and idempresa if provided)
+            $oficinaQuery = Oficina::where('idoficina', $data['idoficina'] ?? null);
+            if (!empty($data['idempresa'])) {
+                $oficinaQuery->where('idempresa', $data['idempresa']);
+            }
+            $oficina = $oficinaQuery->first();
+            if (!$oficina) {
+                return (object)[
+                    'status' => 'failed',
+                    'message' => 'Oficina no encontrada para enviar checada'
+                ];
+            }
+            Log::info('oficina', ['oficina' => $oficina]);
 
             // set headers
             $headers = [
-                'Authorization' => $currentAPI->token,
+                'Authorization' => $oficina->token,
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
             ];
             $response = Http::withHeaders($headers)
-                ->post($currentAPI->base_url . $this->endpoint, $data);
+                ->post($oficina->public_url() . $this->endpoint, $data);
             return (object)$response->json();
         } catch (\Exception $e) {
             return (object)[
                 'status' => 'failed',
+                'public_url' => $oficina->public_url(),
                 'message' => $e->getMessage()
             ];
         }
@@ -52,9 +61,8 @@ class PushChecadaService
 
     public function getStationAgents(Oficina $oficina)
     {
-        $currentAPI = (object)$this->baseUrls[$oficina->idoficina];
         $headers = [
-            'Authorization' => $currentAPI->token,
+            'Authorization' => $oficina->token,
             'Content-Type' => 'multipart/form-data',
             'Accept' => 'application/json',
         ];

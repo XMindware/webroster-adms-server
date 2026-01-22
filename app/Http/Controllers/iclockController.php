@@ -186,7 +186,9 @@ class iclockController extends Controller
                 $q['stamp'] = $stamp;
                 $q['employee_id'] = $employee_id;
                 $q['timestamp'] = $timestamp;
-                $q['idoficina'] = Device::where('serial_number', $request->input('SN'))->first()->oficina->idoficina ?? null;
+                $device = Device::where('serial_number', $request->input('SN'))->first();
+                $q['idoficina'] = $device->oficina->idoficina ?? null;
+                $q['idempresa'] = $device->idempresa ?? null;
                 $q['status1'] = $this->validateAndFormatInteger($data[2] ?? null);
                 $q['status2'] = $this->validateAndFormatInteger($data[3] ?? null);
                 $q['status3'] = $this->validateAndFormatInteger($data[4] ?? null);
