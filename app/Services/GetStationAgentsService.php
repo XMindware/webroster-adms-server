@@ -8,10 +8,26 @@ use Illuminate\Support\Facades\Log;
 
 class GetStationAgentsService
 {
+    /**
+     * Constructor
+     *
+     * Inisialisasi service
+     *
+     * @author XMindware
+     * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/GetStationAgentsService.php
+     */
     public function __construct()
     {
     }
 
+    /**
+     * Get Station Agents
+     *
+     * Mengambil data karyawan (agen) dari server remote untuk kantor tertentu
+     *
+     * @author XMindware
+     * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/GetStationAgentsService.php
+     */
     public function getStationAgents(Oficina $oficina)
     {
         Log::info('getStationAgents', ['job' => self::class]);

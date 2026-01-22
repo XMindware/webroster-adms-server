@@ -10,10 +10,26 @@ class PushChecadaService
 {
     protected $endpoint = '/checador/pushChecadaFromADMS';
 
+    /**
+     * Constructor
+     *
+     * Inisialisasi service
+     *
+     * @author XMindware
+     * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/PushChecadaService.php
+     */
     public function __construct()
     {
     }
 
+    /**
+     * Get Data
+     *
+     * Mengambil data dari endpoint push kantor pertama (untuk testing/debug)
+     *
+     * @author XMindware
+     * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/PushChecadaService.php
+     */
     public function getData()
     {
         $oficina = Oficina::first();
@@ -24,6 +40,14 @@ class PushChecadaService
         return $response->json();
     }
 
+    /**
+     * Post Checada Data
+     *
+     * Mengirim data checada ke endpoint aplikasi utama menggunakan konfigurasi database Oficina
+     *
+     * @author XMindware
+     * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/PushChecadaService.php
+     */
     public function postData($data): object
     {
         try{            
@@ -59,6 +83,14 @@ class PushChecadaService
         }
     }
 
+    /**
+     * Get Station Agents
+     *
+     * Mengambil data agen menggunakan endpoint checador
+     *
+     * @author mdestafadilah
+     * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/PushChecadaService.php
+     */
     public function getStationAgents(Oficina $oficina)
     {
         $headers = [
