@@ -10,8 +10,8 @@ return [
     'restart_confirm' => 'Apakah Anda yakin ingin me-restart perangkat ini?',
     
     // Table headers
-    'id' => 'ID',
-    'oficina' => 'Kantor',
+    'id' => 'ID Jam',
+    'oficina' => 'Kantor Cabang',
     'ubicacion' => 'Lokasi',
     'location' => 'Lokasi',
     'online' => 'Online',

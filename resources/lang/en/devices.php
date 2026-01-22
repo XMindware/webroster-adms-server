@@ -10,7 +10,7 @@ return [
     'restart_confirm' => 'Are you sure you want to restart this device?',
     
     // Table headers
-    'id' => 'ID',
+    'id' => 'ID Clock',
     'oficina' => 'Office',
     'ubicacion' => 'Location',
     'online' => 'Online',
