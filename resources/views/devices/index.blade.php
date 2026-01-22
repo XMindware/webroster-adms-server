@@ -4,9 +4,9 @@
     <div class="container">
         <h2>{{ $title }}</h2>
         <div class="d-flex gap-2 mb-3">
-            <a href="{{ route('devices.create') }}" class="btn btn-primary">Create Device</a>
+            <a href="{{ route('devices.create') }}" class="btn btn-primary">{{ __('devices.create_device') }}</a>
             <a href="{{ route('devices.monitor') }}" class="btn btn-success">
-                <i class="fas fa-traffic-light"></i> Monitor Status
+                <i class="fas fa-traffic-light"></i> {{ __('devices.monitor_status') }}
             </a>
         </div>
         <!-- success message -->
@@ -25,13 +25,13 @@
             <thead>
                 <tr>
                     <th></th>
-                    <th>ID</th>
-                    <th>Oficina</th>
-                    <th>Ubicacion</th>
-                    <th>Online</th>
-                    <th>Ultima checada</th>
-                    <th>Desfases hoy</th>
-                    <th>Acciones</th>
+                    <th>{{ __('devices.id') }}</th>
+                    <th>{{ __('devices.oficina') }}</th>
+                    <th>{{ __('devices.ubicacion') }}</th>
+                    <th>{{ __('common.online') }}</th>
+                    <th>{{ __('devices.last_attendance') }}</th>
+                    <th>{{ __('devices.desfases_hoy') }}</th>
+                    <th>{{ __('common.actions') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -58,7 +58,7 @@
                                 <span style="color: gray;">unknown</span>
                             @endif
                         </td>
-                        <td>{{ $d->getLastAttendance() ? $d->getLastAttendance()->created_at->diffForHumans() : 'unknown' }}</td>
+                        <td>{{ $d->getLastAttendance() ? $d->getLastAttendance()->created_at->diffForHumans() : __('common.unknown') }}</td>
                         <td>
                         @if (!$d->hayDesfasesHoy())
                                 <i class="fas fa-check-circle text-success"></i>                                
@@ -67,9 +67,9 @@
                         @endif                    
                         </td>
                         <td>
-                            <a href="{{ route('devices.populate', ['id' => $d->id ]) }}" class="btn btn-info">Employees</a>                            
-                            <a href="{{ route('devices.edit', ['id' => $d->id ]) }}" class="btn btn-primary">Edit</a>
-                            <a href="{{ route('devices.restart', ['id' => $d->id ]) }}" class="btn btn-primary restart-btn">Restart</a>                            
+                            <a href="{{ route('devices.populate', ['id' => $d->id ]) }}" class="btn btn-info">{{ __('navigation.employees') }}</a>                            
+                            <a href="{{ route('devices.edit', ['id' => $d->id ]) }}" class="btn btn-primary">{{ __('common.edit') }}</a>
+                            <a href="{{ route('devices.restart', ['id' => $d->id ]) }}" class="btn btn-primary restart-btn">{{ __('devices.restart') }}</a>                            
                             <a href="{{ route('devices.activity', ['id' => $d->id ]) }}" class="btn btn-warning">
                                 <i class="fas fa-chart-line"></i>
                             </a>
@@ -79,7 +79,7 @@
             </tbody>
         </table>
         <div class="d-flex justify-content-center">
-            <button class="btn btn-danger" id="delete-all">Update Selected</button>
+            <button class="btn btn-danger" id="delete-all">{{ __('devices.update_selected') }}</button>
         </div>
     </div>
 
@@ -88,17 +88,17 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="confirmModalLabel">Confirm Action</h5>
+                    <h5 class="modal-title" id="confirmModalLabel">{{ __('common.confirm_action') }}</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
-                    Are you sure you want to restart this device?
+                    {{ __('devices.restart_confirm') }}
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="cancelModal" data-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="confirmBtn">Confirm</button>
+                    <button type="button" class="btn btn-secondary" id="cancelModal" data-dismiss="modal">{{ __('common.cancel') }}</button>
+                    <button type="button" class="btn btn-primary" id="confirmBtn">{{ __('common.confirm') }}</button>
                 </div>
             </div>
         </div>

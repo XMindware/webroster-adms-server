@@ -11,6 +11,11 @@ class CommandIdService
 {
     /**
      * Generate the next CmdID, cycling from 1..10000.
+     *
+     * Generate ID perintah berikutnya, berulang dari 1 sampai 10000.
+     *
+     * @author XMindware
+     * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/CommandIdService.php
      */
     public function getNextCmdId(): int
     {
@@ -41,6 +46,14 @@ class CommandIdService
         return $newCmdId;
     }
 
+    /**
+     * Check if a command ID is pending
+     *
+     * Memeriksa apakah ID perintah masih dalam status pending (belum dieksekusi)
+     *
+     * @author mdestafadilah
+     * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/CommandIdService.php
+     */
     protected function isPending(int $cmdId): bool
     {
         return Command::where('command', $cmdId)
