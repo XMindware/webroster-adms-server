@@ -12,6 +12,14 @@ class UpdateChecadaService
     
     protected $endpoint = '/checador/updateChecadaADMS';
 
+    /**
+     * Constructor
+     *
+     * Inisialisasi service dan memuat konfigurasi API
+     *
+     * @author XMindware
+     * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/UpdateChecadaService.php
+     */
     public function __construct()
     {
         $this->baseUrls = config('services.apis');
@@ -21,6 +29,14 @@ class UpdateChecadaService
         }
     }
 
+    /**
+     * Get Data
+     *
+     * Mengambil data dari endpoint update menggunakan konfigurasi API pertama
+     *
+     * @author XMindware
+     * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/UpdateChecadaService.php
+     */
     public function getData()
     {
 
@@ -28,6 +44,14 @@ class UpdateChecadaService
         return $response->json();
     }
 
+    /**
+     * Post Data
+     *
+     * Mengirim data update checada ke endpoint API berdasarkan ID kantor dari konfigurasi file
+     *
+     * @author XMindware
+     * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/UpdateChecadaService.php
+     */
     public function postData($data): object
     {
         try{
@@ -57,6 +81,14 @@ class UpdateChecadaService
         }
     }
 
+    /**
+     * Get Station Agents
+     *
+     * Mengambil data agen menggunakan token dari konfigurasi file
+     *
+     * @author mdestafadilah
+     * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/UpdateChecadaService.php
+     */
     public function getStationAgents(Oficina $oficina)
     {
         $currentAPI = (object)$this->baseUrls[$oficina->idoficina];
