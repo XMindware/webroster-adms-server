@@ -6,11 +6,11 @@
         <form method="post" action="{{ route('devices.store') }}">
             @csrf
             <div class="form-group">
-                <label for="name">Location</label>
+                <label for="name">{{ __('devices.location') }}</label>
                 <input type="text" name="name" class="form-control" id="name" placeholder="Location">
             </div>
             <div class="form-group">
-                <label for="idoficina">Oficina</label>
+                <label for="idoficina">{{ __('devices.oficina') }}</label>
                 <select name="idoficina" class="form-control" id="idoficina">
                     @foreach ($oficinas as $oficina)
                         <option value="{{ $oficina->idoficina }}" data-idempresa="{{ $oficina->idempresa }}">{{ $oficina->ubicacion }}</option>
@@ -19,15 +19,15 @@
             </div>
             <input type="hidden" name="idempresa" id="idempresa" value="">
             <div class="form-group">
-                <label for="no_sn">Serial Number</label>
+                <label for="no_sn">{{ __('devices.serial_number') }}</label>
                 <input type="text" name="no_sn" class="form-control" id="no_sn" placeholder="SN00001">
             </div>
             <div class="form-group">
-                <label for="lokasi">ID Reloj</label>
+                <label for="lokasi">{{ __('devices.id') }}</label>
                 <input type="text" name="idreloj" class="form-control" id="idreloj" placeholder="ID Reloj">
             </div>
             <div class="form-group">
-                <label for="lokasi">IP</label>
+                <label for="lokasi">{{ __('devices.ip_address') }}</label>
                 <input type="text" name="ip" class="form-control" id="ip" placeholder="IP">
             </div>
 
