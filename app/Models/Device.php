@@ -44,18 +44,17 @@ class Device extends Model
         return Attendance::where('sn', $this->serial_number)->orderBy('id', 'desc')->first();
     }
 
-        public function hayDesfasesHoy()
+    public function hayDesfasesHoy()
     {
-        // Get today's attendances for this device
-        $checadasHoy = Attendance::where('sn', $this->serial_number)
-            ->whereDate('created_at', now()->toDateString())
-            ->get();
-        
         $hayDesfases = false;
-        
+
         // Check if device has an office with timezone
         if (!$this->oficina || !$this->oficina->timezone) {
             // If no timezone info, use default behavior
+            $checadasHoy = Attendance::where('sn', $this->serial_number)
+                ->whereDate('created_at', now()->toDateString())
+                ->get();
+
             foreach ($checadasHoy as $attendance) {
                 if ($attendance->created_at->diffInMinutes($attendance->timestamp) > 20) {
                     $hayDesfases = true;
@@ -64,11 +63,17 @@ class Device extends Model
             }
             return $hayDesfases;
         }
-        
-        // Get current time in office timezone
+
+        // Get today's range in office timezone and convert to UTC for querying
         $officeTimezone = $this->oficina->timezone;
-        $nowInOfficeTz = now()->setTimezone($officeTimezone);
-        
+        $startOfDayUtc = now($officeTimezone)->startOfDay()->setTimezone('UTC');
+        $endOfDayUtc = now($officeTimezone)->endOfDay()->setTimezone('UTC');
+
+        // Get today's attendances for this device based on office local date
+        $checadasHoy = Attendance::where('sn', $this->serial_number)
+            ->whereBetween('created_at', [$startOfDayUtc, $endOfDayUtc])
+            ->get();
+
         // go through the attendances and check if there are differences between created_at and timestamp for more than 20min
         foreach ($checadasHoy as $attendance) {
             // Convert attendance timestamp to office timezone for proper comparison
@@ -150,16 +155,21 @@ class Device extends Model
         if (!$this->oficina || !$this->oficina->timezone) {
             return 0;
         }
-        
+
+        // Get today's range in office timezone and convert to UTC for querying
+        $officeTimezone = $this->oficina->timezone;
+        $startOfDayUtc = now($officeTimezone)->startOfDay()->setTimezone('UTC');
+        $endOfDayUtc = now($officeTimezone)->endOfDay()->setTimezone('UTC');
+
         $checadasHoy = Attendance::where('sn', $this->serial_number)
-            ->whereDate('created_at', now()->toDateString())
+            ->whereBetween('created_at', [$startOfDayUtc, $endOfDayUtc])
             ->get();
         
         $discrepancyCount = 0;
         
         foreach ($checadasHoy as $attendance) {
-            $attendanceTimeInOfficeTz = $attendance->timestamp->setTimezone($this->oficina->timezone);
-            $diffInMinutes = $attendance->created_at->setTimezone($this->oficina->timezone)
+            $attendanceTimeInOfficeTz = $attendance->timestamp->setTimezone($officeTimezone);
+            $diffInMinutes = $attendance->created_at->setTimezone($officeTimezone)
                 ->diffInMinutes($attendanceTimeInOfficeTz);
             
             if ($diffInMinutes > 20) {

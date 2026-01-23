@@ -159,7 +159,16 @@ class DeviceController extends Controller
 		$idempresa = $request->query('idempresa');
         $page = $request->query('page', 1);
     
-        $query = Attendance::query();
+        $query = Attendance::query()->with(['device.oficina']);
+
+        $officeTimezone = null;
+        if ($selectedOficina) {
+            $oficinaQuery = Oficina::where('idoficina', $selectedOficina);
+            if (!empty($idempresa)) {
+                $oficinaQuery->where('idempresa', $idempresa);
+            }
+            $officeTimezone = optional($oficinaQuery->first())->timezone;
+        }
     
         if ($selectedOficina) {
 			$query->whereIn('sn', function ($q) use ($selectedOficina, $idempresa) {
@@ -173,14 +182,33 @@ class DeviceController extends Controller
             });
         }
 		if ($selectedDate) {
-			$query->whereDate('timestamp', $selectedDate);
+            if ($officeTimezone) {
+                $startOfDayUtc = \Carbon\Carbon::parse($selectedDate, $officeTimezone)->startOfDay()->setTimezone('UTC');
+                $endOfDayUtc = \Carbon\Carbon::parse($selectedDate, $officeTimezone)->endOfDay()->setTimezone('UTC');
+                $query->whereBetween('timestamp', [$startOfDayUtc, $endOfDayUtc]);
+            } else {
+                $query->whereDate('timestamp', $selectedDate);
+            }
 		}
     
         $query->orderBy('updated_at', 'DESC'); // <--- Siempre se ordena por updated_at DESC
     
         if ($request->input('desfasados') === 'on') {
-            $filtered = $query->get()->filter(function ($attendance) {
-                return $attendance->updated_at->diffInMinutes($attendance->timestamp) > 20;
+            $filtered = $query->get()->filter(function ($attendance) use ($officeTimezone) {
+                $tz = $officeTimezone;
+                if (!$tz && $attendance->device && $attendance->device->oficina && $attendance->device->oficina->timezone) {
+                    $tz = $attendance->device->oficina->timezone;
+                }
+
+                $updatedAt = $attendance->updated_at;
+                $timestamp = $attendance->timestamp;
+
+                if ($tz) {
+                    $updatedAt = $updatedAt->setTimezone($tz);
+                    $timestamp = $timestamp->setTimezone($tz);
+                }
+
+                return $updatedAt->diffInMinutes($timestamp) > 20;
             });
         
             $filtered = $filtered->sortByDesc('updated_at')->values();
@@ -311,8 +339,12 @@ public function monitor()
             try {
                 $lastAttendance = $device->getLastAttendance();
                 if ($lastAttendance && $lastAttendance->timestamp) {
-                    $device->last_attendance_time = $lastAttendance->timestamp;
-                    $device->last_attendance_human = $lastAttendance->timestamp->format('H:i');
+                    $officeTimezone = $device->oficina ? $device->oficina->timezone : null;
+                    $attendanceTime = $officeTimezone
+                        ? $lastAttendance->timestamp->setTimezone($officeTimezone)
+                        : $lastAttendance->timestamp;
+                    $device->last_attendance_time = $attendanceTime;
+                    $device->last_attendance_human = $attendanceTime->format('H:i');
                 } else {
                     $device->last_attendance_time = null;
                     $device->last_attendance_human = 'N/A';
