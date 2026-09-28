@@ -72,7 +72,7 @@
                         </td>
                         <td>{{ $d->getLastAttendance() ? $d->getLastAttendance()->created_at->diffForHumans() : __('common.unknown') }}</td>
                         <td>
-                        @if (!$d->hayDesfasesHoy())
+                        @if (!$d->hasClockDiscrepancyToday())
                                 <i class="fas fa-check-circle text-success"></i>                                
                         @else
                             <i class="fas fa-times-circle text-danger"></i>

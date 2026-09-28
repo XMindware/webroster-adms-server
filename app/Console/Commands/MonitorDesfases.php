@@ -4,78 +4,85 @@ namespace App\Console\Commands;
 
 use App\Models\Attendance;
 use App\Models\Device;
-use Illuminate\Console\Command;
 use Carbon\Carbon;
+use Illuminate\Console\Command;
 
+/**
+ * Report attendance punches whose stored timestamp and created_at disagree.
+ *
+ * The command name is kept in Spanish ("desfases" = skew) because it is
+ * referenced by the scheduler; see app/Console/Kernel.php.
+ */
 class MonitorDesfases extends Command
 {
-    protected $signature = 'monitor:desfases {--threshold=5 : Threshold in minutes for detecting desfases}';
-    protected $description = 'Monitor attendance records for time desfases between timestamp and created_at';
+    protected $signature = 'monitor:desfases {--threshold=5 : Threshold in minutes for detecting skew}';
+
+    protected $description = 'Monitor attendance records for time skew between timestamp and created_at';
 
     public function handle()
     {
         $threshold = (int) $this->option('threshold');
-        $this->info("Iniciando monitoreo de desfases con umbral de {$threshold} minutos...");
+        $this->info("Starting skew monitoring with a threshold of {$threshold} minutes...");
 
-        $desfasesEncontrados = $this->detectarDesfases($threshold);
-        
-        if ($desfasesEncontrados->count() > 0) {
-            $this->warn("Se encontraron {$desfasesEncontrados->count()} checadas con desfase:");
-            
-            foreach ($desfasesEncontrados as $attendance) {
+        $skewed = $this->detectSkewed($threshold);
+
+        if ($skewed->count() > 0) {
+            $this->warn("Found {$skewed->count()} punches with skew:");
+
+            foreach ($skewed as $attendance) {
                 $diffMinutes = abs($attendance->created_at->diffInMinutes($attendance->timestamp));
                 $device = $attendance->device;
                 $oficina = $device ? $device->oficina : null;
-                
-                $this->line("ID: {$attendance->id} | Empleado: {$attendance->employee_id} | Dispositivo: {$attendance->sn}");
+
+                $this->line("ID: {$attendance->id} | Employee: {$attendance->employee_id} | Device: {$attendance->sn}");
                 $this->line("Timestamp: {$attendance->timestamp} | Created: {$attendance->created_at}");
-                $this->line("Diferencia: {$diffMinutes} minutos | Oficina: " . ($oficina ? $oficina->nombre : 'N/A'));
-                $this->line("---");
-                
-                // Información del desfase encontrado (sin logging para evitar problemas de permisos)
-                $this->warn("DESFASE DETECTADO:");
-                $this->warn("  - ID Checada: {$attendance->id}");
-                $this->warn("  - Empleado: {$attendance->employee_id}");
-                $this->warn("  - Dispositivo: {$attendance->sn}");
-                $this->warn("  - Oficina: " . ($oficina ? $oficina->nombre : 'N/A'));
-                $this->warn("  - Diferencia: {$diffMinutes} minutos");
+                $this->line("Difference: {$diffMinutes} minutes | Office: " . ($oficina ? $oficina->ubicacion : 'N/A'));
+                $this->line('---');
+
+                // Details of the skew found. Deliberately not logged to a file,
+                // to avoid file-permission problems.
+                $this->warn('SKEW DETECTED:');
+                $this->warn("  - Punch ID: {$attendance->id}");
+                $this->warn("  - Employee: {$attendance->employee_id}");
+                $this->warn("  - Device: {$attendance->sn}");
+                $this->warn('  - Office: ' . ($oficina ? $oficina->ubicacion : 'N/A'));
+                $this->warn("  - Difference: {$diffMinutes} minutes");
             }
-            
-            $this->error("Se detectaron desfases en las checadas. Revisar la salida anterior para más detalles.");
+
+            $this->error('Skew was detected in the punches. See the output above for details.');
         } else {
-            $this->info("No se encontraron desfases en las checadas recientes.");
+            $this->info('No skew found in recent punches.');
         }
-        
+
         return Command::SUCCESS;
     }
 
-    protected function detectarDesfases($threshold)
+    /**
+     * Punches from the last 24 hours whose timestamp and created_at disagree by
+     * more than $threshold minutes.
+     */
+    protected function detectSkewed($threshold)
     {
-        // Buscar checadas de las últimas 24 horas para detectar desfases
-        $fechaInicio = Carbon::now()->subDay();
-        
-        $attendances = Attendance::with(['device.oficina'])
-            ->where('created_at', '>=', $fechaInicio)
+        $since = Carbon::now()->subDay();
+
+        return Attendance::with(['device.oficina'])
+            ->where('created_at', '>=', $since)
             ->get()
             ->filter(function ($attendance) use ($threshold) {
-                // Calcular diferencia en minutos entre created_at y timestamp
                 // Carbon 3 returns a signed float; abs() keeps the pre-upgrade meaning.
                 $diffMinutes = abs($attendance->created_at->diffInMinutes($attendance->timestamp));
-                
-                // Si hay oficina con timezone, usar lógica más precisa
+
+                // With an office timezone, compare both sides in that timezone.
                 if ($attendance->device && $attendance->device->oficina && $attendance->device->oficina->timezone) {
                     $officeTimezone = $attendance->device->oficina->timezone;
-                    
-                    // Convertir ambos timestamps al timezone de la oficina
+
                     $attendanceTimeInOfficeTz = $attendance->timestamp->setTimezone($officeTimezone);
                     $createdTimeInOfficeTz = $attendance->created_at->setTimezone($officeTimezone);
-                    
+
                     $diffMinutes = abs($createdTimeInOfficeTz->diffInMinutes($attendanceTimeInOfficeTz));
                 }
-                
+
                 return $diffMinutes > $threshold;
             });
-
-        return $attendances;
     }
 }

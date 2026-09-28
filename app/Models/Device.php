@@ -2,16 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-
-use App\Models\Command;
-use App\Models\Oficina;
-use App\Models\Attendance;
 use App\Services\PopulateEmployeesService;
 use App\Services\PullFingerprintsService;
 use App\Services\PushFingerprintsService;
 use App\Services\RemoveEmployeesService;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 class Device extends Model
 {
@@ -35,12 +32,18 @@ class Device extends Model
         'online' => 'datetime',
     ];
 
+    /**
+     * How far a punch's stored timestamp and created_at may drift before it
+     * counts as a clock problem rather than normal write latency.
+     */
+    private const CLOCK_SKEW_TOLERANCE_MINUTES = 20;
+
     public function oficina()
     {
-		// Link by both idoficina and idempresa (using value, not column)
-		// Note: avoid eager loading with this constraint; prefer lazy loading.
-		return $this->belongsTo(Oficina::class, 'idoficina', 'idoficina')
-			->where('oficinas.idempresa', $this->idempresa);
+        // Link by both idoficina and idempresa (using value, not column)
+        // Note: avoid eager loading with this constraint; prefer lazy loading.
+        return $this->belongsTo(Oficina::class, 'idoficina', 'idoficina')
+            ->where('oficinas.idempresa', $this->idempresa);
     }
 
     public function getLastAttendance()
@@ -48,53 +51,54 @@ class Device extends Model
         return Attendance::where('sn', $this->serial_number)->orderBy('id', 'desc')->first();
     }
 
-    public function hayDesfasesHoy()
+    /**
+     * Whether any punch recorded today looks like it came from a terminal whose
+     * clock is out of step with the server.
+     */
+    public function hasClockDiscrepancyToday()
     {
-        $hayDesfases = false;
-
-        // Check if device has an office with timezone
+        // Without an office timezone there is nothing to convert into, so the
+        // raw created_at/timestamp difference is used as-is.
         if (!$this->oficina || !$this->oficina->timezone) {
-            // If no timezone info, use default behavior
-            $checadasHoy = Attendance::where('sn', $this->serial_number)
+            // Only the two timestamps are needed, and only until the first
+            // offender is found - so ask the database for exactly that instead
+            // of hydrating every row of the day into Eloquent models.
+            $rows = Attendance::where('sn', $this->serial_number)
                 ->whereDate('created_at', now()->toDateString())
-                ->get();
+                ->whereBetween('timestamp', self::liveWindow())
+                ->select(['created_at', 'timestamp'])
+                ->cursor();
 
-            foreach ($checadasHoy as $attendance) {
-                if ($attendance->created_at->diffInMinutes($attendance->timestamp) > 20) {
-                    $hayDesfases = true;
-                    break;
+            foreach ($rows as $row) {
+                if (abs(Carbon::parse($row->created_at)->diffInMinutes(Carbon::parse($row->timestamp))) > self::CLOCK_SKEW_TOLERANCE_MINUTES) {
+                    return true;
                 }
             }
-            return $hayDesfases;
+
+            return false;
         }
 
-        // Get today's range in office timezone and convert to UTC for querying
         $officeTimezone = $this->oficina->timezone;
-        $startOfDayUtc = now($officeTimezone)->startOfDay()->setTimezone('UTC');
-        $endOfDayUtc = now($officeTimezone)->endOfDay()->setTimezone('UTC');
+        [$startOfDay, $endOfDay] = self::officeDayWindow($officeTimezone);
 
-        // Get today's attendances for this device based on office local date
-        $checadasHoy = Attendance::where('sn', $this->serial_number)
-            ->whereBetween('created_at', [$startOfDayUtc, $endOfDayUtc])
-            ->get();
+        // Cursored rather than ->get(): the question is only "is there at least
+        // one row more than the tolerance out of step", so rows are pulled in
+        // batches and the search stops at the first hit. ->get() loaded the
+        // whole day into Eloquent models with their Carbon casts, which is what
+        // exhausted the memory limit on a large table.
+        $rows = Attendance::where('sn', $this->serial_number)
+            ->whereBetween('created_at', [$startOfDay, $endOfDay])
+            ->whereBetween('timestamp', self::liveWindow())
+            ->select(['created_at', 'timestamp'])
+            ->cursor();
 
-        // go through the attendances and check if there are differences between created_at and timestamp for more than 20min
-        foreach ($checadasHoy as $attendance) {
-            // Convert attendance timestamp to office timezone for proper comparison
-            $attendanceTimeInOfficeTz = $attendance->timestamp->setTimezone($officeTimezone);
-            
-            // Calculate difference in minutes between when the record was created and the actual attendance time
-            // Both times are now in the same timezone (office timezone)
-            $diffInMinutes = $attendance->created_at->setTimezone($officeTimezone)
-                ->diffInMinutes($attendanceTimeInOfficeTz);
-            
-            if ($diffInMinutes > 20) {
-                $hayDesfases = true;
-                break;
+        foreach ($rows as $row) {
+            if (self::isSkewed(Carbon::parse($row->created_at), Carbon::parse($row->timestamp), $officeTimezone)) {
+                return true;
             }
         }
-        
-        return $hayDesfases;
+
+        return false;
     }
 
     public function commands()
@@ -134,10 +138,11 @@ class Device extends Model
     {
         try {
             $service = new PopulateEmployeesService($this);
+
             return $service->run($employees);
         } catch (\Exception $e) {
-            // log the error
             \Log::error($e->getMessage());
+
             return 0;
         }
     }
@@ -150,13 +155,15 @@ class Device extends Model
     {
         try {
             $service = new RemoveEmployeesService($this);
+
             return $service->run($employees);
         } catch (\Exception $e) {
             \Log::error($e->getMessage());
+
             return 0;
         }
     }
-    
+
     /**
      * Fingerprint templates this terminal has handed back to the server.
      */
@@ -210,6 +217,7 @@ class Device extends Model
 
     /**
      * Get current time in the office's timezone
+     *
      * @return \Carbon\Carbon|null
      */
     public function getCurrentOfficeTime()
@@ -217,13 +225,14 @@ class Device extends Model
         if (!$this->oficina || !$this->oficina->timezone) {
             return null;
         }
-        
+
         return now()->setTimezone($this->oficina->timezone);
     }
-    
+
     /**
      * Convert a datetime to the office's timezone
-     * @param \Carbon\Carbon $datetime
+     *
+     * @param  \Carbon\Carbon  $datetime
      * @return \Carbon\Carbon|null
      */
     public function convertToOfficeTimezone($datetime)
@@ -231,12 +240,14 @@ class Device extends Model
         if (!$this->oficina || !$this->oficina->timezone || !$datetime) {
             return $datetime;
         }
-        
+
         return $datetime->setTimezone($this->oficina->timezone);
     }
-    
+
     /**
-     * Get timezone discrepancy count for today
+     * How many of today's punches look like they came from a terminal whose
+     * clock is out of step. The number counts records, not minutes.
+     *
      * @return int
      */
     public function getTimezoneDiscrepancyCount()
@@ -245,27 +256,155 @@ class Device extends Model
             return 0;
         }
 
-        // Get today's range in office timezone and convert to UTC for querying
         $officeTimezone = $this->oficina->timezone;
-        $startOfDayUtc = now($officeTimezone)->startOfDay()->setTimezone('UTC');
-        $endOfDayUtc = now($officeTimezone)->endOfDay()->setTimezone('UTC');
+        [$startOfDay, $endOfDay] = self::officeDayWindow($officeTimezone);
 
-        $checadasHoy = Attendance::where('sn', $this->serial_number)
-            ->whereBetween('created_at', [$startOfDayUtc, $endOfDayUtc])
-            ->get();
-        
+        // Two columns, streamed in chunks. This method runs on every terminal
+        // poll, so the previous ->get() - which materialised the device's
+        // entire day as Eloquent models - was both a full table scan (there
+        // was no index on sn) and a per-poll memory spike that grew all day.
+        $rows = Attendance::where('sn', $this->serial_number)
+            ->whereBetween('created_at', [$startOfDay, $endOfDay])
+            ->whereBetween('timestamp', self::liveWindow())
+            ->select(['created_at', 'timestamp'])
+            ->cursor();
+
         $discrepancyCount = 0;
-        
-        foreach ($checadasHoy as $attendance) {
-            $attendanceTimeInOfficeTz = $attendance->timestamp->setTimezone($officeTimezone);
-            $diffInMinutes = $attendance->created_at->setTimezone($officeTimezone)
-                ->diffInMinutes($attendanceTimeInOfficeTz);
-            
-            if ($diffInMinutes > 20) {
+
+        foreach ($rows as $row) {
+            if (self::isSkewed(Carbon::parse($row->created_at), Carbon::parse($row->timestamp), $officeTimezone)) {
                 $discrepancyCount++;
             }
         }
-        
+
         return $discrepancyCount;
+    }
+
+    /**
+     * Discrepancy counts for many devices in one pass.
+     *
+     * The monitor page used to call getTimezoneDiscrepancyCount() inside a loop
+     * over every device, so opening /devices ran one query per terminal. This
+     * pulls the day's live rows for the whole fleet in a single query and
+     * buckets them in PHP.
+     *
+     * @param  \Illuminate\Support\Collection<int, Device>  $devices
+     * @return array<string, int> keyed by serial_number
+     */
+    public static function discrepancyCountsFor($devices): array
+    {
+        $counts = [];
+        $timezones = [];
+        $windows = [];
+
+        // Only devices with a usable office timezone can have a discrepancy -
+        // getTimezoneDiscrepancyCount() returns 0 for the rest, and matching
+        // that here keeps the two paths in agreement.
+        foreach ($devices as $device) {
+            $timezone = optional($device->oficina)->timezone;
+
+            if (!$timezone) {
+                continue;
+            }
+
+            $counts[$device->serial_number] = 0;
+            $timezones[$device->serial_number] = $timezone;
+
+            // The same office-local-day window getTimezoneDiscrepancyCount()
+            // builds. Computed per device because two offices can sit on
+            // different calendar days.
+            $windows[$device->serial_number] = self::officeDayWindow($timezone);
+        }
+
+        if ($counts === []) {
+            return $counts;
+        }
+
+        // One query for the whole fleet. The bounds are the widest any office
+        // in the set can need (the app-time day, plus a day either side to
+        // absorb the largest offset); the exact per-office window is applied
+        // below, so this is a superset filter only.
+        $rows = Attendance::whereIn('sn', array_keys($counts))
+            ->whereBetween('timestamp', self::liveWindow())
+            ->whereBetween('created_at', [now()->subDays(2), now()->addDays(2)])
+            ->select(['sn', 'created_at', 'timestamp'])
+            ->cursor();
+
+        foreach ($rows as $row) {
+            $timezone = $timezones[$row->sn] ?? null;
+
+            if ($timezone === null) {
+                continue;
+            }
+
+            $createdAt = Carbon::parse($row->created_at);
+            $timestamp = Carbon::parse($row->timestamp);
+
+            // Apply the per-office day window that the aggregated query could
+            // not express. Without this, rows belonging to a neighbouring day
+            // would be counted for offices whose timezone shifts the boundary.
+            [$startOfDay, $endOfDay] = $windows[$row->sn];
+
+            if ($createdAt->lt($startOfDay) || $createdAt->gt($endOfDay)) {
+                continue;
+            }
+
+            if (self::isSkewed($createdAt, $timestamp, $timezone)) {
+                $counts[$row->sn]++;
+            }
+        }
+
+        return $counts;
+    }
+
+    /**
+     * The office's local calendar day, expressed in the app timezone - which is
+     * the timezone Eloquent writes created_at in.
+     *
+     * Converting these boundaries to UTC instead compared UTC-formatted strings
+     * against local-time rows, sliding the window by the app/office offset
+     * (seven hours here) and dropping punches that had just arrived.
+     *
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    private static function officeDayWindow(string $officeTimezone): array
+    {
+        $appTimezone = config('app.timezone');
+
+        return [
+            now($officeTimezone)->startOfDay()->setTimezone($appTimezone),
+            now($officeTimezone)->endOfDay()->setTimezone($appTimezone),
+        ];
+    }
+
+    /**
+     * The window a genuinely "live" punch can fall in.
+     *
+     * A terminal that is replaying its backlog produces rows whose created_at
+     * is today but whose timestamp is months old; those are not a clock
+     * problem, and counting them saturated this figure (it read 9,559 out of
+     * 10,389 rows for a single device on 2026-09-22). A clock fault shows up as
+     * minutes or hours, so a one-day window separates the two cleanly.
+     *
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    private static function liveWindow(): array
+    {
+        return [now()->subDay(), now()->addDay()];
+    }
+
+    /**
+     * Whether a punch's created_at and timestamp disagree by more than the
+     * tolerance, once both are read in the office's timezone.
+     */
+    private static function isSkewed(Carbon $createdAt, Carbon $timestamp, string $officeTimezone): bool
+    {
+        // Convert both to the office timezone before comparing. Carbon 3
+        // returns a signed float from diffInMinutes; abs() keeps the meaning
+        // this had before the upgrade.
+        $attendanceTimeInOfficeTz = $timestamp->setTimezone($officeTimezone);
+
+        return abs($createdAt->setTimezone($officeTimezone)
+            ->diffInMinutes($attendanceTimeInOfficeTz)) > self::CLOCK_SKEW_TOLERANCE_MINUTES;
     }
 }

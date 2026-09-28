@@ -153,6 +153,36 @@ class WebhookDispatchTest extends TestCase
         Http::assertNothingSent();
     }
 
+    /**
+     * A terminal that cannot advance its watermark re-sends the same batch. The
+     * receiver must not see rows it has already been given a second time.
+     *
+     * The earlier delivery is seeded straight into the table rather than
+     * replayed with a second request: Application::terminate() does not clear
+     * its terminating callbacks, so within one test a second request would re-run
+     * the first request's after-response job as well. Each request gets a fresh
+     * application in production, so that is a test artefact, not a behaviour.
+     */
+    public function test_already_stored_rows_are_not_forwarded(): void
+    {
+        Http::fake([self::URL => Http::response('', 200)]);
+        $this->deviceWithWebhook();
+
+        DB::table('attendances')->insert([
+            'sn' => 'SN-1',
+            'table' => 'ATTLOG',
+            'stamp' => '9999',
+            'employee_id' => '1',
+            'timestamp' => '2026-09-22 08:00:00',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->postAttlog($this->punch())->assertOk();
+
+        Http::assertNothingSent();
+    }
+
     public function test_a_successful_delivery_is_logged_with_status_and_duration(): void
     {
         Http::fake([self::URL => Http::response('', 200)]);

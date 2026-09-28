@@ -1,38 +1,43 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Jobs\SendWebhookJob;
-use App\Models\Attendance;
 use App\Models\Command;
 use App\Models\Device;
 use App\Models\DeviceLog;
-use App\Models\Fingerprint;
 use App\Models\LogEntry;
+use App\Services\Adms\AdmsCommandService;
 use App\Services\Adms\AdmsProtocol;
 use App\Services\BiometricRecordParser;
-use App\Services\CommandIdService;
 use App\Services\FingerprintIngestService;
-use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Throwable;
-use Log;
 
-
+/**
+ * The terminal-facing iClock / ADMS protocol endpoints.
+ *
+ * Every method here is called by a ZKTeco-compatible device, not by a browser:
+ * the handshake, the command queue poll, and the upload of attendance punches
+ * and biometric records. Responses are plain text in the shape the firmware
+ * expects, so they are built by hand rather than returned as views or JSON.
+ */
 class iclockController extends Controller
 {
-
-   public function __invoke(Request $request)
-   {
-
-   }
-
-    // handshake
+    /**
+     * Handshake: GET /iclock/cdata?SN=...
+     *
+     * The terminal asks for its configuration on first contact and after every
+     * reboot, and expects a block of "Key=Value" lines back.
+     */
     public function handshake(Request $request)
     {
         Log::info('call handshake ', ['request' => $request->all()]);
-        try{
-            
+
+        try {
             $endpoint = parse_url($request->url(), PHP_URL_PATH);
 
             // add to device logs
@@ -40,31 +45,32 @@ class iclockController extends Controller
                 'url' => $endpoint,
                 'data' => json_encode($request->getContent()),
                 'sn' => $request->input('SN'),
-                'option' => $request->input('option') ?? "handshake ",
+                'option' => $request->input('option') ?? 'handshake ',
             ];
-            
-            DeviceLog::create($data);
-            // update status device
-            DB::table('devices')->updateOrInsert(
-                ['serial_number' => $request->input('SN')],
-                ['online' => now()]
-            );
 
-            // get timezone from office
+            DeviceLog::create($data);
+
+            $this->markDeviceOnline($request->input('SN'));
+
+            // The terminal must already be registered. (The updateOrInsert above
+            // normally registers it, so this only fires if that write failed.)
             $device = Device::where('serial_number', $request->input('SN'))->first();
+
             if (!$device) {
                 Log::error('handshake', ['error' => 'Device not found']);
-                return "ERROR: Device not found";
+
+                return 'ERROR: Device not found';
             }
+
+            // get timezone from office
             $cityTimezone = $device->oficina ? $device->oficina->timezone : 'America/Mexico_City';
             $timezone = $device->oficina ? $device->oficina->timezone : 'America/Mexico_City';
 
             // set time() to gmt -6
             $date = Carbon::now($cityTimezone);
-            $format = 'Y-m-d H:i:s';
-            $localTime = $date->format($format);
+            $localTime = $date->format('Y-m-d H:i:s');
 
-            $r = "GET OPTION FROM: {$request->input('SN')}\r\n" .
+            return "GET OPTION FROM: {$device->serial_number}\r\n" .
                 "Stamp=9999\r\n" .
                 "OpStamp=" . $localTime . "\r\n" .
                 "ErrorDelay=60\r\n" .
@@ -74,23 +80,19 @@ class iclockController extends Controller
                 "ResLogCount=50000\r\n" .
                 //"TransTimes=00:00;14:05\r\n" .
                 "TransInterval=4\r\n" .
-                // Positions 6/7 (EnrollFP, ChgFP) are what make the terminal
-                // upload a fingerprint template as soon as it is enrolled or
-                // changed. See config/adms.php.
                 "TransFlag=" . config('adms.trans_flag', '1111111000') . "\r\n" .
-                "TimeZone=". $timezone . "\r\n" .
+                "TimeZone=" . $timezone . "\r\n" .
                 "Realtime=1\r\n" .
                 "Encrypt=0";
-
-            return $r;
-
         } catch (Throwable $e) {
             $data['error'] = $e;
             DB::table('error_log')->insert($data);
             report($e);
-            return "ERROR: ".$e."\n";
+
+            return 'ERROR: ' . $e . "\n";
         }
     }
+
 
     /**
      * The terminal reports here after running a queued command:
@@ -121,7 +123,7 @@ class iclockController extends Controller
             if ($acks === []) {
                 Log::info('deviceCommand: no parsable acknowledgement', ['data' => $body]);
 
-                return "OK";
+                return 'OK';
             }
 
             $device = Device::where('serial_number', $request->input('SN'))->first();
@@ -162,7 +164,7 @@ class iclockController extends Controller
             Log::error('deviceCommand', ['error' => $e->getMessage()]);
         }
 
-        return "OK";
+        return 'OK';
     }
 
     /**
@@ -189,25 +191,13 @@ class iclockController extends Controller
 
             // Keep last-seen fresh whatever the payload turns out to be.
             try {
-                DB::table('devices')->updateOrInsert(
-                    ['serial_number' => $sn],
-                    ['online' => now()]
-                );
+                $this->markDeviceOnline($sn);
             } catch (Throwable $e) {
                 Log::error('receiveRecords update device ', ['error' => $e->getMessage()]);
             }
 
             try {
-                DeviceLog::create([
-                    'url' => parse_url($request->url(), PHP_URL_PATH),
-                    'data' => json_encode($request->all()),
-                    'tgl' => now(),
-                    'sn' => $sn,
-                    'option' => $request->input('option') ?? '',
-                    // Previously dereferenced a possibly-missing device and
-                    // took the whole request down with it.
-                    'idreloj' => $device->idreloj ?? '999999',
-                ]);
+                $this->recordDeviceLog($request, $sn, $device);
             } catch (Throwable $e) {
                 Log::error('receiveRecords device log ', ['error' => $e->getMessage()]);
             }
@@ -215,7 +205,7 @@ class iclockController extends Controller
             $parser = app(BiometricRecordParser::class);
 
             if ($table === 'OPERLOG' || $table === 'OPLOG' || $parser->looksLikeBiometricPayload($body)) {
-                return $this->receiveBiometricRecords($request, $sn, $table, $body, $device, $parser);
+                return $this->receiveBiometricRecords($sn, $table, $body, $device, $parser);
             }
 
             return $this->receiveAttendanceRecords($request, $sn, $body, $device);
@@ -232,7 +222,6 @@ class iclockController extends Controller
      * payload keeps its old home in device_options.
      */
     protected function receiveBiometricRecords(
-        Request $request,
         ?string $sn,
         string $table,
         string $body,
@@ -264,7 +253,7 @@ class iclockController extends Controller
             'lines' => count($lines),
         ]));
 
-        return "OK: " . count($lines);
+        return 'OK: ' . count($lines);
     }
 
     /**
@@ -272,14 +261,14 @@ class iclockController extends Controller
      */
     protected function receiveAttendanceRecords(Request $request, ?string $sn, string $body, ?Device $device)
     {
-        $tot = 0;
-        $rows = [];
-
         // Split on line breaks only. The old pattern also split on commas,
         // which silently mangled any field that contained one.
         $lines = preg_split('/\r\n|\r|\n/', $body) ?: [];
 
         $idoficina = $device && $device->oficina ? $device->oficina->idoficina : null;
+
+        $rows = [];
+        $seen = [];
 
         foreach ($lines as $line) {
             $line = trim($line);
@@ -294,14 +283,25 @@ class iclockController extends Controller
                 continue;
             }
 
-            $row = [
+            // A punch is identified by who punched and when. The same pair
+            // arriving twice is the same event, so collapse it inside the
+            // batch as well as against the table.
+            $key = $data[0] . '|' . $data[1];
+
+            if (isset($seen[$key])) {
+                continue;
+            }
+
+            $seen[$key] = true;
+
+            $rows[] = [
                 'sn' => $sn,
                 'table' => $request->input('table'),
                 'stamp' => $request->input('Stamp') ?? date('Y-m-d H:i:s'),
                 'employee_id' => $data[0],
                 'timestamp' => $data[1] ?? date('Y-m-d H:i:s'),
                 'idoficina' => $idoficina,
-                'idempresa' => $device->idempresa ?? null,
+                'idempresa' => $device?->idempresa,
                 'status1' => $this->validateAndFormatInteger($data[2] ?? null),
                 'status2' => $this->validateAndFormatInteger($data[3] ?? null),
                 'status3' => $this->validateAndFormatInteger($data[4] ?? null),
@@ -310,16 +310,71 @@ class iclockController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
+        }
 
-            DB::table('attendances')->insert($row);
-            $rows[] = $row;
-            $tot++;
+        // Drop anything the table already holds. A terminal that cannot advance
+        // its upload watermark re-sends its whole log on every cycle; without
+        // this the table grows without bound (10,389 rows for one device in a
+        // single day, 830 of them repeats) and every replayed row is then
+        // counted as a clock discrepancy by Device::getTimezoneDiscrepancyCount().
+        $rows = $this->dropAlreadyStored($sn, $rows);
+
+        foreach (array_chunk($rows, 500) as $chunk) {
+            DB::table('attendances')->insert($chunk);
         }
 
         // Forward the batch to the device's webhook, if one is configured.
         $this->dispatchWebhook($device, $rows);
 
-        return "OK: " . $tot;
+        // Report how many records the terminal sent, not how many we kept. The
+        // terminal uses this count to advance its upload watermark, so handing
+        // back a smaller number makes it re-send the same batch forever.
+        Log::info('receiveRecords: attendance batch', [
+            'sn' => $sn,
+            'sent' => count($seen),
+            'inserted' => count($rows),
+            'duplicates' => count($seen) - count($rows),
+        ]);
+
+        return 'OK: ' . count($seen);
+    }
+
+    /**
+     * Filter out rows whose (employee_id, timestamp) is already stored for this
+     * device. One range query per batch instead of one query per row.
+     *
+     * Note: this compares the raw timestamp string the terminal sent against
+     * what MySQL hands back. If a terminal ever uses a different wire format for
+     * the same instant (for example a compact 20240920100000), the keys will not
+     * match and duplicates will slip through - the "duplicates" count in the log
+     * above is what makes that visible.
+     */
+    protected function dropAlreadyStored(?string $sn, array $rows): array
+    {
+        if (empty($rows)) {
+            return [];
+        }
+
+        $timestamps = array_values(array_filter(array_column($rows, 'timestamp')));
+
+        if (empty($timestamps)) {
+            return $rows;
+        }
+
+        $existing = DB::table('attendances')
+            ->where('sn', $sn)
+            ->whereBetween('timestamp', [min($timestamps), max($timestamps)])
+            ->get(['employee_id', 'timestamp'])
+            ->mapWithKeys(fn ($row) => [$row->employee_id . '|' . $row->timestamp => true]);
+
+        if ($existing->isEmpty()) {
+            return $rows;
+        }
+
+        return array_values(array_filter(
+            $rows,
+            fn ($row) => !$existing->has($row['employee_id'] . '|' . $row['timestamp'])
+        ));
     }
 
     /**
@@ -354,44 +409,31 @@ class iclockController extends Controller
         }
     }
 
+    /**
+     * Realtime upload (GET /iclock/rtdata).
+     *
+     * The terminal only needs its last-seen refreshed and a bare "ok" back; the
+     * "DateTime=...,ServerTZ=..." reply it can also accept is deliberately not
+     * sent here.
+     */
     public function rtdata(Request $request)
     {
-        // log header and content
-        Log::info('rtdata', ['url' => json_encode($request->all())]);
-        Log::info('rtdata', ['data' => $request->getContent()]);
-        // log SN and type
-
-
-        $data = [
-            'url' => json_encode($request->all()),
+        Log::info('rtdata', [
+            'request' => $request->all(),
             'data' => $request->getContent(),
-            'sn' => $request->input('SN'),
-            'type' => $request->input('type'),
-        ];
-        Log::info('rtdata', ['data' => $data]);
+        ]);
 
+        $this->markDeviceOnline($request->input('SN'));
 
-        // update status device
-        DB::table('devices')->updateOrInsert(
-            ['serial_number' => $request->input('SN')],
-            ['online' => now()]
-        );
-
-        $intDateTime = AdmsProtocol::encodeDateTime(Carbon::now('GMT'));
-
-        $response = "DateTime=" . $intDateTime . ",ServerTZ=+0600";
-
-        Log::info('rtdata', ['response' => $response]);
-
-        return "ok";//$response;
+        return 'ok';
     }
 
     public function querydata(Request $request)
     {
         Log::info('---------call querydata', ['request' => $request->all()]);
-        // log header and content
         Log::info('querydata', ['url' => json_encode($request->all())]);
         Log::info('querydata', ['data' => $request->getContent()]);
+
         $endpoint = parse_url($request->url(), PHP_URL_PATH);
 
         // add to device logs
@@ -401,116 +443,106 @@ class iclockController extends Controller
             'sn' => $request->input('SN'),
             'table' => $request->input('table'),
         ];
+
         Log::info('querydata', ['data' => $data]);
 
-        // update status device
-        DB::table('devices')->updateOrInsert(
-            ['serial_number' => $request->input('SN')],
-            ['online' => now()]
-        );
+        // A terminal always sends SN. Without one, updateOrInsert would try to
+        // insert devices.serial_number = NULL — but that column is NOT NULL and
+        // unique, so the request died with a 23000 integrity violation. With
+        // APP_DEBUG on, that handed a full stack trace to whoever asked.
+        $sn = $request->input('SN');
 
-        $response = "OK";
+        if (!$sn) {
+            Log::warning('querydata called without SN');
 
-        Log::info('querydata', ['response' => $response]);
+            return 'OK';
+        }
 
-        return $response;
+        $this->markDeviceOnline($sn);
+
+        Log::info('querydata', ['response' => 'OK']);
+
+        return 'OK';
     }
 
     public function test(Request $request)
     {
         Log::info('call test', ['request' => $request->all()]);
 
-        return "OK";
+        return 'OK';
     }
+
+    /**
+     * The terminal's polling loop: it comes back every few seconds asking
+     * whether there is anything to do, and this is where queued commands are
+     * handed out.
+     */
     public function getrequest(Request $request)
     {
         Log::info('call getrequest', ['request' => $request->all()]);
 
         try {
             $device = Device::where('serial_number', $request->input('SN'))->first();
+
             if (!$device) {
                 Log::error('getrequest', ['error' => 'Device not found']);
-                return "ERROR: Device not found";
-            }
 
-            $endpoint = parse_url($request->url(), PHP_URL_PATH);
+                return 'ERROR: Device not found';
+            }
 
             // add to device logs — a logging failure must never stop the
             // terminal from receiving its queued commands.
             try {
-                $data = [
-                    'url' => $endpoint,
-                    'data' => json_encode($request->all()),
-                    'tgl' => now(),
-                    'sn' => $request->input('SN'),
-                    'option' => $request->input('option') ?? '',
-                    'idreloj' => $device->idreloj ?? '999999',
-                ];
-                DeviceLog::create($data);
-                Log::debug("inserted data ", $data);
+                $this->recordDeviceLog($request, $request->input('SN'), $device);
             } catch (Throwable $e) {
                 Log::error('getrequest device log', ['error' => $e->getMessage()]);
             }
 
-            //update last online
+            // update last online
             $device->update(['online' => now()]);
 
             // A fingerprint pull can queue hundreds of commands; handing them
             // all to the terminal in one response is a good way to make it
             // choke. Drain the queue in batches instead — it comes back every
             // few seconds anyway.
+            //
+            // The limit is passed down to the query. Taking it off the loaded
+            // collection afterwards would still have held every pending row in
+            // memory, which is the whole thing this is meant to avoid.
             $batchSize = (int) config('adms.commands_per_request', 20);
-            $commands = $device->pendingCommands();
-
-            if ($batchSize > 0 && $commands->count() > $batchSize) {
-                $commands = $commands->take($batchSize);
-            }
-
-            $cmdIdService = resolve(CommandIdService::class);
-            $nextCmdId = $cmdIdService->getNextCmdId();
-            Log::info('Get Request', ['nextCmdId' => $nextCmdId]);
-            
-            $intDateTime = AdmsProtocol::encodeDateTime(Carbon::now('America/Mexico_City'));
-            /*
-            // Add a set time command to the database
-            $device->commands()->create([
-                'device_id' => $device->id,
-                'command' => $nextCmdId,
-                'data' => "C:{$nextCmdId}:SET OPTIONS DateTime=" . $intDateTime,
-                'executed_at' => null
-            ]);*/
+            $commands = $device->pendingCommands($batchSize > 0 ? $batchSize : null);
 
             Log::info('getrequest commands', ['commands' => count($commands)]);
 
             if ($commands->isEmpty()) {
                 Log::info('getrequest', ['info' => 'No pending commands']);
-                return "OK";
+
+                return 'OK';
             }
 
-            // Collect and concatenate all command data
-            $data = $commands->pluck('data');
-            $response = implode("\r\n", $data->toArray()) . "\r\n";
+            $response = implode("\r\n", $commands->pluck('data')->toArray()) . "\r\n";
 
-            //remove last \r\n
+            // remove last \r\n
             $response = substr($response, 0, -2);
 
             // Update commands' executed_at timestamps
             DB::transaction(function () use ($commands) {
                 foreach ($commands as $command) {
-                    if ($command instanceof \App\Models\Command) { 
+                    if ($command instanceof Command) {
                         $command->update(['executed_at' => now()]);
                     }
                 }
             });
-            return $response;
 
+            return $response;
         } catch (Throwable $e) {
-            $data['data'] = $e;
-            Log::error('getrequest', ['data' => $data]);
+            Log::error('getrequest', ['error' => $e->getMessage()]);
             report($e);
-            return "OK";
+
+            return 'OK';
         }
     }
+
 
     public function quickStatus(Request $request)
     {
@@ -519,29 +551,34 @@ class iclockController extends Controller
         $lastError = DB::table('error_log')
             ->orderBy('created_at', 'desc')
             ->first();
-        $data = [];
 
         if ($lastError) {
             Log::info('quickStatus', ['lastError' => $lastError]);
+
             $data = [
                 'status' => 'error',
                 'message' => substr($lastError->data, 0, 16),
                 'error' => substr($lastError->data, 0, 30),
-                'timestamp' => $lastError->created_at ? $lastError->created_at->toIso8601String() : '',
+                // created_at comes back from the query builder as a plain
+                // string, not a Carbon instance.
+                'timestamp' => $lastError->created_at
+                    ? Carbon::parse($lastError->created_at)->toIso8601String()
+                    : '',
             ];
-        }
-        else {
+        } else {
             Log::info('quickStatus', ['status' => 'ok']);
+
             $data = [
                 'status' => 'ok',
                 'message' => 'No errors found',
             ];
         }
+
         $response = response()->json($data);
-        // Forzar que no se use Transfer-Encoding: chunked
+        // Force it not to use Transfer-Encoding: chunked.
         $response->header('Content-Length', strlen($response->getContent()));
         $response->header('Connection', 'close');
-    
+
         return $response;
     }
 
@@ -574,10 +611,38 @@ class iclockController extends Controller
 
         return response()->json(['status' => 'OK']);
     }
+
+    /**
+     * Refresh the terminal's last-seen timestamp, registering it if this is the
+     * first time we have seen its serial number.
+     */
+    private function markDeviceOnline(?string $sn): void
+    {
+        DB::table('devices')->updateOrInsert(
+            ['serial_number' => $sn],
+            ['online' => now()]
+        );
+    }
+
+    /**
+     * Record one incoming request against the device log.
+     */
+    private function recordDeviceLog(Request $request, ?string $sn, ?Device $device): void
+    {
+        DeviceLog::create([
+            'url' => parse_url($request->url(), PHP_URL_PATH),
+            'data' => json_encode($request->all()),
+            'tgl' => now(),
+            'sn' => $sn,
+            'option' => $request->input('option') ?? '',
+            'idreloj' => $device->idreloj ?? '999999',
+        ]);
+    }
+
+
     private function validateAndFormatInteger($value)
     {
-        return isset($value) && $value !== '' ? (int)$value : null;
-        // return is_numeric($value) ? (int) $value : null;
+        return isset($value) && $value !== '' ? (int) $value : null;
     }
 
     /**
@@ -619,5 +684,4 @@ class iclockController extends Controller
 
         SendWebhookJob::dispatch(...$delivery);
     }
-
 }

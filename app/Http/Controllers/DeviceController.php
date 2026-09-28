@@ -752,5 +752,4 @@ class DeviceController extends Controller
     {
         return redirect()->route($route)->with('error', __('devices.device_not_found'));
     }
-
 }
