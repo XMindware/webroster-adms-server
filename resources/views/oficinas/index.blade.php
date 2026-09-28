@@ -43,7 +43,12 @@
                         <td><a href="{{ $oficina->public_url }}" target="_blank">{{ $oficina->public_url }}</a></td>
                         <td>{{ $oficina->iatacode }}</td>
                         <td>{{ $oficina->city_timezone }}</td>
-                        <td>{{ $oficina->timezone }}</td>
+                        <td>
+                            {{ $oficina->timezone }}
+                            @if($oficina->timezoneIsGeneric())
+                                <span class="badge badge-warning" title="{{ __('oficinas.generic_timezone_help') }}">{{ __('oficinas.generic_timezone') }}</span>
+                            @endif
+                        </td>
                         <td>{{ $oficina->updated_at?->diffForHumans() }}</td>
                         <td>
                             <a href="{{ route('oficinas.edit', ['id' => $oficina->id ]) }}" class="btn btn-primary">{{ __('common.edit') }}</a>

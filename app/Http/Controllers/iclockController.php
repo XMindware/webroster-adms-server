@@ -527,6 +527,12 @@ class iclockController extends Controller
             $batchSize = (int) config('adms.commands_per_request', 20);
             $commands = $device->pendingCommands($batchSize > 0 ? $batchSize : null);
 
+            if ($this->queueClockCorrectionIfNeeded($device)) {
+                // Re-read only when a correction was actually queued, so it goes
+                // out in this same response — with the same batch limit applied.
+                $commands = $device->pendingCommands($batchSize > 0 ? $batchSize : null);
+            }
+
             Log::info('getrequest commands', ['commands' => count($commands)]);
 
             if ($commands->isEmpty()) {
@@ -558,6 +564,89 @@ class iclockController extends Controller
         }
     }
 
+    /**
+     * Queue a clock correction when this terminal's punches look skewed.
+     *
+     * A correction is queued at most once per cooldown window. A
+     * pending-command check cannot throttle this: the correction is handed to
+     * the terminal and marked executed in the same request, so it is never
+     * pending by the time the next poll arrives. Without the cooldown this
+     * block added a device_commands row on every poll (~30 s) for as long as
+     * the counter stayed above zero.
+     *
+     * The clock is only ever built from the timezone of the office the terminal
+     * actually sits in. It deliberately does NOT fall back to
+     * config('app.timezone'): a terminal in Mexico whose office timezone is
+     * missing or generic would otherwise be ordered to set its clock to Jakarta
+     * time, obey, then read as skewed again on the next poll — and be corrected
+     * again, forever. Not correcting is the safe outcome; the office timezone
+     * showing up in the offices screen is the fix.
+     *
+     * @return bool whether a correction was queued
+     */
+    private function queueClockCorrectionIfNeeded(Device $device): bool
+    {
+        $cooldown = (int) config('adms.clock_correction_cooldown', 30);
+
+        $recentCorrection = $device->commands()
+            ->where('data', 'like', '%SET OPTIONS DateTime=%')
+            ->where('created_at', '>=', now()->subMinutes($cooldown))
+            ->exists();
+
+        if ($recentCorrection) {
+            return false;
+        }
+
+        $discrepancies = $device->getTimezoneDiscrepancyCount();
+
+        if ($discrepancies <= 0) {
+            return false;
+        }
+
+        $office = $device->oficina;
+
+        // No office, no usable timezone, or a generic one ("UTC", "+07:00"):
+        // there is no local clock to set, so do nothing rather than guess.
+        if (!$office || !$office->timezone || $office->timezoneIsGeneric()) {
+            Log::warning('getrequest: clock correction skipped, office has no local timezone', [
+                'sn' => $device->serial_number,
+                'idoficina' => $office?->idoficina,
+                'timezone' => $office?->timezone,
+                'discrepancies' => $discrepancies,
+            ]);
+
+            return false;
+        }
+
+        // Rows written before OficinaController started validating the field can
+        // hold a string PHP refuses ("UTC+7"). Reading it would throw, and this
+        // runs on a terminal's polling path, so treat it as "not set yet".
+        try {
+            new \DateTimeZone($office->timezone);
+        } catch (Throwable $e) {
+            Log::warning('getrequest: clock correction skipped, office timezone is not valid', [
+                'sn' => $device->serial_number,
+                'timezone' => $office->timezone,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+
+        app(AdmsCommandService::class)->queue(
+            $device,
+            AdmsProtocol::setDateTime(AdmsProtocol::encodeDateTime(Carbon::now($office->timezone))),
+            AdmsProtocol::TYPE_SET_DATETIME
+        );
+
+        Log::info('getrequest: clock correction queued', [
+            'sn' => $device->serial_number,
+            'timezone' => $office->timezone,
+            'discrepancies' => $discrepancies,
+        ]);
+
+        return true;
+    }
 
     public function quickStatus(Request $request)
     {

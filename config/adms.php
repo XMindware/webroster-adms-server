@@ -60,6 +60,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Clock correction
+    |--------------------------------------------------------------------------
+    |
+    | Seconds to wait before a terminal whose punches look skewed may be
+    | corrected again. A terminal polls every few seconds, and a correction is
+    | marked executed in the same response that hands it over, so without a
+    | cooldown a single skewed day would queue a fresh correction on every poll
+    | for as long as the counter stayed above zero.
+    |
+    | The clock is only ever built from the terminal's own office timezone; it
+    | is never taken from the application timezone. See
+    | iclockController::queueClockCorrectionIfNeeded().
+    |
+    */
+    'clock_correction_cooldown' => (int) env('ADMS_CLOCK_CORRECTION_COOLDOWN', 30),
+
+    /*
+    |--------------------------------------------------------------------------
     | Webhook delivery
     |--------------------------------------------------------------------------
     |
