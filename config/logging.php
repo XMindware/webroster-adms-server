@@ -118,16 +118,34 @@ return [
             'facility' => LOG_USER,
             'replace_placeholders' => true,
         ],
-            'request_log' => [
-            'driver' => 'single',
+
+        // RequestLogger writes here for every /iclock/ hit. The terminal polls
+        // getrequest roughly every 30s, so this file grows continuously and the
+        // "single" driver would never rotate it. Keep a bounded window instead.
+        'request_log' => [
+            'driver' => 'daily',
             'path' => storage_path('logs/request_response.log'),
             'level' => 'info',
+            'days' => 14,
         ],
-            '404_errors' => [
+
+        '404_errors' => [
             'driver' => 'single',
             'path' => storage_path('logs/404_errors.log'),
             'level' => 'warning',
         ],
+
+        // One line per webhook delivery: status code and how long the receiver
+        // took. This is the only place a failing receiver becomes visible - the
+        // terminal is answered before the POST happens, so it can never report
+        // the failure itself. See App\Jobs\SendWebhookJob.
+        'webhook' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/webhook.log'),
+            'level' => 'info',
+            'days' => 14,
+        ],
+
         'errorlog' => [
             'driver' => 'errorlog',
             'level' => env('LOG_LEVEL', 'debug'),

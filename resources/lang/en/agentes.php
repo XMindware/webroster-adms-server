@@ -35,4 +35,10 @@ return [
     'shortname' => 'Shortname',
     'fullname' => 'Fullname',
     'last_update' => 'Last Update',
+    'run_request' => 'Run Request',
+
+    // Response messages
+    'office_not_found' => 'Office not found.',
+    'station_unexpected_body' => 'Unexpected or empty response body from station.',
+    'station_http_error' => 'HTTP :status: :body',
 ];

@@ -1,9 +1,7 @@
 <?php
 
-use App\Http\Controllers\DeviceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\iclockController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,17 +13,10 @@ use App\Http\Controllers\iclockController;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
-// // handshake
-// Route::get('/iclock/cdata', [iclockController::class, 'handshake']);
-// // request dari device
-// Route::post('/iclock/cdata', [iclockController::class, 'receiveRecords']);
 
-// Route::get('/iclock/test', [iclockController::class, 'test']);
-// Route::get('/iclock/getrequest', [iclockController::class, 'getrequest']);
-
+// The iClock/ADMS endpoints a terminal calls live in routes/web.php: terminals
+// reach them by plain URL and carry no API token.
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
-
-Route::post('/agentes/bulk-upsert', [DeviceController::class, 'agentes.bulkUpsert']);

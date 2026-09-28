@@ -58,4 +58,27 @@ return [
     */
     'commands_per_request' => (int) env('ADMS_COMMANDS_PER_REQUEST', 20),
 
+    /*
+    | How long to wait before queueing another "set the clock" command for the
+    | same terminal, in minutes. The correction is marked executed as soon as it
+    | is handed to the terminal, so without a cooldown a terminal that stays out
+    | of sync gets a fresh device_commands row on every poll.
+    */
+    'clock_correction_cooldown' => (int) env('ADMS_CLOCK_CORRECTION_COOLDOWN', 30),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Webhook delivery
+    |--------------------------------------------------------------------------
+    |
+    | Seconds to wait for a device's webhook receiver to answer. The POST runs
+    | after the terminal has already been answered, so a slow receiver no
+    | longer delays the terminal - but it does hold a PHP worker for this long,
+    | which is the reason to keep it short.
+    |
+    | Delivery is logged to the "webhook" channel in config/logging.php.
+    |
+    */
+    'webhook_timeout' => (int) env('ADMS_WEBHOOK_TIMEOUT', 5),
+
 ];

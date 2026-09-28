@@ -30,9 +30,9 @@ class AuthController extends Controller
 
         $result = $user->save();
         if($result){
-            return back()->with('success','You have registered successfully.');
+            return back()->with('success', __('auth.registered_successfully'));
         } else {
-            return back()->with('fail','Something wrong!');
+            return back()->with('fail', __('auth.something_wrong'));
         }
     }
     ////Login
@@ -56,7 +56,7 @@ class AuthController extends Controller
             return redirect()->intended('devices'); // redirect to intended page
         }
     
-        return back()->with('fail', 'Email or password is incorrect.');
+        return back()->with('fail', __('auth.invalid_credentials'));
     }
     ///Logout
     public function logout(Request $request)
@@ -66,6 +66,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         
-        return redirect('login')->with('success', 'You have been logged out successfully.');
+        return redirect('login')->with('success', __('auth.logged_out_successfully'));
     }
 }

@@ -35,4 +35,10 @@ return [
     'shortname' => 'Nama Pendek',
     'fullname' => 'Nama Panjang',
     'last_update' => 'Update Terakhir',
+    'run_request' => 'Jalankan Permintaan',
+
+    // Pesan respons
+    'office_not_found' => 'Kantor tidak ditemukan.',
+    'station_unexpected_body' => 'Respons tidak terduga atau kosong dari stasiun.',
+    'station_http_error' => 'HTTP :status: :body',
 ];

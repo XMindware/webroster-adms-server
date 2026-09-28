@@ -68,9 +68,12 @@ return [
     | will be used by the PHP date and date-time functions. We have gone
     | ahead and set this to a sensible default for you out of the box.
     |
+    | Must be an IANA identifier. Offset-style values such as "UTC+7" are
+    | rejected by PHP/Carbon with InvalidTimeZoneException.
+    |
     */
 
-    'timezone' => 'America/Mexico_City',
+    'timezone' => 'Asia/Jakarta',
 
     /*
     |--------------------------------------------------------------------------

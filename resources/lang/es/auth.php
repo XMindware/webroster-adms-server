@@ -11,6 +11,8 @@ return [
     'remember_me' => 'Recuérdame',
     'forgot_password' => '¿Olvidó su Contraseña?',
     'username' => 'Usuario',
+    'full_name' => 'Nombre Completo',
+    'login_here' => '¡Inicie Sesión Aquí!',
     
     // Messages
     'login_successful' => 'Inicio de sesión exitoso.',
@@ -18,4 +20,11 @@ return [
     'registration_successful' => 'Registro exitoso.',
     'login_failed' => 'Credenciales inválidas.',
     'registration_failed' => 'Registro fallido. Por favor intente de nuevo.',
+
+    // Mensajes de respuesta
+    'registered_successfully' => 'Se ha registrado correctamente.',
+    'something_wrong' => '¡Algo salió mal!',
+    'invalid_credentials' => 'El correo o la contraseña son incorrectos.',
+    'logged_out_successfully' => 'Ha cerrado sesión correctamente.',
+    'login_required' => 'Debe iniciar sesión primero.',
 ];

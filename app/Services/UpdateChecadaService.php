@@ -9,13 +9,11 @@ use Illuminate\Support\Facades\Log;
 class UpdateChecadaService
 {
     protected $baseUrls;
-    
+
     protected $endpoint = '/checador/updateChecadaADMS';
 
     /**
-     * Constructor
-     *
-     * Inisialisasi service dan memuat konfigurasi API
+     * Load the API configuration.
      *
      * @author XMindware
      * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/UpdateChecadaService.php
@@ -23,41 +21,36 @@ class UpdateChecadaService
     public function __construct()
     {
         $this->baseUrls = config('services.apis');
-        
+
         if (!$this->baseUrls) {
-            throw new \Exception("API configuration for not found.");
+            throw new \Exception(__('devices.api_config_missing'));
         }
     }
 
     /**
-     * Get Data
-     *
-     * Mengambil data dari endpoint update menggunakan konfigurasi API pertama
+     * Fetch from the update endpoint using the first API configuration.
      *
      * @author XMindware
      * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/UpdateChecadaService.php
      */
     public function getData()
     {
-
         $response = Http::get($this->baseUrls[0] . $this->endpoint);
+
         return $response->json();
     }
 
     /**
-     * Post Data
-     *
-     * Mengirim data update checada ke endpoint API berdasarkan ID kantor dari konfigurasi file
+     * Send a punch update to the API endpoint of the office named in $data,
+     * resolved against the file configuration.
      *
      * @author XMindware
      * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/UpdateChecadaService.php
      */
     public function postData($data): object
     {
-        try{
-            
-            $currentAPI = (object)$this->baseUrls[$data['idoficina']];
-            // set headers
+        try {
+            $currentAPI = (object) $this->baseUrls[$data['idoficina']];
             $headers = [
                 'Authorization' => $currentAPI->token,
                 'Content-Type' => 'application/json',
@@ -65,33 +58,34 @@ class UpdateChecadaService
             ];
             $response = Http::withHeaders($headers)
                 ->post($currentAPI->base_url . $this->endpoint, $data);
-            Log::info("UpdateChecadaService: Response from API", [
+
+            Log::info('UpdateChecadaService: Response from API', [
                 'status' => $response->status(),
-                'data' => $response->json()
+                'data' => $response->json(),
             ]);
+
             if ($response->failed()) {
-                throw new \Exception("API request failed with status: " . $response->status());
+                throw new \Exception(__('devices.attendance_api_error', ['status' => $response->status()]));
             }
-            return (object)$response->json();
+
+            return (object) $response->json();
         } catch (\Exception $e) {
-            return (object)[
+            return (object) [
                 'status' => 'failed',
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ];
         }
     }
 
     /**
-     * Get Station Agents
-     *
-     * Mengambil data agen menggunakan token dari konfigurasi file
+     * Fetch the agent list using the token from the file configuration.
      *
      * @author mdestafadilah
      * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/UpdateChecadaService.php
      */
     public function getStationAgents(Oficina $oficina)
     {
-        $currentAPI = (object)$this->baseUrls[$oficina->idoficina];
+        $currentAPI = (object) $this->baseUrls[$oficina->idoficina];
         $headers = [
             'Authorization' => $currentAPI->token,
             'Content-Type' => 'multipart/form-data',
@@ -105,6 +99,7 @@ class UpdateChecadaService
 
         $response = Http::withHeaders($headers)
             ->post($oficina->public_url() . '/checador/getStationAgents', $form);
+
         return $response->json();
     }
 }

@@ -9,21 +9,7 @@ use Illuminate\Support\Facades\Log;
 class GetStationAgentsService
 {
     /**
-     * Constructor
-     *
-     * Inisialisasi service
-     *
-     * @author XMindware
-     * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/GetStationAgentsService.php
-     */
-    public function __construct()
-    {
-    }
-
-    /**
-     * Get Station Agents
-     *
-     * Mengambil data karyawan (agen) dari server remote untuk kantor tertentu
+     * Fetch the employee (agent) list for one office from its station API.
      *
      * @author XMindware
      * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/GetStationAgentsService.php
@@ -67,7 +53,10 @@ class GetStationAgentsService
 
                 return (object) [
                     'status' => 'failed',
-                    'message' => 'HTTP ' . $response->status() . ': ' . $response->body(),
+                    'message' => __('agentes.station_http_error', [
+                        'status' => $response->status(),
+                        'body' => $response->body(),
+                    ]),
                 ];
             }
 
@@ -81,7 +70,7 @@ class GetStationAgentsService
 
                 return (object) [
                     'status' => 'failed',
-                    'message' => 'Unexpected or empty response body from station.',
+                    'message' => __('agentes.station_unexpected_body'),
                 ];
             }
 

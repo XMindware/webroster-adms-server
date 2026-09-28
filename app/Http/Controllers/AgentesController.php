@@ -52,7 +52,7 @@ class AgentesController extends Controller
 
 			$request->session()->flash('pull_result', [
 				'failed' => true,
-				'message' => 'Office not found.',
+				'message' => __('agentes.office_not_found'),
 			]);
 
 			return redirect()->route('agentes.index');
@@ -105,7 +105,7 @@ class AgentesController extends Controller
 
             $request->session()->flash('purge_result', [
                 'failed' => true,
-                'message' => 'Office not found.',
+                'message' => __('agentes.office_not_found'),
             ]);
 
             return redirect()->route('agentes.index', [

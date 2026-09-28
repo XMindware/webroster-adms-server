@@ -2,23 +2,22 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
-use App\Models\User; // Import model User
 use Illuminate\Support\Facades\Hash;
 
 class UsersLoginSeeder extends Seeder
 {
     public function run(): void
     {
-        // Menghapus data lama (opsional)
+        // Wipe the table so the seeder can be re-run (optional).
         User::truncate();
 
-        // Membuat user admin
         User::create([
             'id' => 1,
             'name' => 'Administrator',
             'email' => 'admin@admin.com',
-            'password' => Hash::make('admin@adm'), // Menggunakan Hash agar lebih aman
+            'password' => Hash::make('admin@adm'), // hashed, never stored in plain text
             'email_verified_at' => now(),
         ]);
     }
