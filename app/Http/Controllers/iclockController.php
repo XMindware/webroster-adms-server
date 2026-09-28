@@ -62,28 +62,7 @@ class iclockController extends Controller
                 return 'ERROR: Device not found';
             }
 
-            // get timezone from office
-            $cityTimezone = $device->oficina ? $device->oficina->timezone : 'America/Mexico_City';
-            $timezone = $device->oficina ? $device->oficina->timezone : 'America/Mexico_City';
-
-            // set time() to gmt -6
-            $date = Carbon::now($cityTimezone);
-            $localTime = $date->format('Y-m-d H:i:s');
-
-            return "GET OPTION FROM: {$device->serial_number}\r\n" .
-                "Stamp=9999\r\n" .
-                "OpStamp=" . $localTime . "\r\n" .
-                "ErrorDelay=60\r\n" .
-                "Delay=30\r\n" .
-                "ResLogDay=18250\r\n" .
-                "ResLogDelCount=10000\r\n" .
-                "ResLogCount=50000\r\n" .
-                //"TransTimes=00:00;14:05\r\n" .
-                "TransInterval=4\r\n" .
-                "TransFlag=" . config('adms.trans_flag', '1111111000') . "\r\n" .
-                "TimeZone=" . $timezone . "\r\n" .
-                "Realtime=1\r\n" .
-                "Encrypt=0";
+            return $this->handshakeOptions((string) $request->input('SN'));
         } catch (Throwable $e) {
             $data['error'] = $e;
             DB::table('error_log')->insert($data);
@@ -91,6 +70,42 @@ class iclockController extends Controller
 
             return 'ERROR: ' . $e . "\n";
         }
+    }
+
+    /**
+     * The configuration block handed back to a terminal on handshake.
+     *
+     * Two fields used to be sent with the wrong type, which is a good way to
+     * make a terminal reject the whole options block:
+     *
+     *   OpStamp  is a unix timestamp, not a formatted date. It used to carry
+     *            "Y-m-d H:i:s".
+     *   TimeZone is an hour offset ("7"), not an IANA identifier. It used to
+     *            carry the office's "Asia/Jakarta". Both the upstream reference
+     *            implementation and the working x100c deployment omit the field
+     *            entirely, so it is left out here too. The office timezone is
+     *            still applied when attendance timestamps are interpreted.
+     *
+     * TransTimes was commented out; the reference sends it.
+     */
+    private function handshakeOptions(string $sn): string
+    {
+        return "GET OPTION FROM: {$sn}\r\n" .
+            "Stamp=9999\r\n" .
+            "OpStamp=" . time() . "\r\n" .
+            "ErrorDelay=60\r\n" .
+            "Delay=30\r\n" .
+            "ResLogDay=18250\r\n" .
+            "ResLogDelCount=10000\r\n" .
+            "ResLogCount=50000\r\n" .
+            "TransTimes=00:00;14:05\r\n" .
+            "TransInterval=4\r\n" .
+            // Positions 6/7 (EnrollFP, ChgFP) are what make the terminal
+            // upload a fingerprint template as soon as it is enrolled or
+            // changed. See config/adms.php.
+            "TransFlag=" . config('adms.trans_flag', '1111111000') . "\r\n" .
+            "Realtime=1\r\n" .
+            "Encrypt=0";
     }
 
 
