@@ -20,6 +20,7 @@ class Device extends Model
     protected $table = 'devices';
 
     protected $fillable = [
+        'name',
         'serial_number',
         'online',
         'idreloj',

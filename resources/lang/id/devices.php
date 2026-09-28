@@ -2,6 +2,7 @@
 
 return [
     'title' => 'Perangkat',
+    'index_title' => 'Perangkat biometrik',
     'create_device' => 'Buat Perangkat',
     'edit_device' => 'Edit Perangkat',
     'monitor_status' => 'Status Monitor',
@@ -73,4 +74,109 @@ return [
     'pull_nothing_queued' => 'Tidak ada yang diantrekan - penarikan yang sama masih menunggu untuk perangkat itu.',
     'push_queued' => ':count sidik jari diantrekan untuk :device.',
     'push_nothing_queued' => 'Tidak ada yang dikirim - perangkat sudah punya semua template (:skipped terkini).',
+
+    // Layar edit / detail
+    'show_title' => 'Perangkat Biometrik',
+    'model' => 'Model',
+    'select_office' => 'Pilih Kantor',
+    'delete_employee_title' => 'Hapus Data Karyawan dari Perangkat',
+    'delete_employee_hint' => 'Perintah hapus akan dikirim ke semua perangkat di kantor ini.',
+    'delete_employee_warning' => 'Ini akan mengantrekan perintah untuk menghapus pengguna dari perangkat biometrik. Tindakan ini tidak mudah dibatalkan dari server.',
+    'enter_pin_to_delete' => 'Masukkan PIN yang akan dihapus',
+    'delete_from_devices' => 'Hapus dari Perangkat',
+    'fix' => 'Perbaiki',
+
+    // Monitor perangkat
+    'device_status_monitor' => 'Monitor Status Perangkat',
+    'back_to_devices' => 'Kembali ke Perangkat',
+    'status_legend' => 'Keterangan Status',
+    'status_online' => 'Online (5 menit terakhir)',
+    'status_warning' => 'Peringatan (5-15 menit)',
+    'status_offline' => 'Offline (>15 menit)',
+    'status_unknown' => 'Tidak diketahui',
+    'last_checkin' => 'Check-in terakhir:',
+    'office_time' => 'Waktu kantor:',
+    'unknown_location' => 'Lokasi tidak diketahui',
+    'time_discrepancies_today' => 'Selisih waktu hari ini:',
+    'auto_refresh_notice' => 'Menyegarkan otomatis setiap 30 detik',
+
+    // Grafik aktivitas
+    'log_finger_title' => 'Log Sidik Jari',
+    'select_time_range' => 'Pilih rentang waktu:',
+    'range_1h' => '1 jam terakhir',
+    'range_6h' => '6 jam terakhir',
+    'range_1d' => '24 jam terakhir',
+    'range_7d' => '7 hari terakhir',
+    'range_30d' => '30 hari terakhir',
+    'range_90d' => '90 hari terakhir',
+    'range_all' => 'Semua',
+    'reports_per_minute' => 'Laporan per menit',
+    'reports_per_hour' => 'Laporan per jam',
+    'reports_per_day' => 'Laporan per hari',
+    'chart_reports' => 'Jumlah laporan',
+
+    // Pesan respons
+    'error_loading_monitor' => 'Gagal memuat monitor: :error',
+    'no_devices_for_office' => 'Tidak ada perangkat ditemukan untuk kantor ini',
+    'delete_command_queued' => 'Perintah menghapus karyawan :pin dikirim ke :count perangkat.',
+    'error_sending_delete_command' => 'Gagal mengirim perintah hapus',
+    'attendance_updated_successfully' => 'Data kehadiran berhasil diperbarui',
+    'attendance_record_not_found' => 'Data tidak ditemukan',
+    'attendance_error_no_response' => 'Gagal memproses data kehadiran: tidak ada respons dari API',
+    'attendance_error_processing' => 'Gagal memproses data kehadiran',
+    'attendance_error_failed_status' => 'Gagal memproses data kehadiran: :reason',
+    'attendance_status_failed' => 'status gagal',
+    'attendance_fixed_successfully' => 'Data kehadiran berhasil diperbaiki',
+    'attendance_api_error' => 'Permintaan API gagal dengan status: :status',
+    'api_config_missing' => 'Konfigurasi API tidak ditemukan.',
+    'value_error' => 'Galat',
+    'value_not_available' => 'N/A',
+
+    // Ambil info user
+    'get_user_info' => 'Ambil Info User',
+    'query_user_explainer' => 'Meminta satu terminal mengunggah ulang data satu karyawan. Hasilnya tidak langsung datang: perintah menunggu sampai terminal melakukan polling berikutnya, biasanya dalam satu menit bila perangkat online.',
+    'query_with_templates' => 'Sekaligus minta template sidik jarinya',
+    'query_with_templates_help' => 'Menambah satu kueri per slot jari. Biarkan tercentang untuk menarik data orang itu secara utuh.',
+    'query_user_queue' => 'Antrekan kueri',
+    'pin_required' => 'Isi PIN karyawan yang ingin dikueri.',
+    'query_queued' => ':count perintah diantrekan untuk PIN :pin di :device.',
+    'query_nothing_queued' => 'Tidak ada yang diantrekan - kueri yang sama masih menunggu di perangkat itu.',
+
+    // Set jam manual
+    'set_time' => 'Set jam',
+    'set_time_confirm' => 'Setel jam perangkat ini ke waktu kantor sekarang?',
+    'set_time_queued' => 'Perintah jam dikirim ke :device: :time (:timezone).',
+    'set_time_needs_timezone' => 'Tidak bisa menyetel jam :device: kantornya belum punya zona waktu sebenarnya (UTC, GMT, atau offset saja). Isi dulu zona waktu kantornya.',
+    'error_setting_time' => 'Gagal mengirim perintah jam.',
+
+    // Migrasi device
+    'migrate_device' => 'Migrasi Device',
+    'migration_explainer' => 'Memindahkan pendaftaran sebuah kantor ke terminal lain, misalnya saat unit diganti. Roster karyawan dan template sidik jari yang tersimpan diantrekan untuk perangkat tujuan, lalu diambil pada siklus polling-nya sendiri.',
+    'migration_source' => 'Perangkat asal',
+    'migration_source_help' => 'Terminal yang diganti. Harus berada di kantor yang sama dengan perangkat tujuan.',
+    'migration_target' => 'Perangkat tujuan',
+    'migration_target_help' => 'Terminal yang akan menerima pendaftaran. Daftarkan dulu kalau belum muncul di daftar.',
+    'migration_warning' => 'Ini mengantrekan perintah yang membuat user dan menulis template sidik jari di terminal tujuan. Perangkat asal tidak diubah - mengosongkannya adalah tindakan terpisah.',
+    'migration_queue' => 'Antrekan migrasi',
+    'migration_queued' => 'Migrasi dari :source ke :target diantrekan: :employees data user dan :templates template sidik jari.',
+    'migration_same_device' => 'Perangkat asal dan tujuan sama.',
+    'migration_different_office' => 'Perangkat asal dan tujuan berada di kantor berbeda. Roster maupun template difilter per kantor, jadi ini tidak bisa berjalan.',
+    'migration_failed' => 'Migrasi gagal: :error',
+
+    // Remove individual fingers from one terminal
+    'remove_fingerprints' => 'Hapus Sidik Jari',
+    'remove_fingerprints_explainer' => 'Menghapus sidik jari tertentu dari satu terminal tanpa menyentuh data karyawannya: nama, kartu, sandi, dan grup tetap ada. Tidak ada yang langsung terjadi: perintahnya menunggu sampai terminal berikutnya menghubungi server, biasanya dalam satu menit kalau terminalnya online.',
+    'remove_fingerprints_warning' => 'Sidik jari yang dihapus tidak lagi berfungsi di terminal itu. Template yang kita simpan sekaligus ditandai tidak berlaku, jadi pengiriman berikutnya tidak bisa mengembalikannya diam-diam.',
+    'finger' => 'Jari',
+    'finger_n' => 'Jari :n',
+    'finger_all' => 'Semua jari (0-9)',
+    'finger_help' => 'Nomor jari sesuai penomoran terminal (FID 0-9). "Semua jari" mengantre satu perintah per nomor, karena protokolnya tidak punya wildcard.',
+    'finger_required' => 'Pilih jari yang akan dihapus.',
+    'remove_fingerprints_queue' => 'Antre penghapusan',
+    'remove_fingerprints_queued' => ':count perintah diantrekan untuk PIN :pin di :device. :invalidated template tersimpan ditandai tidak berlaku.',
+    'remove_nothing_queued' => 'Tidak ada yang diantrekan - penghapusan yang sama sudah menunggu di device itu.',
+
+    'invalid_timezone' => "Zona waktu tidak valid: ':value'. Gunakan pengenal IANA, "
+        . "misalnya Asia/Jakarta (UTC+7) atau America/Mexico_City (UTC-6). "
+        . "Format seperti UTC+7 tidak diterima.",
 ];

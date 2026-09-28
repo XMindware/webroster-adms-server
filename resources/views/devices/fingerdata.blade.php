@@ -20,19 +20,7 @@
 
             <div class="form-group mb-3">
                 <label for="device">{{ __('devices.device') }}</label>
-                <select name="device" id="device" class="form-control" required>
-                    @foreach ($devices as $device)
-                        <option value="{{ $device->id }}">
-                            {{ $device->name ?: $device->serial_number }}
-                            @if ($device->oficina)
-                                — {{ $device->oficina->ubicacion }}
-                            @endif
-                            @if (!$device->online || abs($device->online->diffInMinutes(now())) > 5)
-                                ({{ __('devices.offline_warning') }})
-                            @endif
-                        </option>
-                    @endforeach
-                </select>
+                @include('devices._device_select', ['name' => 'device'])
             </div>
 
             <fieldset class="mb-3">
