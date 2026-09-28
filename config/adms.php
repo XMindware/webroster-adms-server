@@ -58,4 +58,37 @@ return [
     */
     'commands_per_request' => (int) env('ADMS_COMMANDS_PER_REQUEST', 20),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Clock correction
+    |--------------------------------------------------------------------------
+    |
+    | Seconds to wait before a terminal whose punches look skewed may be
+    | corrected again. A terminal polls every few seconds, and a correction is
+    | marked executed in the same response that hands it over, so without a
+    | cooldown a single skewed day would queue a fresh correction on every poll
+    | for as long as the counter stayed above zero.
+    |
+    | The clock is only ever built from the terminal's own office timezone; it
+    | is never taken from the application timezone. See
+    | iclockController::queueClockCorrectionIfNeeded().
+    |
+    */
+    'clock_correction_cooldown' => (int) env('ADMS_CLOCK_CORRECTION_COOLDOWN', 30),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Webhook delivery
+    |--------------------------------------------------------------------------
+    |
+    | Seconds to wait for a device's webhook receiver to answer. The POST runs
+    | after the terminal has already been answered, so a slow receiver no
+    | longer delays the terminal - but it does hold a PHP worker for this long,
+    | which is the reason to keep it short.
+    |
+    | Delivery is logged to the "webhook" channel in config/logging.php.
+    |
+    */
+    'webhook_timeout' => (int) env('ADMS_WEBHOOK_TIMEOUT', 5),
+
 ];

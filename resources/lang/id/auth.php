@@ -11,6 +11,8 @@ return [
     'remember_me' => 'Ingat Saya',
     'forgot_password' => 'Lupa Kata Sandi?',
     'username' => 'Nama Pengguna',
+    'full_name' => 'Nama Lengkap',
+    'login_here' => 'Masuk di Sini!',
     
     // Messages
     'login_successful' => 'Login berhasil.',

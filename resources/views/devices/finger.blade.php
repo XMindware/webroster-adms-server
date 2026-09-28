@@ -2,12 +2,12 @@
 
 @section('content')
     <div class="container">
-        <h2>Log Finger</h2>
+        <h2>{{ __('devices.log_finger_title') }}</h2>
         <table class="table table-bordered data-table" id="fingers-log">
             <thead>
                 <tr>
-                    <th>Id</th>
-                    <th>Data</th>
+                    <th>{{ __('common.id') }}</th>
+                    <th>{{ __('common.data') }}</th>
                 </tr>
             </thead>
             <tbody>

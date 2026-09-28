@@ -68,9 +68,15 @@ return [
     | will be used by the PHP date and date-time functions. We have gone
     | ahead and set this to a sensible default for you out of the box.
     |
+    | This is the timezone Eloquent writes created_at/updated_at in. It is read
+    | in more places than just the handshake: Device::officeDayWindow() uses it
+    | to express an office's local day for the discrepancy count, and the
+    | DeviceLog/FingerLog accessors use it to render timestamps. Override it per
+    | deployment with APP_TIMEZONE rather than editing it here.
+    |
     */
 
-    'timezone' => 'America/Mexico_City',
+    'timezone' => env('APP_TIMEZONE', 'Asia/Jakarta'),
 
     /*
     |--------------------------------------------------------------------------

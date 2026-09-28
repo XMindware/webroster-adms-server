@@ -35,4 +35,5 @@ return [
     'shortname' => 'Nama Pendek',
     'fullname' => 'Nama Panjang',
     'last_update' => 'Update Terakhir',
+    'run_request' => 'Jalankan Permintaan',
 ];

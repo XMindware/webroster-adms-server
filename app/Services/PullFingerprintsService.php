@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Agente;
 use App\Models\Device;
 use App\Models\Oficina;
+use App\Services\Adms\AdmsCommandService;
+use App\Services\Adms\AdmsProtocol;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -32,15 +34,19 @@ use Illuminate\Support\Facades\Log;
  */
 class PullFingerprintsService
 {
-    public const TYPE_CHECK = 'pull_check';
-    public const TYPE_QUERY_FP = 'pull_fingertmp';
-    public const TYPE_QUERY_USER = 'pull_userinfo';
+    /*
+     * Aliases for the canonical AdmsProtocol constants. Kept so callers and
+     * rows already stored under these names keep working.
+     */
+    public const TYPE_CHECK = AdmsProtocol::TYPE_PULL_CHECK;
+    public const TYPE_QUERY_FP = AdmsProtocol::TYPE_PULL_FINGERTMP;
+    public const TYPE_QUERY_USER = AdmsProtocol::TYPE_PULL_USERINFO;
 
-    protected CommandIdService $commandIdService;
+    protected AdmsCommandService $commands;
 
-    public function __construct(?CommandIdService $commandIdService = null)
+    public function __construct(?AdmsCommandService $commands = null)
     {
-        $this->commandIdService = $commandIdService ?? app(CommandIdService::class);
+        $this->commands = $commands ?? app(AdmsCommandService::class);
     }
 
     /**
@@ -54,7 +60,7 @@ class PullFingerprintsService
 
         $queued += $this->queue(
             $device,
-            fn (int $cmdId) => "C:{$cmdId}:CHECK",
+            AdmsProtocol::check(),
             self::TYPE_CHECK,
             'device:' . $device->id
         );
@@ -62,7 +68,7 @@ class PullFingerprintsService
         if (config('adms.query_userinfo', true)) {
             $queued += $this->queue(
                 $device,
-                fn (int $cmdId) => "C:{$cmdId}:DATA QUERY USERINFO PIN=",
+                AdmsProtocol::queryUserinfo(),
                 self::TYPE_QUERY_USER,
                 'device:' . $device->id
             );
@@ -119,7 +125,7 @@ class PullFingerprintsService
 
                 $queued += $this->queue(
                     $device,
-                    fn (int $cmdId) => "C:{$cmdId}:DATA QUERY FINGERTMP PIN={$pin}\tFingerID={$fid}",
+                    AdmsProtocol::queryFingerTmp($pin, $fid),
                     self::TYPE_QUERY_FP,
                     "PIN:{$pin}/FID:{$fid}"
                 );
@@ -158,6 +164,51 @@ class PullFingerprintsService
     }
 
     /**
+     * Ask one terminal for a single employee's user record.
+     *
+     * This is the "get info user" operation: `DATA QUERY USERINFO PIN=x` makes
+     * the terminal re-upload that user's record, which lands in
+     * fingerprint_templates / agentes through the normal /iclock/cdata path.
+     *
+     * Distinct from bulk(), which asks for the whole roster with a trailing
+     * empty PIN. It is also distinct from forPin(), which only asks for
+     * templates — a terminal can hold a user record whose templates were never
+     * enrolled, and that is a case worth being able to inspect.
+     *
+     * $withTemplates additionally queues the ten targeted finger queries, which
+     * is what an operator usually wants when they say "pull this person".
+     *
+     * @return int number of commands queued
+     */
+    public function userInfo(Device $device, $pin, bool $withTemplates = true, ?array $fids = null): int
+    {
+        if ($pin === null || $pin === '') {
+            return 0;
+        }
+
+        $queued = $this->queue(
+            $device,
+            AdmsProtocol::queryUserinfo($pin),
+            self::TYPE_QUERY_USER,
+            "PIN:{$pin}"
+        );
+
+        if ($withTemplates) {
+            $queued += $this->forPin($device, $pin, $fids);
+        }
+
+        Log::info('PullFingerprintsService: user info pull queued', [
+            'device_id' => $device->id,
+            'sn' => $device->serial_number,
+            'pin' => $pin,
+            'with_templates' => $withTemplates,
+            'commands' => $queued,
+        ]);
+
+        return $queued;
+    }
+
+    /**
      * Pull across every device in an office.
      *
      * @param array<int, int>|null $fids
@@ -184,42 +235,17 @@ class PullFingerprintsService
     }
 
     /**
-     * Create one command unless an identical one is already pending for this
+     * Queue one command unless an identical one is already pending for this
      * device — a second click should not double the queue.
      *
-     * @param callable(int): string $builder
+     * @param  string $payload an AdmsProtocol payload builder, unframed
      * @return int 1 when queued, 0 when skipped as duplicate
      */
-    protected function queue(Device $device, callable $builder, string $type, ?string $reference = null): int
+    protected function queue(Device $device, string $payload, string $type, ?string $reference = null): int
     {
-        $alreadyPending = $device->commands()
-            ->pending()
-            ->where('type', $type)
-            ->when($reference !== null, fn ($q) => $q->where('reference', $reference))
-            ->exists();
+        $command = $this->commands->queue($device, $payload, $type, $reference, skipIfPending: true);
 
-        if ($alreadyPending) {
-            Log::debug('PullFingerprintsService: command already pending, skipping', [
-                'device_id' => $device->id,
-                'type' => $type,
-                'reference' => $reference,
-            ]);
-
-            return 0;
-        }
-
-        $cmdId = $this->commandIdService->getNextCmdId();
-
-        $device->commands()->create([
-            'device_id' => $device->id,
-            'command' => $cmdId,
-            'type' => $type,
-            'reference' => $reference,
-            'data' => $builder($cmdId),
-            'executed_at' => null,
-        ]);
-
-        return 1;
+        return $command !== null ? 1 : 0;
     }
 
     /**

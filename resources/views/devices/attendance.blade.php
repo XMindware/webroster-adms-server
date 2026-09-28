@@ -38,7 +38,7 @@
         <table class="table table-bordered data-table">
             <thead class="thead-dark">
                 <tr>
-                    <th>ID</th>
+                    <th>{{ __('common.id') }}</th>
                     <th>{{ __('attendance.device') }}</th>
                     <th>{{ __('attendance.employee_id') }}</th>
                     <th>{{ __('attendance.employee') }}</th>
@@ -58,7 +58,7 @@
                         <td>{!! $attendance->getEmployee()?->fullname ?? '<em>Unknown</em>' !!}</td>
                         <td>{{ $attendance->timestamp }}</td>
                         <td>{{ $attendance->updated_at }}</td>
-                        <td class="{{ $attendance->updated_at->diffInMinutes($attendance->timestamp) > 3 ? 'text-danger' : '' }}">
+                        <td class="{{ abs($attendance->updated_at->diffInMinutes($attendance->timestamp)) > 3 ? 'text-danger' : '' }}">
                             {{ $attendance->updated_at->diffForHumans($attendance->timestamp) }}
                         </td>
                         <td>{{ $attendance->response_uniqueid }}</td>
@@ -66,7 +66,7 @@
                             <a href="{{ route('devices.attendance.edit', $attendance->id) }}" class="btn btn-primary">Edit</a>
                         </td>
                         <td>
-                            <button onclick="fixAttendance({{ $attendance->id }}, this)" class="btn btn-primary">Fix</button>
+                            <button onclick="fixAttendance({{ $attendance->id }}, this)" class="btn btn-primary">{{ __('devices.fix') }}</button>
                         </td>
                     </tr>
                 @endforeach

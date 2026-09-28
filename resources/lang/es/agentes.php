@@ -35,4 +35,5 @@ return [
     'shortname' => 'Shortname',
     'fullname' => 'Fullname',
     'last_update' => 'Last Update',
+    'run_request' => 'Ejecutar Solicitud',
 ];
