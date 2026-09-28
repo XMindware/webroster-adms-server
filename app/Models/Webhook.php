@@ -41,4 +41,16 @@ class Webhook extends Model
     {
         return $this->belongsTo(Device::class, 'device_id');
     }
+
+    /**
+     * Every attempt made through this webhook, the failed ones included.
+     *
+     * Rows outlive the webhook itself (webhook_id becomes null on delete), so
+     * this relation only ever covers the deliveries whose configuration still
+     * exists.
+     */
+    public function deliveries()
+    {
+        return $this->hasMany(WebhookDelivery::class, 'webhook_id');
+    }
 }

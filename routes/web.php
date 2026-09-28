@@ -104,6 +104,7 @@ Route::middleware(['auth'])
         Route::get('webhooks/create', 'create')->name('webhooks.create');
         Route::post('webhooks/store', 'store')->name('webhooks.store');
         Route::get('webhooks/{id}/edit', 'edit')->name('webhooks.edit');
+        Route::get('webhooks/{id}/deliveries', 'deliveries')->name('webhooks.deliveries');
         Route::post('webhooks/{id}/update', 'update')->name('webhooks.update');
         Route::post('webhooks/{id}/secret', 'regenerateSecret')->name('webhooks.secret');
         Route::get('webhooks/delete', 'delete')->name('webhooks.delete');

@@ -26,4 +26,18 @@ return [
     'secret_help' => 'Cada envío incluye X-Webhook-Signature: HMAC-SHA256 de "{timestamp}.{cuerpo sin procesar}" con este secreto, más X-Webhook-Timestamp. Rechace marcas de tiempo antiguas para evitar repeticiones.',
     'regenerate_secret' => 'Regenerar secreto',
     'secret_regenerated' => 'Secreto de firma regenerado',
+
+    // Historial de envíos
+    'delivery_history' => 'Historial de envíos',
+    'delivery_history_for' => 'Envíos a :device',
+    'view_deliveries' => 'Historial',
+    'back_to_webhooks' => 'Volver a webhooks',
+    'no_deliveries' => 'Todavía no hay envíos registrados.',
+    'result' => 'Resultado',
+    'delivered' => 'Entregado',
+    'failed' => 'Fallido',
+    'records' => 'Registros',
+    'attempt' => 'Intento',
+    'duration' => 'Duración',
+    'error' => 'Error',
 ];

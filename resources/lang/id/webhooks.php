@@ -26,4 +26,18 @@ return [
     'secret_help' => 'Setiap pengiriman menyertakan X-Webhook-Signature: HMAC-SHA256 dari "{timestamp}.{body mentah}" dengan rahasia ini, plus X-Webhook-Timestamp. Tolak timestamp yang lebih tua dari beberapa menit untuk mencegah replay.',
     'regenerate_secret' => 'Buat ulang rahasia',
     'secret_regenerated' => 'Rahasia penanda tangan berhasil dibuat ulang',
+
+    // Riwayat pengiriman
+    'delivery_history' => 'Riwayat pengiriman',
+    'delivery_history_for' => 'Pengiriman ke :device',
+    'view_deliveries' => 'Riwayat',
+    'back_to_webhooks' => 'Kembali ke webhook',
+    'no_deliveries' => 'Belum ada pengiriman yang tercatat.',
+    'result' => 'Hasil',
+    'delivered' => 'Terkirim',
+    'failed' => 'Gagal',
+    'records' => 'Record',
+    'attempt' => 'Percobaan',
+    'duration' => 'Durasi',
+    'error' => 'Kesalahan',
 ];

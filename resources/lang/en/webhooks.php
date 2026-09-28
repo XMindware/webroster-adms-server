@@ -26,4 +26,18 @@ return [
     'secret_help' => 'Every delivery carries X-Webhook-Signature: HMAC-SHA256 of "{timestamp}.{raw body}" keyed with this secret, plus X-Webhook-Timestamp. Reject timestamps older than a few minutes to stop replays.',
     'regenerate_secret' => 'Regenerate secret',
     'secret_regenerated' => 'Signing secret regenerated',
+
+    // Delivery history
+    'delivery_history' => 'Delivery history',
+    'delivery_history_for' => 'Deliveries to :device',
+    'view_deliveries' => 'History',
+    'back_to_webhooks' => 'Back to webhooks',
+    'no_deliveries' => 'No deliveries recorded yet.',
+    'result' => 'Result',
+    'delivered' => 'Delivered',
+    'failed' => 'Failed',
+    'records' => 'Records',
+    'attempt' => 'Attempt',
+    'duration' => 'Duration',
+    'error' => 'Error',
 ];

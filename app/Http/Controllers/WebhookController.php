@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Device;
 use App\Models\Webhook;
+use App\Models\WebhookDelivery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -14,6 +15,31 @@ class WebhookController extends Controller
         $title = __('webhooks.title');
         $webhooks = Webhook::with('device')->orderBy('id', 'DESC')->get();
         return view('webhooks.index', compact('webhooks', 'title'));
+    }
+
+    /**
+     * Read-only history of what was POSTed to this webhook, newest first.
+     *
+     * Rows are written by SendWebhookJob through WebhookDeliveryLogger; nothing
+     * on this screen writes. It exists because the alternative - reading
+     * storage/logs/webhook.log over SSH - is not available to whoever is
+     * looking at a terminal that "is not sending anything".
+     */
+    public function deliveries($id)
+    {
+        $webhook = Webhook::with('device')->find($id);
+
+        if (!$webhook) {
+            return redirect()->route('webhooks.index')->with('error', __('webhooks.not_found'));
+        }
+
+        $title = __('webhooks.delivery_history');
+
+        $deliveries = WebhookDelivery::where('webhook_id', $webhook->id)
+            ->orderByDesc('id')
+            ->paginate(50);
+
+        return view('webhooks.deliveries', compact('webhook', 'deliveries', 'title'));
     }
 
     public function create(Request $request)

@@ -28,6 +28,7 @@
                         <td class="text-wrap">{{ $webhook->url }}</td>
                         <td>{{ $webhook->updated_at?->diffForHumans() }}</td>
                         <td>
+                            <a href="{{ route('webhooks.deliveries', ['id' => $webhook->id ]) }}" class="btn btn-secondary">{{ __('webhooks.view_deliveries') }}</a>
                             <a href="{{ route('webhooks.edit', ['id' => $webhook->id ]) }}" class="btn btn-primary">{{ __('common.edit') }}</a>
                             <a href="{{ route('webhooks.delete', ['id' => $webhook->id ]) }}" class="btn btn-danger delete-btn">{{ __('common.delete') }}</a>
                         </td>

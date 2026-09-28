@@ -779,16 +779,16 @@ class iclockController extends Controller
             return;
         }
 
-        $url = $webhook->url;
-        $sn = $device->serial_number;
-        $secret = $webhook->secret;
+        // The webhook id travels with the job so the delivery it is about to
+        // make can be tied back to its configuration in the history screen.
+        $delivery = [$webhook->url, $attLog, $device->serial_number, $webhook->secret, $webhook->id];
 
         if (config('queue.default') === 'sync') {
-            SendWebhookJob::dispatchAfterResponse($url, $attLog, $sn, $secret);
+            SendWebhookJob::dispatchAfterResponse(...$delivery);
 
             return;
         }
 
-        SendWebhookJob::dispatch($url, $attLog, $sn, $secret);
+        SendWebhookJob::dispatch(...$delivery);
     }
 }
