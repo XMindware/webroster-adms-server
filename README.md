@@ -28,13 +28,19 @@ It is built on Laravel.
 ## 📸 Screenshots
 
 Device Connected
-![App Screenshot](Screenshot_7.png)
+![Device connected — Biometric Devices list](docs/connected.png)
+Device Status Monitor
+![Device status monitor](docs/monitoring-device.png)
 Attendance Recorded
-![App Screenshot](Screenshot_8.png)
+![Attendance log with timestamps and discrepancies](docs/attendance.png)
 Device Log
-![App Screenshot](Screenshot_9.png)
-Attendence Log
-![App Screenshot](Screenshot_10.png)
+![Device request log showing getrequest/cdata calls](docs/log-perangkat.png)
+Attendance Log
+![Fingerprint upload log entries per device](docs/log-sidik-jari.png)
+Multiple Offices
+![Multiple Offices](docs/cabang.png)
+Webhook Supports
+![Webhook Supports](docs/webhook.png)
 
 ## 🖥️ Device Support
 
@@ -190,8 +196,8 @@ Every attempt writes one line to the `webhook` channel
 receiver took:
 
 ```
-[2026-09-23 03:10:00] webhook.INFO: webhook delivered {"url":"https://...","sn":"6339151200543","records":2,"status":200,"duration_ms":84}
-[2026-09-23 03:11:00] webhook.ERROR: webhook rejected {"url":"https://...","sn":"6339151200543","records":2,"status":500,"duration_ms":31}
+[2026-09-23 03:10:00] webhook.INFO: webhook delivered {"url":"https://...","sn":"*************","records":2,"status":200,"duration_ms":84}
+[2026-09-23 03:11:00] webhook.ERROR: webhook rejected {"url":"https://...","sn":"*************","records":2,"status":500,"duration_ms":31}
 ```
 
 That log is the only place a failing receiver becomes visible: the terminal is
@@ -253,7 +259,7 @@ Leaving one in place costs two things:
 
 ```
 getrequest: clock correction skipped, office has no local timezone
-{"sn":"6339151200543","idoficina":3,"timezone":"UTC","discrepancies":12}
+{"sn":"*************","idoficina":3,"timezone":"UTC","discrepancies":12}
 ```
 
 Corrections that *are* queued are rate-limited by
