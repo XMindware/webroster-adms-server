@@ -2,6 +2,7 @@
 
 return [
     'title' => 'Dispositivos',
+    'index_title' => 'Dispositivos biométricos',
     'create_device' => 'Crear Dispositivo',
     'edit_device' => 'Editar Dispositivo',
     'monitor_status' => 'Estado del Monitor',
@@ -73,4 +74,109 @@ return [
     'pull_nothing_queued' => 'No se encoló nada: ya hay una descarga idéntica pendiente para ese biométrico.',
     'push_queued' => ':count huella(s) encolada(s) para :device.',
     'push_nothing_queued' => 'Nada que enviar: el biométrico ya tiene todas las plantillas guardadas (:skipped al día).',
+
+    // Pantallas de edición / detalle
+    'show_title' => 'Dispositivo Biométrico',
+    'model' => 'Modelo',
+    'select_office' => 'Seleccionar Oficina',
+    'delete_employee_title' => 'Eliminar Registro de Empleado del Dispositivo',
+    'delete_employee_hint' => 'El comando de eliminación se enviará a todos los dispositivos de esta oficina.',
+    'delete_employee_warning' => 'Esto encolará un comando para quitar al usuario de los biométricos. Esta acción no se puede deshacer fácilmente desde el servidor.',
+    'enter_pin_to_delete' => 'Ingrese el PIN a eliminar',
+    'delete_from_devices' => 'Eliminar de los Dispositivos',
+    'fix' => 'Corregir',
+
+    // Monitor de dispositivos
+    'device_status_monitor' => 'Monitor de Estado de Dispositivos',
+    'back_to_devices' => 'Volver a Dispositivos',
+    'status_legend' => 'Leyenda de Estado',
+    'status_online' => 'En línea (últimos 5 min)',
+    'status_warning' => 'Advertencia (5-15 min)',
+    'status_offline' => 'Sin conexión (>15 min)',
+    'status_unknown' => 'Desconocido',
+    'last_checkin' => 'Último registro:',
+    'office_time' => 'Hora de la oficina:',
+    'unknown_location' => 'Ubicación desconocida',
+    'time_discrepancies_today' => 'Desfases de hoy:',
+    'auto_refresh_notice' => 'Actualizando automáticamente cada 30 segundos',
+
+    // Gráfico de actividad
+    'log_finger_title' => 'Registro de Huella',
+    'select_time_range' => 'Seleccione el rango de tiempo:',
+    'range_1h' => 'Última 1 hora',
+    'range_6h' => 'Últimas 6 horas',
+    'range_1d' => 'Últimas 24 horas',
+    'range_7d' => 'Últimos 7 días',
+    'range_30d' => 'Últimos 30 días',
+    'range_90d' => 'Últimos 90 días',
+    'range_all' => 'Todo',
+    'reports_per_minute' => 'Reportes por minuto',
+    'reports_per_hour' => 'Reportes por hora',
+    'reports_per_day' => 'Reportes por día',
+    'chart_reports' => 'Número de reportes',
+
+    // Mensajes de respuesta
+    'error_loading_monitor' => 'Error al cargar el monitor: :error',
+    'no_devices_for_office' => 'No se encontraron dispositivos para esta oficina',
+    'delete_command_queued' => 'Comando para eliminar al usuario :pin enviado a :count dispositivo(s).',
+    'error_sending_delete_command' => 'Error al enviar el comando de eliminación',
+    'attendance_updated_successfully' => 'Registro de asistencia actualizado correctamente',
+    'attendance_record_not_found' => 'Registro no encontrado',
+    'attendance_error_no_response' => 'Error al procesar el registro de asistencia: no hay respuesta de la API',
+    'attendance_error_processing' => 'Error al procesar el registro de asistencia',
+    'attendance_error_failed_status' => 'Error al procesar el registro de asistencia: :reason',
+    'attendance_status_failed' => 'estado fallido',
+    'attendance_fixed_successfully' => 'Registro de asistencia corregido correctamente',
+    'attendance_api_error' => 'La solicitud a la API falló con estado: :status',
+    'api_config_missing' => 'No se encontró la configuración de la API.',
+    'value_error' => 'Error',
+    'value_not_available' => 'N/D',
+
+    // Obtener información del usuario
+    'get_user_info' => 'Obtener información del usuario',
+    'query_user_explainer' => 'Pide a un terminal que vuelva a subir el registro de un solo empleado. No llega de inmediato: el comando espera hasta que el terminal consulte al servidor, normalmente dentro de un minuto si está en línea.',
+    'query_with_templates' => 'Pedir también sus plantillas de huella',
+    'query_with_templates_help' => 'Añade una consulta por cada dedo. Déjalo activado para traer a la persona completa.',
+    'query_user_queue' => 'Encolar consulta',
+    'pin_required' => 'Introduce el PIN del empleado que quieres consultar.',
+    'query_queued' => ':count comando(s) encolado(s) para el PIN :pin en :device.',
+    'query_nothing_queued' => 'Nada encolado: ya hay una consulta idéntica pendiente para ese dispositivo.',
+
+    // Ajustar la hora a demanda
+    'set_time' => 'Ajustar hora',
+    'set_time_confirm' => '¿Ajustar ahora el reloj de este dispositivo a la hora de la oficina?',
+    'set_time_queued' => 'Comando de hora enviado a :device: :time (:timezone).',
+    'set_time_needs_timezone' => 'No se puede ajustar la hora de :device: su oficina no tiene una zona horaria real (UTC, GMT o un desplazamiento simple). Configura primero la zona horaria de la oficina.',
+    'error_setting_time' => 'Error al enviar el comando de hora.',
+
+    // Migración de dispositivo
+    'migrate_device' => 'Migrar dispositivo',
+    'migration_explainer' => 'Traslada la inscripción de una oficina a otro terminal, por ejemplo cuando se reemplaza un equipo. El personal y las plantillas de huella almacenadas se encolan para el destino, que las recoge en su propio ciclo de consulta.',
+    'migration_source' => 'Dispositivo de origen',
+    'migration_source_help' => 'El terminal que se reemplaza. Debe pertenecer a la misma oficina que el destino.',
+    'migration_target' => 'Dispositivo de destino',
+    'migration_target_help' => 'El terminal que recibirá la inscripción. Regístralo primero si aún no aparece en la lista.',
+    'migration_warning' => 'Esto encola comandos que crean usuarios y escriben plantillas de huella en el terminal de destino. El dispositivo de origen no se toca: vaciarlo es una acción aparte.',
+    'migration_queue' => 'Encolar migración',
+    'migration_queued' => 'Migración de :source a :target encolada: :employees registro(s) de usuario y :templates plantilla(s) de huella.',
+    'migration_same_device' => 'El origen y el destino son el mismo dispositivo.',
+    'migration_different_office' => 'El origen y el destino pertenecen a oficinas distintas. Tanto el personal como las plantillas se filtran por oficina, así que esto no puede funcionar.',
+    'migration_failed' => 'La migración falló: :error',
+
+    // Remove individual fingers from one terminal
+    'remove_fingerprints' => 'Eliminar huellas',
+    'remove_fingerprints_explainer' => 'Elimina huellas concretas de un terminal y deja intacto el registro del empleado: nombre, tarjeta, contraseña y grupo se mantienen. Nada ocurre de inmediato: el comando espera a que el terminal consulte al servidor, normalmente dentro de un minuto si está en línea.',
+    'remove_fingerprints_warning' => 'La huella eliminada deja de funcionar en ese terminal. La plantilla que guardamos se marca como no válida al mismo tiempo, así que un envío posterior no puede devolverla sin avisar.',
+    'finger' => 'Dedo',
+    'finger_n' => 'Dedo :n',
+    'finger_all' => 'Todos los dedos (0-9)',
+    'finger_help' => 'El índice del dedo tal como lo numera el terminal (FID 0-9). "Todos los dedos" encola un comando por índice, porque el protocolo no tiene comodín.',
+    'finger_required' => 'Elige qué dedo eliminar.',
+    'remove_fingerprints_queue' => 'Encolar eliminación',
+    'remove_fingerprints_queued' => ':count comando(s) en cola para el PIN :pin en :device. :invalidated plantilla(s) guardada(s) marcada(s) como no válida(s).',
+    'remove_nothing_queued' => 'Nada en cola: ya hay una eliminación idéntica pendiente para ese dispositivo.',
+
+    'invalid_timezone' => "Zona horaria no válida: ':value'. Usa un identificador IANA, "
+        . "por ejemplo Asia/Jakarta (UTC+7) o America/Mexico_City (UTC-6). "
+        . "No se aceptan formatos como UTC+7.",
 ];

@@ -17,6 +17,7 @@ use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\iclockController;
 use App\Http\Controllers\AgentesController;
+use App\Http\Controllers\WebhookController;
 
 Route::controller(AuthController::class)->group(function(){
     Route::get('/registration','registration')->middleware('isLoggedIn');
@@ -53,6 +54,16 @@ Route::middleware(['auth'])
         Route::post('devices/retrieve/fingerdata', 'runRetrieveFingerData')->name('devices.runRetrieveFingerData');
         Route::get('devices/{id}/pull-fingerprints', 'pullFingerprints')->name('devices.pullFingerprints');
         Route::post('devices/{id}/push-fingerprints', 'pushFingerprints')->name('devices.pushFingerprints');
+        // Ask one terminal about one employee.
+        Route::get('devices/query-user', 'queryUser')->name('devices.queryUser');
+        Route::post('devices/query-user', 'runQueryUser')->name('devices.runQueryUser');
+        // Move an office's enrolment onto a replacement terminal.
+        Route::get('devices/migrate', 'migrateDevice')->name('devices.migrateDevice');
+        Route::post('devices/migrate', 'runMigrateDevice')->name('devices.runMigrateDevice');
+        // Drop individual fingers from one terminal, keeping the user record.
+        Route::get('devices/remove-fingerprints', 'removeFingerprints')->name('devices.removeFingerprints');
+        Route::post('devices/remove-fingerprints', 'runRemoveFingerprints')->name('devices.runRemoveFingerprints');
+        Route::get('devices/{id}/set-time', 'setTime')->name('devices.setTime');
         Route::get('devices/retrieve/attendance/{id}', 'editAttendance')->name('devices.attendance.edit');
         Route::get('devices/retrieve/attendance/fix/{id}', 'fixAttendance')->name('devices.attendance.fix');
         Route::post('devices/retrieve/attendance', 'updateAttendance')->name('devices.attendance.update');
@@ -74,6 +85,19 @@ Route::middleware(['auth'])
         Route::get('agentes/pull', 'pullAgentes')->name('agentes.pull');
         Route::post('agentes/runpull', 'runPullAgentes')->name('agentes.runpull');
         Route::post('agentes/runpurge', 'runPurgeRemoved')->name('agentes.runpurge');
+    });
+
+Route::middleware(['auth'])
+    ->controller(WebhookController::class)
+    ->group(function(){
+        Route::get('webhooks', 'index')->name('webhooks.index');
+        Route::get('webhooks/create', 'create')->name('webhooks.create');
+        Route::post('webhooks/store', 'store')->name('webhooks.store');
+        Route::get('webhooks/{id}/edit', 'edit')->name('webhooks.edit');
+        Route::get('webhooks/{id}/deliveries', 'deliveries')->name('webhooks.deliveries');
+        Route::post('webhooks/{id}/update', 'update')->name('webhooks.update');
+        Route::post('webhooks/{id}/secret', 'regenerateSecret')->name('webhooks.secret');
+        Route::get('webhooks/delete', 'delete')->name('webhooks.delete');
     });
 
 // handshake

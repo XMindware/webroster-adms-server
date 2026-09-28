@@ -20,6 +20,7 @@ class Device extends Model
     protected $table = 'devices';
 
     protected $fillable = [
+        'name',
         'serial_number',
         'online',
         'idreloj',
@@ -99,6 +100,11 @@ class Device extends Model
     public function commands()
     {
         return $this->hasMany(Command::class);
+    }
+
+    public function webhook()
+    {
+        return $this->hasOne(Webhook::class, 'device_id');
     }
 
     public function scopeOnline($query)
