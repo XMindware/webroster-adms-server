@@ -58,4 +58,19 @@ return [
     */
     'commands_per_request' => (int) env('ADMS_COMMANDS_PER_REQUEST', 20),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Webhook delivery
+    |--------------------------------------------------------------------------
+    |
+    | Seconds to wait for a device's webhook receiver to answer. The POST runs
+    | after the terminal has already been answered, so a slow receiver no
+    | longer delays the terminal - but it does hold a PHP worker for this long,
+    | which is the reason to keep it short.
+    |
+    | Delivery is logged to the "webhook" channel in config/logging.php.
+    |
+    */
+    'webhook_timeout' => (int) env('ADMS_WEBHOOK_TIMEOUT', 5),
+
 ];

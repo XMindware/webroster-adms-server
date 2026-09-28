@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Device;
 use App\Models\FingerprintTemplate;
+use App\Services\Adms\AdmsCommandService;
+use App\Services\Adms\AdmsProtocol;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -22,13 +24,13 @@ use Illuminate\Support\Facades\Log;
  */
 class PushFingerprintsService
 {
-    public const TYPE_PUSH_FP = 'push_fingertmp';
+    public const TYPE_PUSH_FP = AdmsProtocol::TYPE_PUSH_FINGERTMP;
 
-    protected CommandIdService $commandIdService;
+    protected AdmsCommandService $commands;
 
-    public function __construct(?CommandIdService $commandIdService = null)
+    public function __construct(?AdmsCommandService $commands = null)
     {
-        $this->commandIdService = $commandIdService ?? app(CommandIdService::class);
+        $this->commands = $commands ?? app(AdmsCommandService::class);
     }
 
     /**
@@ -117,16 +119,6 @@ class PushFingerprintsService
     {
         $reference = "PIN:{$template->pin}/FID:{$template->fid}";
 
-        $alreadyPending = $device->commands()
-            ->pending()
-            ->where('type', self::TYPE_PUSH_FP)
-            ->where('reference', $reference)
-            ->exists();
-
-        if ($alreadyPending) {
-            return 0;
-        }
-
         // Fetch the blob only now that we know it is going out.
         $payload = FingerprintTemplate::whereKey($template->id)->value('template');
 
@@ -138,25 +130,20 @@ class PushFingerprintsService
             return 0;
         }
 
-        $cmdId = $this->commandIdService->getNextCmdId();
-
-        $device->commands()->create([
-            'device_id' => $device->id,
-            'command' => $cmdId,
-            'type' => self::TYPE_PUSH_FP,
-            'reference' => $reference,
-            'data' => sprintf(
-                "C:%d:DATA UPDATE FINGERTMP PIN=%s\tFID=%d\tSize=%d\tValid=%d\tTMP=%s",
-                $cmdId,
+        $command = $this->commands->queue(
+            $device,
+            AdmsProtocol::updateFingerTmp(
                 $template->pin,
                 $template->fid,
-                $template->size ?: strlen($payload),
-                $template->valid ?: 1,
+                $template->size,
+                $template->valid,
                 $payload
             ),
-            'executed_at' => null,
-        ]);
+            self::TYPE_PUSH_FP,
+            $reference,
+            skipIfPending: true
+        );
 
-        return 1;
+        return $command !== null ? 1 : 0;
     }
 }

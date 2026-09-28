@@ -3,42 +3,42 @@
 namespace App\Services;
 
 use App\Models\Command;
-use App\Models\Setting; // or wherever you store 'last_cmd_id' persistent data
-use Illuminate\Support\Facades\DB;
-use Log;
 
+/**
+ * Allocates the CmdID carried by each queued command.
+ *
+ * A terminal acknowledges a command by echoing its id back, so ids are reused
+ * cyclically rather than growing without bound.
+ */
 class CommandIdService
 {
     /**
+     * Highest id the protocol allows; ids wrap back to 1 past this.
+     */
+    private const MAX_COMMAND_ID = 10000;
+
+    /**
      * Generate the next CmdID, cycling from 1..10000.
-     *
-     * Generate ID perintah berikutnya, berulang dari 1 sampai 10000.
      *
      * @author XMindware
      * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/CommandIdService.php
      */
     public function getNextCmdId(): int
     {
-        // Retrieve last used from your 'settings' table or somewhere you store it
-        $lastCommandId = Command::orderBy('id', 'desc')->value('command') ?? 0;
-        
-        // If not set, default to 0
-        if (!$lastCommandId) {
-            $lastCommandId = 0;
-        }
+        // Continue from the id of the most recently queued command.
+        $lastCommandId = (int) (Command::orderBy('id', 'desc')->value('command') ?? 0);
 
-        // Increment
         $newCmdId = $lastCommandId + 1;
 
-        // Wrap if above 10000
-        if ($newCmdId > 10000) {
+        if ($newCmdId > self::MAX_COMMAND_ID) {
             $newCmdId = 1;
         }
 
-        // Optional: Avoid reusing an ID that is still "pending"
+        // Never hand out an id that is still waiting to be acknowledged.
         while ($this->isPending($newCmdId)) {
             $newCmdId++;
-            if ($newCmdId > 10000) {
+
+            if ($newCmdId > self::MAX_COMMAND_ID) {
                 $newCmdId = 1;
             }
         }
@@ -47,9 +47,7 @@ class CommandIdService
     }
 
     /**
-     * Check if a command ID is pending
-     *
-     * Memeriksa apakah ID perintah masih dalam status pending (belum dieksekusi)
+     * Whether the given CmdID is still pending (not yet executed).
      *
      * @author mdestafadilah
      * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/CommandIdService.php
@@ -57,7 +55,7 @@ class CommandIdService
     protected function isPending(int $cmdId): bool
     {
         return Command::where('command', $cmdId)
-                      ->whereNull('executed_at') // or however you track "pending"
-                      ->exists();
+            ->whereNull('executed_at')
+            ->exists();
     }
 }
