@@ -8,6 +8,7 @@ use App\Models\Device;
 use App\Models\DeviceLog;
 use App\Models\Fingerprint;
 use App\Models\LogEntry;
+use App\Services\Adms\AdmsProtocol;
 use App\Services\BiometricRecordParser;
 use App\Services\CommandIdService;
 use App\Services\FingerprintIngestService;
@@ -376,14 +377,7 @@ class iclockController extends Controller
             ['online' => now()]
         );
 
-        $intDateTime = $this->oldEncodeTime(
-            Carbon::now('GMT')->year,
-            Carbon::now('GMT')->month,
-            Carbon::now('GMT')->day,
-            Carbon::now('GMT')->hour,
-            Carbon::now('GMT')->minute,
-            Carbon::now('GMT')->second
-        );
+        $intDateTime = AdmsProtocol::encodeDateTime(Carbon::now('GMT'));
 
         $response = "DateTime=" . $intDateTime . ",ServerTZ=+0600";
 
@@ -476,14 +470,7 @@ class iclockController extends Controller
             $nextCmdId = $cmdIdService->getNextCmdId();
             Log::info('Get Request', ['nextCmdId' => $nextCmdId]);
             
-            $intDateTime = $this->oldEncodeTime(
-                Carbon::now('America/Mexico_City')->year,
-                Carbon::now('America/Mexico_City')->month,
-                Carbon::now('America/Mexico_City')->day,
-                Carbon::now('America/Mexico_City')->hour,
-                Carbon::now('America/Mexico_City')->minute,
-                Carbon::now('America/Mexico_City')->second
-            );
+            $intDateTime = AdmsProtocol::encodeDateTime(Carbon::now('America/Mexico_City'));
             /*
             // Add a set time command to the database
             $device->commands()->create([
@@ -591,12 +578,6 @@ class iclockController extends Controller
     {
         return isset($value) && $value !== '' ? (int)$value : null;
         // return is_numeric($value) ? (int) $value : null;
-    }
-
-    private function oldEncodeTime(int $year, int $month, int $day, int $hour, int $minute, int $second): int
-    {
-        return (($year - 2000) * 12 * 31 + (($month - 1) * 31) + $day - 1) * (24 * 60 * 60)
-            + ($hour * 60 + $minute) * 60 + $second;
     }
 
     /**

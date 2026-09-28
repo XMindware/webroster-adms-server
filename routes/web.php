@@ -18,6 +18,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\iclockController;
 use App\Http\Controllers\AgentesController;
 use App\Http\Controllers\WebhookController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\OficinaController;
 
 Route::controller(AuthController::class)->group(function(){
     Route::get('/registration','registration')->middleware('isLoggedIn');
@@ -47,7 +49,6 @@ Route::middleware(['auth'])
         Route::get('devices-log', 'deviceLog')->name('devices.deviceLog');
         Route::get('finger-log', 'fingerLog')->name('devices.fingerLog');
         Route::get('fingerprints', 'fingerprints')->name('devices.fingerprints');
-        Route::get('attendance', 'attendance')->name('devices.attendance');
         Route::get('devices/delete/employee', 'deleteEmployeeRecord')->name('devices.deleteEmployeeRecord');
         Route::post('devices/delete/employee', 'runDeleteFingerRecord')->name('devices.runDeleteFingerRecord');
         Route::get('devices/retrieve/fingerdata', 'retrieveFingerData')->name('devices.retrieveFingerData');
@@ -64,18 +65,31 @@ Route::middleware(['auth'])
         Route::get('devices/remove-fingerprints', 'removeFingerprints')->name('devices.removeFingerprints');
         Route::post('devices/remove-fingerprints', 'runRemoveFingerprints')->name('devices.runRemoveFingerprints');
         Route::get('devices/{id}/set-time', 'setTime')->name('devices.setTime');
-        Route::get('devices/retrieve/attendance/{id}', 'editAttendance')->name('devices.attendance.edit');
-        Route::get('devices/retrieve/attendance/fix/{id}', 'fixAttendance')->name('devices.attendance.fix');
-        Route::post('devices/retrieve/attendance', 'updateAttendance')->name('devices.attendance.update');
         Route::get('/devices/activity/{id}', 'devicesActivity')->name('devices.activity');
         Route::get('/devices/monitor', 'monitor')->name('devices.monitor');
+    });
 
-        Route::get('oficinas', 'oficinas')->name('devices.oficinas');
-        Route::get('oficinas/create', 'createOficina')->name('oficinas.create');
-        Route::post('oficinas/store', 'storeOficina')->name('oficinas.store');
-        Route::get('oficinas/{id}/edit', 'editOficina')->name('oficinas.edit');
-        Route::post('oficinas/{id}/update', 'updateOficina')->name('oficinas.update');
-        Route::get('oficinas/delete', 'deleteOficina')->name('oficinas.delete');
+// Attendance review and correction. Split out of DeviceController so that
+// clock-in handling and device administration no longer share one class.
+Route::middleware(['auth'])
+    ->controller(AttendanceController::class)
+    ->group(function () {
+        Route::get('attendance', 'index')->name('devices.attendance');
+        Route::get('devices/retrieve/attendance/{id}', 'edit')->name('devices.attendance.edit');
+        Route::get('devices/retrieve/attendance/fix/{id}', 'fix')->name('devices.attendance.fix');
+        Route::post('devices/retrieve/attendance', 'update')->name('devices.attendance.update');
+    });
+
+// Office (site) administration, likewise split out of DeviceController.
+Route::middleware(['auth'])
+    ->controller(OficinaController::class)
+    ->group(function () {
+        Route::get('oficinas', 'index')->name('devices.oficinas');
+        Route::get('oficinas/create', 'create')->name('oficinas.create');
+        Route::post('oficinas/store', 'store')->name('oficinas.store');
+        Route::get('oficinas/{id}/edit', 'edit')->name('oficinas.edit');
+        Route::post('oficinas/{id}/update', 'update')->name('oficinas.update');
+        Route::get('oficinas/delete', 'destroy')->name('oficinas.delete');
     });
 
 Route::middleware(['auth'])

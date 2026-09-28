@@ -112,9 +112,22 @@ class Device extends Model
         return $query->where('online', true);
     }
 
-    public function pendingCommands()
+    /**
+     * Commands waiting to be handed to the terminal.
+     *
+     * $limit is applied by the database, not by slicing the loaded collection:
+     * a fingerprint pull can queue hundreds of commands, and ->get()->take($n)
+     * still holds every one of them in memory before returning $n.
+     */
+    public function pendingCommands(?int $limit = null)
     {
-        return $this->commands()->pending()->get();
+        $query = $this->commands()->pending()->orderBy('id');
+
+        if ($limit !== null && $limit > 0) {
+            $query->limit($limit);
+        }
+
+        return $query->get();
     }
 
     public function populate($employees = null)
