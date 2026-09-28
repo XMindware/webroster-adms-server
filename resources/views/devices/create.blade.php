@@ -2,12 +2,12 @@
 
 @section('content')
     <div class="container">
-        <h2>Create Biometric Recor</h2>
+        <h2>{{ __('devices.create_device') }}</h2>
         <form method="post" action="{{ route('devices.store') }}">
             @csrf
             <div class="form-group">
                 <label for="name">{{ __('devices.location') }}</label>
-                <input type="text" name="name" class="form-control" id="name" placeholder="Location">
+                <input type="text" name="name" class="form-control" id="name" placeholder="{{ __('devices.location') }}">
             </div>
             <div class="form-group">
                 <label for="idoficina">{{ __('devices.oficina') }}</label>
@@ -23,15 +23,15 @@
                 <input type="text" name="no_sn" class="form-control" id="no_sn" placeholder="SN00001">
             </div>
             <div class="form-group">
-                <label for="lokasi">{{ __('devices.id') }}</label>
-                <input type="text" name="idreloj" class="form-control" id="idreloj" placeholder="ID Reloj">
+                <label for="idreloj">{{ __('devices.id') }}</label>
+                <input type="text" name="idreloj" class="form-control" id="idreloj" placeholder="{{ __('devices.id') }}">
             </div>
             <div class="form-group">
-                <label for="lokasi">{{ __('devices.ip_address') }}</label>
+                <label for="ip">{{ __('devices.ip_address') }}</label>
                 <input type="text" name="ip" class="form-control" id="ip" placeholder="IP">
             </div>
 
-            <button type="submit" class="btn btn-primary">Enviar</button>
+            <button type="submit" class="btn btn-primary">{{ __('common.submit') }}</button>
         </form>
     </div>
     <script>

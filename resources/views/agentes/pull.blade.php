@@ -2,11 +2,11 @@
 
 @section('content')
     <div class="container">
-        <h2>Pull employees from Office</h2>
+        <h2>{{ __('agentes.pull_employees') }}</h2>
         <form method="post" action="{{ route('agentes.runpull') }}">
             @csrf
             <div class="form-group">
-                <label for="oficina">Offices</label>
+                <label for="oficina">{{ __('devices.oficina') }}</label>
                 <select name="oficina" class="form-control" id="oficina">
                     @foreach ($oficinas as $oficina)
                         <option value="{{ $oficina->idoficina }}" data-idempresa="{{ $oficina->idempresa }}">{{ $oficina->ubicacion }}</option>
@@ -14,7 +14,7 @@
                 </select>
             </div>
             <input type="hidden" name="idempresa" id="idempresa" value="">
-            <button type="submit" class="btn btn-primary">Run Request</button>
+            <button type="submit" class="btn btn-primary">{{ __('agentes.run_request') }}</button>
         </form>
     </div>
     <script>

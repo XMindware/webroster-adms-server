@@ -3,13 +3,13 @@
 @section('content')
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="fas fa-traffic-light"></i> Device Status Monitor</h2>
+        <h2><i class="fas fa-traffic-light"></i> {{ __('devices.device_status_monitor') }}</h2>
         <div class="d-flex gap-2">
             <button class="btn btn-outline-primary" onclick="refreshData()">
-                <i class="fas fa-sync-alt"></i> Refresh
+                <i class="fas fa-sync-alt"></i> {{ __('common.refresh') }}
             </button>
             <a href="{{ route('devices.index') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to Devices
+                <i class="fas fa-arrow-left"></i> {{ __('devices.back_to_devices') }}
             </a>
         </div>
     </div>
@@ -19,23 +19,23 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <h6 class="card-title">Status Legend</h6>
+                    <h6 class="card-title">{{ __('devices.status_legend') }}</h6>
                     <div class="d-flex gap-4">
                         <div class="d-flex align-items-center gap-2">
                             <div class="traffic-light online"></div>
-                            <span>Online (Last 5 min)</span>
+                            <span>{{ __('devices.status_online') }}</span>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <div class="traffic-light warning"></div>
-                            <span>Warning (5-15 min)</span>
+                            <span>{{ __('devices.status_warning') }}</span>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <div class="traffic-light offline"></div>
-                            <span>Offline (>15 min)</span>
+                            <span>{{ __('devices.status_offline') }}</span>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <div class="traffic-light unknown"></div>
-                            <span>Unknown</span>
+                            <span>{{ __('devices.status_unknown') }}</span>
                         </div>
                     </div>
                 </div>
@@ -66,17 +66,17 @@
                 </div>
                 
                 <div class="device-info">
-                    <h6 class="device-name">{{ $device->name ?? 'Device ' . $device->idreloj }}</h6>
+                    <h6 class="device-name">{{ $device->name ?? __('devices.device') . ' ' . $device->idreloj }}</h6>
                     <p class="device-location">
                         <i class="fas fa-map-marker-alt"></i>
-                        {{ $device->oficina ? $device->oficina->ubicacion : 'Unknown Location' }}
+                        {{ $device->oficina ? $device->oficina->ubicacion : __('devices.unknown_location') }}
                     </p>
                     <div class="last-checkin">
-                        <span class="label">Last Check-in:</span>
+                        <span class="label">{{ __('devices.last_checkin') }}</span>
                         <span class="time">{{ $device->last_attendance_human }}</span>
                     </div>
                     <div class="office-time">
-                        <span class="label">Office Time:</span>
+                        <span class="label">{{ __('devices.office_time') }}</span>
                         <span class="time">{{ $device->office_time_display }}</span>
                         @if($device->office_timezone)
                             <small class="timezone">({{ $device->office_timezone }})</small>
@@ -84,14 +84,14 @@
                     </div>
                     @if($device->discrepancy_count > 0)
                     <div class="discrepancy-alert">
-                        <span class="label">⚠️ Time Discrepancies Today:</span>
+                        <span class="label">⚠️ {{ __('devices.time_discrepancies_today') }}</span>
                         <span class="count">{{ $device->discrepancy_count }}</span>
                     </div>
                     @endif
                     <div class="device-details">
                         <small class="text-muted">
-                            ID: {{ $device->idreloj }} | 
-                            Model: {{ $device->modelo ?? 'N/A' }}
+                            {{ __('common.id') }}: {{ $device->idreloj }} | 
+                            {{ __('devices.model') }}: {{ $device->modelo ?? 'N/A' }}
                         </small>
                     </div>
                 </div>
@@ -103,7 +103,7 @@
     <!-- Auto-refresh indicator -->
     <div class="text-center mt-4">
         <small class="text-muted">
-            <i class="fas fa-clock"></i> Auto-refreshing every 30 seconds
+            <i class="fas fa-clock"></i> {{ __('devices.auto_refresh_notice') }}
         </small>
     </div>
 </div>

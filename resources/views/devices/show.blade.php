@@ -2,11 +2,11 @@
 
 @section('content')
     <div class="container">
-        <h2>Dispositivo Biometrico</h2>
-        <p>Nombre: {{ $device->name }}</p>
-        <p>Numero serie: {{ $device->no_sn }}</p>
-        <p>ID Reloj: {{ $device->idreloj }}</p>
-        <p>Online: {{ $device->online }}</p>
-        <a href="{{ route('devices.edit', $device->id) }}" class="btn btn-primary">Edit</a>
+        <h2>{{ __('devices.show_title') }}</h2>
+        <p>{{ __('common.name') }}: {{ $device->name }}</p>
+        <p>{{ __('devices.serial_number') }}: {{ $device->no_sn }}</p>
+        <p>{{ __('devices.id') }}: {{ $device->idreloj }}</p>
+        <p>{{ __('devices.online') }}: {{ $device->online }}</p>
+        <a href="{{ route('devices.edit', $device->id) }}" class="btn btn-primary">{{ __('common.edit') }}</a>
     </div>
 @endsection
