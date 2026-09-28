@@ -3,15 +3,15 @@
 @section('content')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <form method="GET" action="{{ route('devices.activity', ['id' => $id ]) }}">
-        <label for="range">Select Time Range:</label>
+        <label for="range">{{ __('devices.select_time_range') }}</label>
         <select name="range" id="range" onchange="this.form.submit()">
-            <option value="1h" {{ $range === '1h' ? 'selected' : '' }}>Last 1 Hour</option>
-            <option value="6h" {{ $range === '6h' ? 'selected' : '' }}>Last 6 Hours</option>
-            <option value="1d" {{ $range === '1d' ? 'selected' : '' }}>Last 24 Hours</option>
-            <option value="7d" {{ $range === '7d' ? 'selected' : '' }}>Last 7 Days</option>
-            <option value="30d" {{ $range === '30d' ? 'selected' : '' }}>Last 30 Days</option>
-            <option value="90d" {{ $range === '90d' ? 'selected' : '' }}>Last 90 Days</option>
-            <option value="all" {{ $range === 'all' ? 'selected' : '' }}>All</option>
+            <option value="1h" {{ $range === '1h' ? 'selected' : '' }}>{{ __('devices.range_1h') }}</option>
+            <option value="6h" {{ $range === '6h' ? 'selected' : '' }}>{{ __('devices.range_6h') }}</option>
+            <option value="1d" {{ $range === '1d' ? 'selected' : '' }}>{{ __('devices.range_1d') }}</option>
+            <option value="7d" {{ $range === '7d' ? 'selected' : '' }}>{{ __('devices.range_7d') }}</option>
+            <option value="30d" {{ $range === '30d' ? 'selected' : '' }}>{{ __('devices.range_30d') }}</option>
+            <option value="90d" {{ $range === '90d' ? 'selected' : '' }}>{{ __('devices.range_90d') }}</option>
+            <option value="all" {{ $range === 'all' ? 'selected' : '' }}>{{ __('devices.range_all') }}</option>
         </select>
     </form>
 
@@ -28,7 +28,7 @@
         data: {
             labels: labels,
             datasets: [{
-                label: 'Reports per {{ $range === "1h" || $range === "6h" || $range === "1d" ? "Minute" : ($range === "7d" ? "Hour" : "Day") }}',
+                label: '{{ $range === "1h" || $range === "6h" || $range === "1d" ? __('devices.reports_per_minute') : ($range === "7d" ? __('devices.reports_per_hour') : __('devices.reports_per_day')) }}',
                 data: counts,
                 borderWidth: 2,
                 fill: false,
@@ -40,14 +40,14 @@
         options: {
             scales: {
                 x: {
-                    title: { display: true, text: 'Time' },
+                    title: { display: true, text: '{{ __('common.time') }}' },
                     ticks: {
                         maxRotation: 90,
                         minRotation: 45
                     }
                 },
                 y: {
-                    title: { display: true, text: 'Number of Reports' },
+                    title: { display: true, text: '{{ __('devices.chart_reports') }}' },
                     beginAtZero: true
                 }
             }

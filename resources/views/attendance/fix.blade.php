@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Procesando Fix</title>
+    <title>{{ __('common.processing') }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -47,20 +47,20 @@
         @if(isset($success))
             @if($success)
                 <div class="success">
-                    <h2>✓ Éxito</h2>
+                    <h2>✓ {{ __('common.success') }}</h2>
                     <p>{{ $message }}</p>
                 </div>
             @else
                 <div class="error">
-                    <h2>✗ Error</h2>
+                    <h2>✗ {{ __('common.error') }}</h2>
                     <p>{{ $message }}</p>
                 </div>
             @endif
         @else
             <div>
                 <div class="spinner"></div>
-                <h2>Procesando...</h2>
-                <p>Por favor espera un momento</p>
+                <h2>{{ __('common.processing') }}</h2>
+                <p>{{ __('common.please_wait') }}</p>
             </div>
         @endif
     </div>

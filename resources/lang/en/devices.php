@@ -2,6 +2,7 @@
 
 return [
     'title' => 'Devices',
+    'index_title' => 'Biometric Devices',
     'create_device' => 'Create Device',
     'edit_device' => 'Edit Device',
     'monitor_status' => 'Monitor Status',
@@ -13,9 +14,11 @@ return [
     'id' => 'ID Clock',
     'oficina' => 'Office',
     'ubicacion' => 'Location',
+    'location' => 'Location',
     'online' => 'Online',
     'last_attendance' => 'Last Attendance',
     'desfases_hoy' => 'Today Issues',
+    'today_issues' => 'Today Issues',
     
     // Form fields
     'device_name' => 'Device Name',
@@ -71,4 +74,109 @@ return [
     'pull_nothing_queued' => 'Nothing queued - an identical pull is already pending for that device.',
     'push_queued' => ':count fingerprint(s) queued for :device.',
     'push_nothing_queued' => 'Nothing to send - the device already holds every stored template (:skipped up to date).',
+
+    // Edit / show screens
+    'show_title' => 'Biometric Device',
+    'model' => 'Model',
+    'select_office' => 'Select Office',
+    'delete_employee_title' => 'Delete Employee Record from Device',
+    'delete_employee_hint' => 'The delete command will be sent to all devices in this office.',
+    'delete_employee_warning' => 'This will queue a command to remove the user from the biometric devices. This action cannot be undone from the server easily.',
+    'enter_pin_to_delete' => 'Enter PIN to delete',
+    'delete_from_devices' => 'Delete from Devices',
+    'fix' => 'Fix',
+
+    // Device monitor
+    'device_status_monitor' => 'Device Status Monitor',
+    'back_to_devices' => 'Back to Devices',
+    'status_legend' => 'Status Legend',
+    'status_online' => 'Online (Last 5 min)',
+    'status_warning' => 'Warning (5-15 min)',
+    'status_offline' => 'Offline (>15 min)',
+    'status_unknown' => 'Unknown',
+    'last_checkin' => 'Last Check-in:',
+    'office_time' => 'Office Time:',
+    'unknown_location' => 'Unknown Location',
+    'time_discrepancies_today' => 'Time Discrepancies Today:',
+    'auto_refresh_notice' => 'Auto-refreshing every 30 seconds',
+
+    // Activity chart
+    'log_finger_title' => 'Finger Log',
+    'select_time_range' => 'Select Time Range:',
+    'range_1h' => 'Last 1 Hour',
+    'range_6h' => 'Last 6 Hours',
+    'range_1d' => 'Last 24 Hours',
+    'range_7d' => 'Last 7 Days',
+    'range_30d' => 'Last 30 Days',
+    'range_90d' => 'Last 90 Days',
+    'range_all' => 'All',
+    'reports_per_minute' => 'Reports per Minute',
+    'reports_per_hour' => 'Reports per Hour',
+    'reports_per_day' => 'Reports per Day',
+    'chart_reports' => 'Number of Reports',
+
+    // Response messages
+    'error_loading_monitor' => 'Error loading monitor: :error',
+    'no_devices_for_office' => 'No devices found for this office',
+    'delete_command_queued' => 'Command to delete user :pin sent to :count device(s).',
+    'error_sending_delete_command' => 'Error sending delete command',
+    'attendance_updated_successfully' => 'Attendance record updated successfully',
+    'attendance_record_not_found' => 'Record not found',
+    'attendance_error_no_response' => 'Error processing the attendance record: no response from the API',
+    'attendance_error_processing' => 'Error processing the attendance record',
+    'attendance_error_failed_status' => 'Error processing the attendance record: :reason',
+    'attendance_status_failed' => 'failed status',
+    'attendance_fixed_successfully' => 'Attendance record fixed successfully',
+    'attendance_api_error' => 'API request failed with status: :status',
+    'api_config_missing' => 'API configuration not found.',
+    'value_error' => 'Error',
+    'value_not_available' => 'N/A',
+
+    // Get user info
+    'get_user_info' => 'Get User Info',
+    'query_user_explainer' => 'Asks one terminal to re-upload a single employee record. Nothing arrives immediately: the command waits until the terminal next polls the server, usually within a minute for an online device.',
+    'query_with_templates' => 'Also ask for their fingerprint templates',
+    'query_with_templates_help' => 'Adds one query per finger slot. Leave it on to pull the whole person.',
+    'query_user_queue' => 'Queue query',
+    'pin_required' => 'Enter the employee PIN to query.',
+    'query_queued' => ':count command(s) queued for PIN :pin on :device.',
+    'query_nothing_queued' => 'Nothing queued - an identical query is already pending for that device.',
+
+    // Set the clock on demand
+    'set_time' => 'Set time',
+    'set_time_confirm' => 'Set this device clock to the office time now?',
+    'set_time_queued' => 'Clock command sent to :device: :time (:timezone).',
+    'set_time_needs_timezone' => 'Cannot set the clock on :device: its office has no real timezone (UTC, GMT or a bare offset). Set the office timezone first.',
+    'error_setting_time' => 'Error sending the clock command.',
+
+    // Device migration
+    'migrate_device' => 'Migrate Device',
+    'migration_explainer' => 'Moves an office enrolment onto a different terminal, for example when a unit is replaced. The roster and the stored fingerprint templates are queued for the target, which picks them up on its own polling cycle.',
+    'migration_source' => 'Source device',
+    'migration_source_help' => 'The terminal being replaced. It has to belong to the same office as the target.',
+    'migration_target' => 'Target device',
+    'migration_target_help' => 'The terminal that will receive the enrolment. Register it first if it is not listed yet.',
+    'migration_warning' => 'This queues commands that create users and write fingerprint templates on the target terminal. The source device is left untouched - clearing it is a separate action.',
+    'migration_queue' => 'Queue migration',
+    'migration_queued' => 'Migration from :source to :target queued: :employees user record(s) and :templates fingerprint template(s).',
+    'migration_same_device' => 'Source and target are the same device.',
+    'migration_different_office' => 'Source and target belong to different offices. Both the roster and the templates are scoped by office, so this cannot work.',
+    'migration_failed' => 'Migration failed: :error',
+
+    // Remove individual fingers from one terminal
+    'remove_fingerprints' => 'Remove Fingerprints',
+    'remove_fingerprints_explainer' => 'Removes individual fingers from one terminal while leaving the employee record alone - name, card, password and group all stay. Nothing happens immediately: the command waits until the terminal next polls the server, usually within a minute for an online device.',
+    'remove_fingerprints_warning' => 'The removed finger stops working on that terminal. The template we store is marked invalid at the same time, so a later push cannot quietly put it back.',
+    'finger' => 'Finger',
+    'finger_n' => 'Finger :n',
+    'finger_all' => 'All fingers (0-9)',
+    'finger_help' => 'The finger index as the terminal numbers them (FID 0-9). "All fingers" queues one command per index, because the protocol has no wildcard.',
+    'finger_required' => 'Choose which finger to remove.',
+    'remove_fingerprints_queue' => 'Queue removal',
+    'remove_fingerprints_queued' => ':count command(s) queued for PIN :pin on :device. :invalidated stored template(s) marked invalid.',
+    'remove_nothing_queued' => 'Nothing queued - an identical removal is already pending for that device.',
+
+    'invalid_timezone' => "Invalid timezone: ':value'. Use an IANA identifier, "
+        . "for example Asia/Jakarta (UTC+7) or America/Mexico_City (UTC-6). "
+        . "Formats like UTC+7 are not accepted.",
 ];

@@ -3,7 +3,7 @@
 @section('content')
     <div class="container">
         <h2>{{ $title }}</h2>
-        <a href="{{ route('oficinas.create') }}" class="btn btn-primary mb-3">Create Oficina</a>
+        <a href="{{ route('oficinas.create') }}" class="btn btn-primary mb-3">{{ __('oficinas.create_oficina') }}</a>
         <!-- success message -->
         @if(session('success'))
             <div class="alert alert-success">
@@ -20,16 +20,16 @@
             <thead>
                 <tr>
                     <th></th>
-                    <th>ID</th>
-                    <th>ID Empresa</th>
-                    <th>ID Oficina</th>
-                    <th>Ubicación</th>
-                    <th>Public URL</th>
-                    <th>IATA Code</th>
-                    <th>City Timezone</th>
-                    <th>Timezone</th>
-                    <th>Última Actualización</th>
-                    <th>Acciones</th>
+                    <th>{{ __('common.id') }}</th>
+                    <th>{{ __('oficinas.idempresa') }}</th>
+                    <th>{{ __('oficinas.idoficina') }}</th>
+                    <th>{{ __('oficinas.ubicacion') }}</th>
+                    <th>{{ __('oficinas.public_url') }}</th>
+                    <th>{{ __('oficinas.iatacode') }}</th>
+                    <th>{{ __('oficinas.city_timezone') }}</th>
+                    <th>{{ __('oficinas.timezone') }}</th>
+                    <th>{{ __('oficinas.last_updated') }}</th>
+                    <th>{{ __('common.actions') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -46,15 +46,15 @@
                         <td>{{ $oficina->timezone }}</td>
                         <td>{{ $oficina->updated_at?->diffForHumans() }}</td>
                         <td>
-                            <a href="{{ route('oficinas.edit', ['id' => $oficina->id ]) }}" class="btn btn-primary">Edit</a>
-                            <a href="{{ route('oficinas.delete', ['id' => $oficina->id ]) }}" class="btn btn-danger delete-btn">Delete</a>
+                            <a href="{{ route('oficinas.edit', ['id' => $oficina->id ]) }}" class="btn btn-primary">{{ __('common.edit') }}</a>
+                            <a href="{{ route('oficinas.delete', ['id' => $oficina->id ]) }}" class="btn btn-danger delete-btn">{{ __('common.delete') }}</a>
                         </td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
         <div class="d-flex justify-content-center">
-            <button class="btn btn-danger" id="delete-all">Delete Selected</button>
+            <button class="btn btn-danger" id="delete-all">{{ __('common.delete_selected') }}</button>
         </div>
     </div>
 
@@ -63,17 +63,17 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="confirmModalLabel">Confirm Action</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <h5 class="modal-title" id="confirmModalLabel">{{ __('common.confirm_action') }}</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="{{ __('common.close') }}">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
-                    Are you sure you want to delete this oficina?
+                    {{ __('oficinas.confirm_delete') }}
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="cancelModal" data-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="confirmBtn">Confirm</button>
+                    <button type="button" class="btn btn-secondary" id="cancelModal" data-dismiss="modal">{{ __('common.cancel') }}</button>
+                    <button type="button" class="btn btn-primary" id="confirmBtn">{{ __('common.confirm') }}</button>
                 </div>
             </div>
         </div>

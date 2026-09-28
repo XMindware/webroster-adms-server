@@ -7,6 +7,17 @@ return [
     'oficina_name' => 'Nombre de la Oficina',
     'ubicacion' => 'Ubicación',
     'location' => 'Ubicación',
+
+    // Form fields
+    'idempresa' => 'ID Empresa',
+    'idoficina' => 'ID Oficina',
+    'public_url' => 'URL Pública',
+    'token' => 'Token',
+    'iatacode' => 'Código IATA',
+    'city_timezone' => 'Zona Horaria de la Ciudad',
+    'timezone' => 'Zona Horaria',
+    'last_updated' => 'Última Actualización',
+    'confirm_delete' => '¿Está seguro de que desea eliminar esta oficina?',
     
     // Messages
     'created_successfully' => 'Oficina creada exitosamente.',

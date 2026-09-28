@@ -11,6 +11,8 @@ return [
     'remember_me' => 'Remember Me',
     'forgot_password' => 'Forgot Password?',
     'username' => 'Username',
+    'full_name' => 'Full Name',
+    'login_here' => 'Login Here!',
     
     // Messages
     'login_successful' => 'Login successful.',
