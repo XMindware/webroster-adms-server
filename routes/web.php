@@ -17,6 +17,7 @@ use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\iclockController;
 use App\Http\Controllers\AgentesController;
+use App\Http\Controllers\WebhookController;
 
 Route::controller(AuthController::class)->group(function(){
     Route::get('/registration','registration')->middleware('isLoggedIn');
@@ -74,6 +75,19 @@ Route::middleware(['auth'])
         Route::get('agentes/pull', 'pullAgentes')->name('agentes.pull');
         Route::post('agentes/runpull', 'runPullAgentes')->name('agentes.runpull');
         Route::post('agentes/runpurge', 'runPurgeRemoved')->name('agentes.runpurge');
+    });
+
+Route::middleware(['auth'])
+    ->controller(WebhookController::class)
+    ->group(function(){
+        Route::get('webhooks', 'index')->name('webhooks.index');
+        Route::get('webhooks/create', 'create')->name('webhooks.create');
+        Route::post('webhooks/store', 'store')->name('webhooks.store');
+        Route::get('webhooks/{id}/edit', 'edit')->name('webhooks.edit');
+        Route::get('webhooks/{id}/deliveries', 'deliveries')->name('webhooks.deliveries');
+        Route::post('webhooks/{id}/update', 'update')->name('webhooks.update');
+        Route::post('webhooks/{id}/secret', 'regenerateSecret')->name('webhooks.secret');
+        Route::get('webhooks/delete', 'delete')->name('webhooks.delete');
     });
 
 // handshake
