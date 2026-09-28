@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
@@ -10,6 +11,11 @@ use Illuminate\Support\Str;
  */
 class UserFactory extends Factory
 {
+    /**
+     * The current password being used by the factory.
+     */
+    protected static ?string $password = null;
+
     /**
      * Define the model's default state.
      *
@@ -21,7 +27,11 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
+            // Hash at runtime so the cost matches the configured rounds
+            // (BCRYPT_ROUNDS=4 under phpunit). A hard-coded cost-10 hash makes
+            // the `hashed` cast on User throw "Could not verify the hashed
+            // value's configuration."
+            'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
     }

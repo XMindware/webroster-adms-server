@@ -5,6 +5,9 @@
         <h2>{{ $title }}</h2>
         <div class="d-flex gap-2 mb-3">
             <a href="{{ route('devices.create') }}" class="btn btn-primary">{{ __('devices.create_device') }}</a>
+            <a href="{{ route('devices.deleteEmployeeRecord') }}" class="btn btn-danger">
+                <i class="fas fa-user-minus"></i> Delete User from Device
+            </a>
             <a href="{{ route('devices.monitor') }}" class="btn btn-success">
                 <i class="fas fa-traffic-light"></i> {{ __('devices.monitor_status') }}
             </a>
@@ -44,7 +47,7 @@
                         <td class="text-center align-middle">
                             @if ($d->online)
                                 @php
-                                    $diffInMinutes = $d->online->diffInMinutes(now());
+                                    $diffInMinutes = abs($d->online->diffInMinutes(now()));
                                 @endphp
 
                                 @if ($diffInMinutes < 1)

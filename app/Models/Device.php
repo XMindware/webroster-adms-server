@@ -59,7 +59,7 @@ class Device extends Model
                 ->get();
 
             foreach ($checadasHoy as $attendance) {
-                if ($attendance->created_at->diffInMinutes($attendance->timestamp) > 20) {
+                if (abs($attendance->created_at->diffInMinutes($attendance->timestamp)) > 20) {
                     $hayDesfases = true;
                     break;
                 }
@@ -84,8 +84,9 @@ class Device extends Model
             
             // Calculate difference in minutes between when the record was created and the actual attendance time
             // Both times are now in the same timezone (office timezone)
-            $diffInMinutes = $attendance->created_at->setTimezone($officeTimezone)
-                ->diffInMinutes($attendanceTimeInOfficeTz);
+            // Carbon 3 returns a signed float; abs() keeps the pre-upgrade meaning.
+            $diffInMinutes = abs($attendance->created_at->setTimezone($officeTimezone)
+                ->diffInMinutes($attendanceTimeInOfficeTz));
             
             if ($diffInMinutes > 20) {
                 $hayDesfases = true;
@@ -239,8 +240,8 @@ class Device extends Model
         
         foreach ($checadasHoy as $attendance) {
             $attendanceTimeInOfficeTz = $attendance->timestamp->setTimezone($officeTimezone);
-            $diffInMinutes = $attendance->created_at->setTimezone($officeTimezone)
-                ->diffInMinutes($attendanceTimeInOfficeTz);
+            $diffInMinutes = abs($attendance->created_at->setTimezone($officeTimezone)
+                ->diffInMinutes($attendanceTimeInOfficeTz));
             
             if ($diffInMinutes > 20) {
                 $discrepancyCount++;
