@@ -6,11 +6,11 @@
         <table class="table table-bordered data-table w-100" id="devices">
             <thead>
                 <tr>
-                    <th>Id</th>
-                    <th>Url</th>
-                    <th class="w-50">Data</th>
-                    <th>ID Reloj</th>
-                    <th class="w-20">Fecha</th>
+                    <th>{{ __('common.id') }}</th>
+                    <th>{{ __('common.url') }}</th>
+                    <th class="w-50">{{ __('common.data') }}</th>
+                    <th>{{ __('devices.id') }}</th>
+                    <th class="w-20">{{ __('common.date') }}</th>
                 </tr>
             </thead>
             <tbody>

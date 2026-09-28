@@ -40,6 +40,14 @@ return [
     'online' => 'Online',
     'offline' => 'Offline',
     'unknown' => 'Tidak Diketahui',
+    'id' => 'ID',
+    'url' => 'URL',
+    'data' => 'Data',
+    'updated' => 'Diperbarui',
+    'action' => 'Aksi',
+    'dashboard' => 'Dasbor',
+    'delete_selected' => 'Hapus yang Dipilih',
+    'please_wait' => 'Mohon tunggu sebentar',
     
     // Common messages
     'success' => 'Berhasil!',

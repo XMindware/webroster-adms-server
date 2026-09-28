@@ -11,6 +11,8 @@ return [
     'remember_me' => 'Recuérdame',
     'forgot_password' => '¿Olvidó su Contraseña?',
     'username' => 'Usuario',
+    'full_name' => 'Nombre Completo',
+    'login_here' => '¡Inicie Sesión Aquí!',
     
     // Messages
     'login_successful' => 'Inicio de sesión exitoso.',

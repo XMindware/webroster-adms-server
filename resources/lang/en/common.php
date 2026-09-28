@@ -40,6 +40,14 @@ return [
     'online' => 'Online',
     'offline' => 'Offline',
     'unknown' => 'Unknown',
+    'id' => 'ID',
+    'url' => 'URL',
+    'data' => 'Data',
+    'updated' => 'Updated',
+    'action' => 'Action',
+    'dashboard' => 'Dashboard',
+    'delete_selected' => 'Delete Selected',
+    'please_wait' => 'Please wait a moment',
     
     // Common messages
     'success' => 'Success!',
