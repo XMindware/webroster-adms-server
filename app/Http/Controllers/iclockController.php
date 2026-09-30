@@ -59,6 +59,14 @@ class iclockController extends Controller
 
             // set time() to gmt -6
             $date = Carbon::now($cityTimezone);
+
+            // Only devices flagged in devices.timezone_format get a numeric
+            // offset; everything else keeps receiving the timezone name.
+            if ($device->timezone_format === 'hours') {
+                $timezone = $date->utcOffset() / 60;
+            } elseif ($device->timezone_format === 'minutes') {
+                $timezone = $date->utcOffset();
+            }
             $format = 'Y-m-d H:i:s';
             $localTime = $date->format($format);
 
