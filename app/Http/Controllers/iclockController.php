@@ -62,7 +62,7 @@ class iclockController extends Controller
                 return 'ERROR: Device not found';
             }
 
-            return $this->handshakeOptions((string) $request->input('SN'));
+            return $this->handshakeOptions((string) $request->input('SN'), $device);
         } catch (Throwable $e) {
             $data['error'] = $e;
             DB::table('error_log')->insert($data);
@@ -81,15 +81,17 @@ class iclockController extends Controller
      *   OpStamp  is a unix timestamp, not a formatted date. It used to carry
      *            "Y-m-d H:i:s".
      *   TimeZone is an hour offset ("7"), not an IANA identifier. It used to
-     *            carry the office's "Asia/Jakarta". Both the upstream reference
-     *            implementation and the working x100c deployment omit the field
-     *            entirely, so it is left out here too. The office timezone is
-     *            still applied when attendance timestamps are interpreted.
+     *            carry the office's "Asia/Jakarta", which no firmware can use,
+     *            so it is omitted by default. A device that needs the offset
+     *            asks for it through devices.timezone_format - see
+     *            handshakeTimezone().
      *
      * TransTimes was commented out; the reference sends it.
      */
-    private function handshakeOptions(string $sn): string
+    private function handshakeOptions(string $sn, ?Device $device = null): string
     {
+        $timezone = $this->handshakeTimezone($device);
+
         return "GET OPTION FROM: {$sn}\r\n" .
             "Stamp=9999\r\n" .
             "OpStamp=" . time() . "\r\n" .
@@ -104,8 +106,53 @@ class iclockController extends Controller
             // upload a fingerprint template as soon as it is enrolled or
             // changed. See config/adms.php.
             "TransFlag=" . config('adms.trans_flag', '1111111000') . "\r\n" .
+            ($timezone === null ? '' : "TimeZone={$timezone}\r\n") .
             "Realtime=1\r\n" .
             "Encrypt=0";
+    }
+
+    /**
+     * The value of the TimeZone line, or null to leave the line out.
+     *
+     * Opt-in per device, because the fleet is not uniform: what one terminal
+     * parses happily makes another reject the whole options block. A device
+     * left on the default (null) gets exactly the block it got before this
+     * existed.
+     *
+     * The offset is built from the office timezone, never from
+     * config('app.timezone'): the office is where the terminal physically is.
+     * A generic office timezone ("UTC", "+07:00") is refused for the same
+     * reason Oficina::timezoneIsGeneric() refuses to order a clock correction
+     * from one - an office mis-recorded as UTC would have its terminal set 7
+     * hours back, its punches would read as skewed, and the next poll would
+     * order another correction, forever. Not sending the line is the safe
+     * outcome; the terminal keeps whatever it was configured with.
+     */
+    private function handshakeTimezone(?Device $device): ?string
+    {
+        $format = trim((string) $device?->timezone_format);
+
+        // Anything unrecognised - including 'iana', which cannot be sent
+        // because the protocol wants an offset - leaves the line out.
+        if ($format !== 'hours' && $format !== 'minutes') {
+            return null;
+        }
+
+        $office = $device->oficina;
+
+        if (!$office || $office->timezoneIsGeneric()) {
+            Log::warning('handshake: TimeZone omitted, office has no local timezone', [
+                'sn' => $device->serial_number,
+                'timezone_format' => $format,
+                'timezone' => $office?->timezone,
+            ]);
+
+            return null;
+        }
+
+        $offset = Carbon::now($this->resolveTimezone($office->timezone))->utcOffset();
+
+        return $format === 'hours' ? (string) ($offset / 60) : (string) $offset;
     }
 
     /**
