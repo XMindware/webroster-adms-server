@@ -28,6 +28,14 @@
             </div>   
             <input type="hidden" name="idempresa" id="idempresa" value="{{ $device->idempresa }}">
             <div class="form-group">
+                <label for="timezone_format">Formato de zona horaria (TimeZone)</label>
+                <select name="timezone_format" class="form-control" id="timezone_format">
+                    <option value="" @if(!$device->timezone_format) selected @endif>Nombre (America/Mexico_City) - predeterminado</option>
+                    <option value="hours" @if($device->timezone_format === 'hours') selected @endif>Horas (-6)</option>
+                    <option value="minutes" @if($device->timezone_format === 'minutes') selected @endif>Minutos (-360)</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <label for="online">Online</label>
                 <input type="text" name="online" class="form-control" id="online" value="{{ $device->online }}">
             </div>

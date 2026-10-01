@@ -602,6 +602,9 @@ public function monitor()
         $device->name = $request->input('name');
         $device->serial_number = $request->input('no_sn');
         $device->idreloj = $request->input('idreloj');
+        $device->timezone_format = in_array($request->input('timezone_format'), ['hours', 'minutes'], true)
+            ? $request->input('timezone_format')
+            : null;
 		if ($request->filled('idoficina')) {
 			$oficina = Oficina::where('idoficina', $request->input('idoficina'))->first();
 			if ($oficina) {
@@ -640,6 +643,9 @@ public function monitor()
         $device->idreloj = $request->input('idreloj') ?? '999999';
         $device->idoficina = $oficina->idoficina;
 		$device->idempresa = $request->input('idempresa') ?? $oficina->idempresa;
+        $device->timezone_format = in_array($request->input('timezone_format'), ['hours', 'minutes'], true)
+            ? $request->input('timezone_format')
+            : null;
         $device->save();
       return redirect()->route('devices.index')->with('success', 'Biométrico actualizado correctamente');
     }

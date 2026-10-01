@@ -31,6 +31,15 @@
                 <input type="text" name="ip" class="form-control" id="ip" placeholder="IP">
             </div>
 
+            <div class="form-group">
+                <label for="timezone_format">Formato de zona horaria (TimeZone)</label>
+                <select name="timezone_format" class="form-control" id="timezone_format">
+                    <option value="" selected>Nombre (America/Mexico_City) - predeterminado</option>
+                    <option value="hours">Horas (-6)</option>
+                    <option value="minutes">Minutos (-360)</option>
+                </select>
+            </div>
+
             <button type="submit" class="btn btn-primary">Enviar</button>
         </form>
     </div>
