@@ -102,6 +102,11 @@ class Device extends Model
         return $this->hasMany(Command::class);
     }
 
+    public function webhook()
+    {
+        return $this->hasOne(Webhook::class, 'device_id');
+    }
+
     public function scopeOnline($query)
     {
         return $query->where('online', true);

@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Jobs\SendWebhookJob;
 use App\Models\Attendance;
 use App\Models\Command;
 use App\Models\Device;
@@ -279,6 +280,7 @@ class iclockController extends Controller
     protected function receiveAttendanceRecords(Request $request, ?string $sn, string $body, ?Device $device)
     {
         $tot = 0;
+        $rows = [];
 
         // Split on line breaks only. The old pattern also split on commas,
         // which silently mangled any field that contained one.
@@ -299,7 +301,7 @@ class iclockController extends Controller
                 continue;
             }
 
-            DB::table('attendances')->insert([
+            $row = [
                 'sn' => $sn,
                 'table' => $request->input('table'),
                 'stamp' => $request->input('Stamp') ?? date('Y-m-d H:i:s'),
@@ -314,10 +316,15 @@ class iclockController extends Controller
                 'status5' => $this->validateAndFormatInteger($data[6] ?? null),
                 'created_at' => now(),
                 'updated_at' => now(),
-            ]);
+            ];
 
+            DB::table('attendances')->insert($row);
+            $rows[] = $row;
             $tot++;
         }
+
+        // Forward the batch to the device's webhook, if one is configured.
+        $this->dispatchWebhook($device, $rows);
 
         return "OK: " . $tot;
     }
@@ -598,6 +605,46 @@ class iclockController extends Controller
     {
         return (($year - 2000) * 12 * 31 + (($month - 1) * 31) + $day - 1) * (24 * 60 * 60)
             + ($hour * 60 + $minute) * 60 + $second;
+    }
+
+    /**
+     * Hand one attendance batch to the device's webhook, if it has one.
+     *
+     * The POST must never delay the reply the terminal is waiting for: that
+     * reply carries the record count the terminal uses as its upload
+     * watermark, and a terminal whose answer is late re-sends the same batch.
+     * Doing the request here used to hold the terminal for up to five seconds.
+     *
+     * With the "sync" queue connection - what .env.example ships and what
+     * production runs - there is no worker to hand the job to, so it is
+     * dispatched for after the response has been flushed. The terminal is freed
+     * immediately and no supervisor process is needed. Point QUEUE_CONNECTION
+     * at a real driver and run a worker, and the same job is picked up in the
+     * background instead.
+     */
+    private function dispatchWebhook($device, array $attLog): void
+    {
+        if (!$device || empty($attLog)) {
+            return;
+        }
+
+        $webhook = $device->webhook;
+
+        if (!$webhook || empty($webhook->url)) {
+            return;
+        }
+
+        // The webhook id travels with the job so the delivery it is about to
+        // make can be tied back to its configuration in the history screen.
+        $delivery = [$webhook->url, $attLog, $device->serial_number, $webhook->secret, $webhook->id];
+
+        if (config('queue.default') === 'sync') {
+            SendWebhookJob::dispatchAfterResponse(...$delivery);
+
+            return;
+        }
+
+        SendWebhookJob::dispatch(...$delivery);
     }
 
 }
