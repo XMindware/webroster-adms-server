@@ -284,6 +284,8 @@ class iclockController extends Controller
 
         $rows = [];
         $seen = [];
+        $unparsable = 0;
+        $firstUnparsable = null;
 
         foreach ($lines as $line) {
             $line = trim($line);
@@ -295,6 +297,17 @@ class iclockController extends Controller
             $data = explode("\t", $line);
 
             if (count($data) < 2) {
+                // A non-empty line with no field separator is either a payload
+                // shape we cannot read (some firmware sends spaces where the
+                // protocol says TAB) or a truncated upload. It used to vanish
+                // without a trace while the reply still said "OK: 0", which
+                // left the terminal re-sending the same batch forever with
+                // nothing in the log to explain why. Counted rather than logged
+                // per line, so a terminal that sends every record this way
+                // cannot flood the log.
+                $unparsable++;
+                $firstUnparsable ??= substr($line, 0, 200);
+
                 continue;
             }
 
@@ -327,19 +340,40 @@ class iclockController extends Controller
             ];
         }
 
-        // Drop anything the table already holds. A terminal that cannot advance
-        // its upload watermark re-sends its whole log on every cycle; without
-        // this the table grows without bound (10,389 rows for one device in a
-        // single day, 830 of them repeats) and every replayed row is then
-        // counted as a clock discrepancy by Device::getTimezoneDiscrepancyCount().
-        $rows = $this->dropAlreadyStored($sn, $rows);
+        // Split the batch against what the table already holds. A terminal that
+        // cannot advance its upload watermark re-sends its whole log on every
+        // cycle; without this the table grows without bound (10,389 rows for
+        // one device in a single day, 830 of them repeats) and every replayed
+        // row is then counted as a clock discrepancy by
+        // Device::getTimezoneDiscrepancyCount().
+        //
+        // A replayed punch is not necessarily an identical one, though. The
+        // status columns belong to the terminal, and a later replay can carry
+        // values the first upload did not have. Dropping every replay on sight
+        // is how a punch the terminal reports as "keluar" (status1 = 1) stayed
+        // stored as "masuk" (status1 = 0) for good: the first copy won and
+        // every later copy was thrown away unread.
+        [$insertRows, $corrections, $unchanged] = $this->partitionAgainstStored($sn, $rows);
 
-        foreach (array_chunk($rows, 500) as $chunk) {
+        foreach (array_chunk($insertRows, 500) as $chunk) {
             DB::table('attendances')->insert($chunk);
         }
 
-        // Forward the batch to the device's webhook, if one is configured.
-        $this->dispatchWebhook($device, $rows);
+        $corrected = $this->applyStatusCorrections($corrections);
+
+        // Forward only genuinely new punches. A correction describes a punch a
+        // receiver may already have been told about, and re-sending it would
+        // duplicate the event downstream.
+        $this->dispatchWebhook($device, $insertRows);
+
+        if ($unparsable > 0) {
+            Log::warning('receiveRecords: attendance lines without field separators', [
+                'sn' => $sn,
+                'table' => $request->input('table'),
+                'lines' => $unparsable,
+                'sample' => $firstUnparsable,
+            ]);
+        }
 
         // Report how many records the terminal sent, not how many we kept. The
         // terminal uses this count to advance its upload watermark, so handing
@@ -347,49 +381,149 @@ class iclockController extends Controller
         Log::info('receiveRecords: attendance batch', [
             'sn' => $sn,
             'sent' => count($seen),
-            'inserted' => count($rows),
-            'duplicates' => count($seen) - count($rows),
+            'inserted' => count($insertRows),
+            'corrected' => $corrected,
+            'duplicates' => $unchanged,
+            'unparsable' => $unparsable,
         ]);
 
         return 'OK: ' . count($seen);
     }
 
     /**
-     * Filter out rows whose (employee_id, timestamp) is already stored for this
-     * device. One range query per batch instead of one query per row.
+     * Columns a terminal owns. They are the only thing a replay may change: the
+     * punch itself (who, when, on which device) is immutable.
+     */
+    private const STATUS_COLUMNS = ['status1', 'status2', 'status3', 'status4', 'status5'];
+
+    /**
+     * Sort a batch into the punches that are new, the ones already stored with
+     * the same statuses, and the ones already stored with *different* statuses.
+     *
+     * One range query per batch instead of one query per row.
+     *
+     * Returns [$insert, $corrections, $unchangedCount] where $corrections is a
+     * list of ['id' => <stored row id>, status1..status5 => <value>].
      *
      * Note: this compares the raw timestamp string the terminal sent against
      * what MySQL hands back. If a terminal ever uses a different wire format for
      * the same instant (for example a compact 20240920100000), the keys will not
-     * match and duplicates will slip through - the "duplicates" count in the log
-     * above is what makes that visible.
+     * match and the replay will be inserted as a duplicate - the "duplicates"
+     * and "inserted" counts in the log above are what makes that visible.
      */
-    protected function dropAlreadyStored(?string $sn, array $rows): array
+    protected function partitionAgainstStored(?string $sn, array $rows): array
     {
         if (empty($rows)) {
-            return [];
+            return [[], [], 0];
         }
 
         $timestamps = array_values(array_filter(array_column($rows, 'timestamp')));
 
         if (empty($timestamps)) {
-            return $rows;
+            return [$rows, [], 0];
         }
 
         $existing = DB::table('attendances')
             ->where('sn', $sn)
             ->whereBetween('timestamp', [min($timestamps), max($timestamps)])
-            ->get(['employee_id', 'timestamp'])
-            ->mapWithKeys(fn ($row) => [$row->employee_id . '|' . $row->timestamp => true]);
+            ->get(array_merge(['id', 'employee_id', 'timestamp'], self::STATUS_COLUMNS))
+            ->keyBy(fn ($row) => $row->employee_id . '|' . $row->timestamp);
 
         if ($existing->isEmpty()) {
-            return $rows;
+            return [$rows, [], 0];
         }
 
-        return array_values(array_filter(
-            $rows,
-            fn ($row) => !$existing->has($row['employee_id'] . '|' . $row['timestamp'])
-        ));
+        $insert = [];
+        $corrections = [];
+        $unchanged = 0;
+
+        foreach ($rows as $row) {
+            $stored = $existing->get($row['employee_id'] . '|' . $row['timestamp']);
+
+            if ($stored === null) {
+                $insert[] = $row;
+
+                continue;
+            }
+
+            $statuses = [];
+            $differs = false;
+
+            foreach (self::STATUS_COLUMNS as $column) {
+                // The query builder hands MySQL's integers back as strings, and
+                // the incoming row holds int|null, so both sides are normalised
+                // before they are compared.
+                $incoming = $this->normalizeStatus($row[$column] ?? null);
+                $statuses[$column] = $incoming;
+
+                if ($incoming !== $this->normalizeStatus($stored->{$column})) {
+                    $differs = true;
+                }
+            }
+
+            if (!$differs) {
+                $unchanged++;
+
+                continue;
+            }
+
+            $corrections[] = ['id' => $stored->id] + $statuses;
+        }
+
+        return [$insert, $corrections, $unchanged];
+    }
+
+    /**
+     * Write back the statuses a terminal reported after the row was stored.
+     *
+     * Deliberately does NOT touch updated_at. That column is what
+     * Device::getTimezoneDiscrepancyCount() compares against the punch time to
+     * decide whether the terminal's clock is out of step; bumping it here would
+     * make every corrected row look like a skewed clock and could trigger a
+     * clock correction that moves the terminal's clock for no reason.
+     *
+     * @return int how many rows were corrected
+     */
+    protected function applyStatusCorrections(array $corrections): int
+    {
+        if (empty($corrections)) {
+            return 0;
+        }
+
+        // Group by identical status values so a whole-log replay that corrects
+        // thousands of rows issues a handful of statements instead of one per
+        // row.
+        $groups = [];
+
+        foreach ($corrections as $correction) {
+            $id = $correction['id'];
+            unset($correction['id']);
+
+            $key = implode('|', array_map(
+                fn ($value) => $value === null ? 'null' : (string) $value,
+                $correction
+            ));
+
+            $groups[$key]['values'] = $correction;
+            $groups[$key]['ids'][] = $id;
+        }
+
+        foreach ($groups as $group) {
+            foreach (array_chunk($group['ids'], 1000) as $ids) {
+                DB::table('attendances')->whereIn('id', $ids)->update($group['values']);
+            }
+        }
+
+        return count($corrections);
+    }
+
+    /**
+     * Compare status values as integers, treating "not reported" as null so an
+     * empty field and a missing one are the same thing.
+     */
+    private function normalizeStatus($value): ?int
+    {
+        return $value === null || $value === '' ? null : (int) $value;
     }
 
     /**
