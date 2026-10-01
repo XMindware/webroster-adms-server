@@ -52,7 +52,7 @@
                     @php
                         $status = 'unknown';
                         if ($device->online) {
-                            $diffInMinutes = $device->online->diffInMinutes(now());
+                            $diffInMinutes = abs($device->online->diffInMinutes(now()));
                             if ($diffInMinutes < 5) {
                                 $status = 'online';
                             } elseif ($diffInMinutes <= 15) {
