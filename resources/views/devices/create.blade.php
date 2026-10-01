@@ -31,6 +31,16 @@
                 <input type="text" name="ip" class="form-control" id="ip" placeholder="IP">
             </div>
 
+            <div class="form-group">
+                <label for="timezone_format">{{ __('devices.timezone_format') }}</label>
+                <select name="timezone_format" class="form-control" id="timezone_format">
+                    <option value="" selected>{{ __('devices.timezone_format_none') }}</option>
+                    <option value="hours">{{ __('devices.timezone_format_hours') }}</option>
+                    <option value="minutes">{{ __('devices.timezone_format_minutes') }}</option>
+                </select>
+                <small class="form-text text-muted">{{ __('devices.timezone_format_help') }}</small>
+            </div>
+
             <button type="submit" class="btn btn-primary">{{ __('common.submit') }}</button>
         </form>
     </div>

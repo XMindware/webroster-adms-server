@@ -405,6 +405,7 @@ class DeviceController extends Controller
         $device->name = $request->input('name');
         $device->serial_number = $request->input('no_sn');
         $device->idreloj = $request->input('idreloj');
+        $device->timezone_format = $this->timezoneFormat($request);
 
         if ($request->filled('idoficina')) {
             $oficina = Oficina::where('idoficina', $request->input('idoficina'))->first();
@@ -449,9 +450,27 @@ class DeviceController extends Controller
         $device->idreloj = $request->input('idreloj') ?? '999999';
         $device->idoficina = $oficina->idoficina;
         $device->idempresa = $request->input('idempresa') ?? $oficina->idempresa;
+        $device->timezone_format = $this->timezoneFormat($request);
         $device->save();
 
         return redirect()->route('devices.index')->with('success', __('devices.updated_successfully'));
+    }
+
+    /**
+     * The TimeZone shape the form asked for, or null for "send no line".
+     *
+     * Only the two shapes a terminal can parse are kept; anything else - a
+     * hand-made POST, a stale form, a value someone typed in - clears the
+     * column instead of storing something the handshake will silently ignore.
+     * iclockController::handshakeTimezone() already treats every other value
+     * as "no line", so the difference is only that the form would otherwise
+     * show a blank selection over a value that is really there.
+     */
+    private function timezoneFormat(Request $request): ?string
+    {
+        $format = $request->input('timezone_format');
+
+        return in_array($format, ['hours', 'minutes'], true) ? $format : null;
     }
 
     public function restart(Request $request, $id, AdmsCommandService $commands)

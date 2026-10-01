@@ -26,6 +26,11 @@ return [
     'ip_address' => 'IP Address',
     'port' => 'Port',
     'serial_number' => 'Serial Number',
+    'timezone_format' => 'TimeZone format',
+    'timezone_format_none' => 'Not sent (default)',
+    'timezone_format_hours' => 'Hours (e.g. 7 for Asia/Jakarta)',
+    'timezone_format_minutes' => 'Minutes (e.g. 420 for Asia/Jakarta)',
+    'timezone_format_help' => 'Only applies when this device\'s office has a real timezone. The number is derived from the office timezone, so it is not a fixed value. A generic zone such as UTC is not sent.',
     
     // Messages
     'created_successfully' => 'Device created successfully.',

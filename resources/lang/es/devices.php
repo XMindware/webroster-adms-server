@@ -26,6 +26,11 @@ return [
     'ip_address' => 'Dirección IP',
     'port' => 'Puerto',
     'serial_number' => 'Número de Serie',
+    'timezone_format' => 'Formato de TimeZone',
+    'timezone_format_none' => 'No se envía (predeterminado)',
+    'timezone_format_hours' => 'Horas (p. ej. 7 para Asia/Jakarta)',
+    'timezone_format_minutes' => 'Minutos (p. ej. 420 para Asia/Jakarta)',
+    'timezone_format_help' => 'Solo aplica cuando la oficina de este dispositivo tiene una zona horaria real. El número se calcula desde la zona horaria de la oficina, así que no es un valor fijo. Una zona genérica como UTC no se envía.',
     
     // Messages
     'created_successfully' => 'Dispositivo creado exitosamente.',

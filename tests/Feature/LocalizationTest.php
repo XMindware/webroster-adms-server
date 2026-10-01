@@ -84,6 +84,37 @@ class LocalizationTest extends TestCase
         }
     }
 
+    /**
+     * @return array<string, array<int, string>>
+     */
+    public static function deviceTimezoneLabels(): array
+    {
+        return [
+            'en' => ['en', 'TimeZone format', 'Not sent (default)', 'Hours (e.g. 7 for Asia/Jakarta)', 'Minutes (e.g. 420 for Asia/Jakarta)'],
+            'es' => ['es', 'Formato de TimeZone', 'No se envía (predeterminado)', 'Horas (p. ej. 7 para Asia/Jakarta)', 'Minutos (p. ej. 420 para Asia/Jakarta)'],
+            'id' => ['id', 'Format TimeZone', 'Tidak dikirim (bawaan)', 'Jam (mis. 7 untuk Asia/Jakarta)', 'Menit (mis. 420 untuk Asia/Jakarta)'],
+        ];
+    }
+
+    /**
+     * The TimeZone selector is the newest field on the device form, and the
+     * easiest one to hardcode in Spanish by copying it from upstream.
+     */
+    #[DataProvider('deviceTimezoneLabels')]
+    public function test_device_timezone_format_labels_follow_the_locale(string $locale, string $label, string $none, string $hours, string $minutes): void
+    {
+        $this->office();
+        $device = $this->device();
+
+        $response = $this->actingUser()->get("/devices/{$device->id}/edit?lang={$locale}");
+
+        $response->assertOk();
+        $response->assertSee($label, false);
+        $response->assertSee($none, false);
+        $response->assertSee($hours, false);
+        $response->assertSee($minutes, false);
+    }
+
     public function test_language_switch_route_stores_the_locale_and_changes_the_labels(): void
     {
         $this->office();

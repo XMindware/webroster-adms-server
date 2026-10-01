@@ -26,6 +26,11 @@ return [
     'ip_address' => 'Alamat IP',
     'port' => 'Port',
     'serial_number' => 'Nomor Seri',
+    'timezone_format' => 'Format TimeZone',
+    'timezone_format_none' => 'Tidak dikirim (bawaan)',
+    'timezone_format_hours' => 'Jam (mis. 7 untuk Asia/Jakarta)',
+    'timezone_format_minutes' => 'Menit (mis. 420 untuk Asia/Jakarta)',
+    'timezone_format_help' => 'Hanya berlaku kalau kantor perangkat ini punya zona waktu sebenarnya. Angkanya dihitung dari zona waktu kantor, jadi bukan angka tetap. Zona generik seperti UTC tidak dikirim.',
     
     // Messages
     'created_successfully' => 'Perangkat berhasil dibuat.',
