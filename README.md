@@ -111,3 +111,21 @@ or via <br>
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Device status API (for WebRoster)
+
+Read-only, authenticated per empresa with an API key. A key only ever sees devices whose `idempresa` matches it.
+
+```bash
+php artisan migrate
+php artisan empresa-keys:create <idempresa> --name="webroster prod"   # prints the key once
+php artisan empresa-keys:revoke <key id>
+php artisan route:clear   # if routes were cached (bootstrap/cache/routes-v7.php)
+```
+
+```bash
+curl -H "Authorization: Bearer wrk_..." "https://<adms-host>/api/empresa/devices?idoficina=60&online=1"
+curl -H "Authorization: Bearer wrk_..." "https://<adms-host>/api/empresa/devices/<serial_number>"
+```
+
+Each device returns `online` (contacted the server within `ADMS_ONLINE_THRESHOLD_MINUTES`, default 3), `last_seen_at`, `seconds_since_last_seen`, `last_checada` (`employee_id`, `device_timestamp` as stored, `received_at`), `pending_commands`, office and timezone. The list also carries a `summary` (total/online/offline) that ignores the `online` filter. Missing/invalid/revoked key → 401; a serial number from another empresa → 404.

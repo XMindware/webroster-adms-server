@@ -58,4 +58,10 @@ return [
     */
     'commands_per_request' => (int) env('ADMS_COMMANDS_PER_REQUEST', 20),
 
+    /*
+    | A device counts as online if it contacted the server within this many
+    | minutes (same threshold devices:check-status alerts on).
+    */
+    'online_threshold_minutes' => (int) env('ADMS_ONLINE_THRESHOLD_MINUTES', 3),
+
 ];
