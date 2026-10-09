@@ -117,4 +117,18 @@ return [
     */
     'webhook_timeout' => (int) env('ADMS_WEBHOOK_TIMEOUT', 5),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Device online threshold
+    |--------------------------------------------------------------------------
+    |
+    | A terminal counts as online if it contacted the server within this many
+    | minutes. Read from here by both devices:check-status and the read-only
+    | /api/empresa/devices endpoint, so the API can never report a terminal as
+    | online while the alert command has already declared it offline. The
+    | command used to hardcode 3 minutes.
+    |
+    */
+    'online_threshold_minutes' => (int) env('ADMS_ONLINE_THRESHOLD_MINUTES', 3),
+
 ];

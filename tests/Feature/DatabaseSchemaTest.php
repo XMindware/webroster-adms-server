@@ -78,4 +78,52 @@ class DatabaseSchemaTest extends TestCase
             'api:sincronizeAttendance filters on response_uniqueid'
         );
     }
+
+    /**
+     * The WebRoster device status API asks for "the newest punch per terminal"
+     * for the whole fleet in one query. The index above cannot serve that even
+     * though it also leads with `sn`: its second column is a range column, so
+     * it cannot be walked in id order and every row of each device's history
+     * has to be read to find the newest one.
+     */
+    public function test_attendances_has_the_latest_punch_index(): void
+    {
+        $indexes = collect(DB::select("PRAGMA index_list('attendances')"))
+            ->pluck('name')
+            ->all();
+
+        $this->assertContains(
+            'attendances_sn_id_index',
+            $indexes,
+            'the latest-punch-per-device lookup must be indexed'
+        );
+
+        $columns = collect(DB::select("PRAGMA index_info('attendances_sn_id_index')"))
+            ->sortBy('seqno')
+            ->pluck('name')
+            ->all();
+
+        $this->assertSame(
+            ['sn', 'id'],
+            $columns,
+            'sn is the equality predicate and id must follow, so max(id) is the last entry of the range'
+        );
+    }
+
+    /**
+     * The per-empresa device status API authenticates with a key stored only
+     * as a hash; without the table every call would 401.
+     */
+    public function test_empresa_api_keys_table_exists(): void
+    {
+        $this->assertTrue(
+            Schema::hasTable('empresa_api_keys'),
+            'the device status API authenticates against empresa_api_keys'
+        );
+
+        $this->assertTrue(
+            Schema::hasColumn('empresa_api_keys', 'key_hash'),
+            'the key must be stored hashed, never as the plaintext'
+        );
+    }
 }

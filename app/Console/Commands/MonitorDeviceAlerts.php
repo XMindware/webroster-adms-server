@@ -14,9 +14,12 @@ class MonitorDeviceAlerts extends Command
 
     public function handle()
     {
-        $threshold = now()->subMinutes(3);
+        $threshold = now()->subMinutes(Device::onlineThresholdMinutes());
 
-        // 🔌 Devices that have been offline for more than 3 minutes
+        // 🔌 Devices that have been offline for longer than
+        // adms.online_threshold_minutes (3 by default). Read from the same
+        // setting as the /api/empresa/devices endpoint, so the two cannot
+        // disagree about whether a terminal is up.
         Device::where('online', '<', $threshold)->get()->each(function ($device) {
             if (!$device->last_alert_sent_at || $device->last_alert_sent_at->lt($device->online)) {
                 Log::channel('slack')->warning("🔌 Device `{$device->name}` (ID: {$device->id}) has been offline since {$device->online}.");

@@ -20,6 +20,8 @@ It is built on Laravel.
 - 🏢 **Offices (oficinas)** — per-office timezone, station API URL and token.
 - 🔔 **Webhooks** — forward each attendance batch to an external URL, signed
   with HMAC-SHA256 and logged with status code and duration.
+- 🔑 **Device status API** — read-only, per-empresa API keys, so WebRoster can
+  poll which terminals are online and when each one last saw a punch.
 - 🌐 **Three languages** — English, Spanish and Indonesian, switchable per
   session.
 - 🧰 **Artisan commands** — sync employees, pull/push fingerprints, monitor
@@ -283,6 +285,38 @@ WHERE timezone IS NULL
 > more than a day away from `created_at` are excluded, so a terminal replaying
 > an old backlog does not saturate it.
 
+## 🔑 Device status API (for WebRoster)
+
+Read-only, and authenticated per empresa: a key only ever sees devices whose
+`idempresa` matches it, and every query is scoped from the key rather than from
+anything the caller sends.
+
+```bash
+php artisan migrate
+php artisan empresa-keys:create <idempresa> --name="webroster prod"   # prints the key once
+php artisan empresa-keys:revoke <key id>
+php artisan route:clear   # if routes were cached (bootstrap/cache/routes-*.php)
+```
+
+```bash
+curl -H "Authorization: Bearer wrk_..." "https://<adms-host>/api/empresa/devices?idoficina=60&online=1"
+curl -H "Authorization: Bearer wrk_..." "https://<adms-host>/api/empresa/devices/<serial_number>"
+```
+
+Each device returns `online` (it contacted the server within
+`ADMS_ONLINE_THRESHOLD_MINUTES`, default 3 — the same setting
+`devices:check-status` alerts on), `last_seen_at`, `seconds_since_last_seen`,
+`last_checada` (`employee_id`, `device_timestamp` exactly as the terminal sent
+it, `received_at`), `pending_commands`, office and timezone. The list also
+carries a `summary` (total/online/offline) that ignores the `online` filter. A
+missing, unknown or revoked key is a 401; a serial number belonging to another
+empresa is a 404 — the same answer as one that does not exist, so the API never
+confirms that a serial number exists somewhere else.
+
+These routes sit in the `api` group and are therefore rate limited to 60
+requests per minute per IP (see `RouteServiceProvider`). A dashboard polling
+every few seconds is fine; a tight loop is not.
+
 ## 🧰 Artisan commands
 
 | Command | Purpose |
@@ -292,6 +326,8 @@ WHERE timezone IS NULL
 | `fingerprints:push` | Send stored templates to a terminal (`--device`, `--office`, `--pins`, `--dry-run`) |
 | `monitor:desfases` | Report attendance whose punch time is far from when it was received (`--threshold`, minutes) |
 | `devices:check-status` | Alert when devices go offline too long, or come back online |
+| `empresa-keys:create` | Issue a per-empresa key for the device status API (printed once) |
+| `empresa-keys:revoke` | Revoke an empresa API key |
 | `api:sincronizeAttendance` | Push attendance to the Webroster APIs |
 
 Four of them are scheduled in `app/Console/Kernel.php` and need a cron entry:

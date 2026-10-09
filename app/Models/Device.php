@@ -40,6 +40,20 @@ class Device extends Model
      */
     private const CLOCK_SKEW_TOLERANCE_MINUTES = 20;
 
+    /**
+     * A terminal counts as online if it contacted the server within this many
+     * minutes.
+     *
+     * Single source for devices:check-status and /api/empresa/devices. The
+     * alert command used to hardcode 3, so changing the setting would have
+     * left the API reporting a terminal as online that the command had
+     * already declared offline.
+     */
+    public static function onlineThresholdMinutes(): int
+    {
+        return (int) config('adms.online_threshold_minutes', 3);
+    }
+
     public function oficina()
     {
         // Link by both idoficina and idempresa (using value, not column)
