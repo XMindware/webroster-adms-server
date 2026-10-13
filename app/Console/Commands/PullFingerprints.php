@@ -68,7 +68,7 @@ class PullFingerprints extends Command
                 $device->name ?: $device->serial_number,
                 $mode,
                 $queued,
-                $device->online && $device->online->diffInMinutes(now()) <= 5 ? '' : '  (device looks offline)'
+                $device->online && abs($device->online->diffInMinutes(now())) <= 5 ? '' : '  (device looks offline)'
             ));
         }
 

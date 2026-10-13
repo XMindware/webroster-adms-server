@@ -58,7 +58,7 @@
                         <td>{!! $attendance->getEmployee()?->fullname ?? '<em>Unknown</em>' !!}</td>
                         <td>{{ $attendance->timestamp }}</td>
                         <td>{{ $attendance->updated_at }}</td>
-                        <td class="{{ $attendance->updated_at->diffInMinutes($attendance->timestamp) > 3 ? 'text-danger' : '' }}">
+                        <td class="{{ abs($attendance->updated_at->diffInMinutes($attendance->timestamp)) > 3 ? 'text-danger' : '' }}">
                             {{ $attendance->updated_at->diffForHumans($attendance->timestamp) }}
                         </td>
                         <td>{{ $attendance->response_uniqueid }}</td>
