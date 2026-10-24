@@ -10,7 +10,7 @@
                       onsubmit="return confirm('{{ __('agentes.purge_confirm') }}');">
                     @csrf
                     <input type="hidden" name="oficina" value="{{ $selectedOficina }}">
-                    <input type="hidden" name="idempresa" value="{{ request('idempresa') }}">
+                    <input type="hidden" name="idempresa" value="{{ $selectedEmpresa }}">
                     <button type="submit" class="btn btn-outline-danger">{{ __('agentes.purge_removed') }}</button>
                 </form>
             @endif
@@ -90,12 +90,12 @@
         @endif
         <div class="form-group">
             <label for="oficina">{{ __('navigation.oficinas') }}</label>
-            <form method="GET" action="{{ route('agentes.index', ['selectedOficina' => $selectedOficina]) }}" id="oficinaForm">
-                <input type="hidden" name="idempresa" id="idempresa" value="{{ request('idempresa') }}">
-                <select name="selectedOficina" class="form-control" id="selectedOficina">
+            <form method="GET" action="{{ route('agentes.index') }}" id="oficinaForm">
+                <select name="oficina_id" class="form-control" id="selectedOficina">
+                    <option value="" {{ $selectedOficinaId ? '' : 'selected' }}>--</option>
                     @foreach ($oficinas as $oficina)
-                        <option value="{{ $oficina->idoficina }}" data-idempresa="{{ $oficina->idempresa }}" 
-                            {{ $oficina->idoficina == $selectedOficina ? 'selected' : '' }}>
+                        <option value="{{ $oficina->id }}"
+                            {{ $oficina->id == $selectedOficinaId ? 'selected' : '' }}>
                             {{ $oficina->ubicacion }}
                         </option>
                     @endforeach
@@ -150,14 +150,7 @@
                 }
             @endif
 
-            function syncEmpresa() {
-                var idempresa = $('#selectedOficina option:selected').data('idempresa');
-                $('#idempresa').val(idempresa || '');
-            }
-            // sync on load
-            syncEmpresa();
             $('#selectedOficina').change(function() {
-                syncEmpresa();
                 $('#oficinaForm').submit();
             });
         });

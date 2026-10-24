@@ -12,20 +12,33 @@ use Illuminate\Support\Facades\Log;
 class AgentesController extends Controller
 {
     public function index(Request $request)
-    {        
-        $selectedOficina = $request->query('selectedOficina');
-		$idempresa = $request->query('idempresa');
-        if ($selectedOficina) {
-			$q = Agente::where('idoficina', $selectedOficina);
-			if (!empty($idempresa)) {
-				$q->where('idempresa', $idempresa);
-			}
-			$agentes = $q->get()->sortBy('idagente');
+    {
+        $oficinas = Oficina::all();
+
+        // The oficinas.id is the only unique key: idoficina can repeat across empresas.
+        $selected = null;
+        if ($request->filled('oficina_id')) {
+            $selected = $oficinas->firstWhere('id', (int) $request->query('oficina_id'));
+        } elseif ($request->filled('selectedOficina')) {
+            $selected = $oficinas->first(function ($o) use ($request) {
+                return $o->idoficina == $request->query('selectedOficina')
+                    && (!$request->filled('idempresa') || $o->idempresa == $request->query('idempresa'));
+            });
+        }
+
+        if ($selected) {
+            $agentes = Agente::where('idoficina', $selected->idoficina)
+                ->where('idempresa', $selected->idempresa)
+                ->get()->sortBy('idagente');
         } else {
             $agentes = Agente::all()->sortBy('idagente');
         }
-        $oficinas = Oficina::all();
-        return view('agentes.index', compact('agentes', 'oficinas', 'selectedOficina'));
+
+        $selectedOficina = $selected ? $selected->idoficina : null;
+        $selectedEmpresa = $selected ? $selected->idempresa : null;
+        $selectedOficinaId = $selected ? $selected->id : null;
+
+        return view('agentes.index', compact('agentes', 'oficinas', 'selectedOficina', 'selectedEmpresa', 'selectedOficinaId'));
     }
 
     public function pullAgentes(Request $request)
@@ -108,10 +121,7 @@ class AgentesController extends Controller
                 'message' => 'Office not found.',
             ]);
 
-            return redirect()->route('agentes.index', [
-                'selectedOficina' => $idoficina,
-                'idempresa' => $idempresa,
-            ]);
+            return redirect()->route('agentes.index');
         }
 
         Log::debug('runPurgeRemoved: manual purge triggered', [
@@ -131,9 +141,6 @@ class AgentesController extends Controller
             'oficina' => $oficina->ubicacion,
         ]));
 
-        return redirect()->route('agentes.index', [
-            'selectedOficina' => $oficina->idoficina,
-            'idempresa' => $oficina->idempresa,
-        ]);
+        return redirect()->route('agentes.index', ['oficina_id' => $oficina->id]);
     }
 }

@@ -65,6 +65,25 @@ class DeviceController extends Controller
     }
 
     /**
+     * Resolve the office picked in a dropdown. oficinas.id is the only unique key
+     * (idoficina repeats across empresas); the legacy selectedOficina + idempresa
+     * pair is still honoured for old links.
+     */
+    private function resolveOficina(Request $request): ?Oficina
+    {
+        if ($request->filled('oficina_id')) {
+            return Oficina::find((int) $request->query('oficina_id'));
+        }
+        if ($request->filled('selectedOficina')) {
+            return Oficina::where('idoficina', $request->query('selectedOficina'))
+                ->when($request->filled('idempresa'), fn ($q) => $q->where('idempresa', $request->query('idempresa')))
+                ->first();
+        }
+
+        return null;
+    }
+
+    /**
      * Templates actually captured from the terminals, one row per employee
      * finger per device.
      *
@@ -76,11 +95,12 @@ class DeviceController extends Controller
     {
         $title = __('devices.fingerprints_captured');
 
-        $selectedOficina = $request->query('selectedOficina');
+        $oficina = $this->resolveOficina($request);
+        $selectedOficinaId = $oficina?->id;
         $pin = $request->query('pin');
 
         $templates = FingerprintTemplate::query()
-            ->when($selectedOficina, fn ($q) => $q->where('idoficina', $selectedOficina))
+            ->when($oficina, fn ($q) => $q->forOffice($oficina->idempresa, $oficina->idoficina))
             ->when($pin, fn ($q) => $q->where('pin', $pin))
             ->orderByDesc('captured_at')
             ->orderBy('pin')
@@ -99,7 +119,7 @@ class DeviceController extends Controller
 
         $oficinas = Oficina::all();
 
-        return view('devices.fingerprints', compact('templates', 'title', 'oficinas', 'selectedOficina', 'pin'));
+        return view('devices.fingerprints', compact('templates', 'title', 'oficinas', 'selectedOficinaId', 'pin'));
     }
 
     /**
@@ -292,31 +312,22 @@ class DeviceController extends Controller
     }
 
     public function Attendance(Request $request) {
-        $selectedOficina = $request->query('selectedOficina');
+        $oficina = $this->resolveOficina($request);
+        $selectedOficinaId = $oficina?->id;
 		$selectedDate = $request->query('selectedDate'); // YYYY-MM-DD
-		$idempresa = $request->query('idempresa');
         $page = $request->query('page', 1);
     
         $query = Attendance::query()->with(['device.oficina']);
 
-        $officeTimezone = null;
-        if ($selectedOficina) {
-            $oficinaQuery = Oficina::where('idoficina', $selectedOficina);
-            if (!empty($idempresa)) {
-                $oficinaQuery->where('idempresa', $idempresa);
-            }
-            $officeTimezone = optional($oficinaQuery->first())->timezone;
-        }
+        $officeTimezone = $oficina?->timezone;
     
-        if ($selectedOficina) {
-			$query->whereIn('sn', function ($q) use ($selectedOficina, $idempresa) {
+        if ($oficina) {
+			$query->whereIn('sn', function ($q) use ($oficina) {
                 $q->select('serial_number')
                   ->from('devices')
                   ->whereNotIn('employee_id', self::EXCLUDED_EMPLOYEES) // Exclude devices with idreloj 999999 or 0
-                  ->where('idoficina', $selectedOficina);
-				if (!empty($idempresa)) {
-					$q->where('idempresa', $idempresa);
-				}
+                  ->where('idoficina', $oficina->idoficina)
+                  ->where('idempresa', $oficina->idempresa);
             });
         }
 		if ($selectedDate) {
@@ -374,8 +385,7 @@ class DeviceController extends Controller
         return view('devices.attendance', [
             'attendances' => $paginator,
             'oficinas' => $oficinas,
-            'selectedOficina' => $selectedOficina,
-			'idempresa' => $idempresa,
+            'selectedOficinaId' => $selectedOficinaId,
 			'selectedDate' => $selectedDate,
             'page' => $page,
         ]);
