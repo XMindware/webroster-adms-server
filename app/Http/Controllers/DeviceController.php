@@ -273,12 +273,18 @@ class DeviceController extends Controller
     {
         $oficina = Oficina::find($request->input('id'));
         if ($oficina) {
-            // Check if there are devices associated with this oficina
-            $devices = Device::where('idoficina', $oficina->idoficina)->get();
-            foreach ($devices as $device) {
-                $device->delete();
-            }
-            $oficina->delete();
+            DB::transaction(function () use ($oficina) {
+                // Devices of this oficina (same idoficina can exist under another empresa)
+                $devices = Device::where('idoficina', $oficina->idoficina)
+                    ->where('idempresa', $oficina->idempresa)
+                    ->get();
+                foreach ($devices as $device) {
+                    // device_commands.device_id has a foreign key to devices
+                    $device->commands()->delete();
+                    $device->delete();
+                }
+                $oficina->delete();
+            });
             return redirect()->route('devices.oficinas')->with('success', 'Oficina eliminada correctamente');
         } else {
             return redirect()->route('devices.oficinas')->with('error', 'Oficina no encontrada');
