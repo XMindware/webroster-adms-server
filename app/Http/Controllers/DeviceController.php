@@ -612,6 +612,23 @@ public function monitor()
 		return view('devices.create', compact('oficinas'));
     }
 
+    /**
+     * Office chosen in the device form. idoficina repeats across empresas, so the
+     * form posts oficinas.id (oficina_id); idoficina + idempresa is the fallback.
+     */
+    private function resolveFormOficina(Request $request): ?Oficina
+    {
+        if ($request->filled('oficina_id')) {
+            return Oficina::find((int) $request->input('oficina_id'));
+        }
+        if ($request->filled('idoficina')) {
+            return Oficina::where('idoficina', $request->input('idoficina'))
+                ->when($request->filled('idempresa'), fn ($q) => $q->where('idempresa', $request->input('idempresa')))
+                ->first();
+        }
+        return null;
+    }
+
     public function store(Request $request)
     {
         $device = new Device();
@@ -621,12 +638,10 @@ public function monitor()
         $device->timezone_format = in_array($request->input('timezone_format'), ['hours', 'minutes'], true)
             ? $request->input('timezone_format')
             : null;
-		if ($request->filled('idoficina')) {
-			$oficina = Oficina::where('idoficina', $request->input('idoficina'))->first();
-			if ($oficina) {
-				$device->idoficina = $oficina->idoficina;
-				$device->idempresa = $request->input('idempresa') ?? $oficina->idempresa;
-			}
+		$oficina = $this->resolveFormOficina($request);
+		if ($oficina) {
+			$device->idoficina = $oficina->idoficina;
+			$device->idempresa = $oficina->idempresa;
 		}
         $device->save();
 
@@ -649,7 +664,7 @@ public function monitor()
     public function update(Request $request, $id)
     {
         $device = Device::find($id);
-        $oficina = Oficina::where('idoficina', $request->input('idoficina'))->first();
+        $oficina = $this->resolveFormOficina($request);
 
         if (!$oficina) {
             return redirect()->route('devices.index')->with('error', 'Oficina no encontrada');
@@ -658,7 +673,7 @@ public function monitor()
         $device->serial_number = $request->input('serial_number');
         $device->idreloj = $request->input('idreloj') ?? '999999';
         $device->idoficina = $oficina->idoficina;
-		$device->idempresa = $request->input('idempresa') ?? $oficina->idempresa;
+		$device->idempresa = $oficina->idempresa;
         $device->timezone_format = in_array($request->input('timezone_format'), ['hours', 'minutes'], true)
             ? $request->input('timezone_format')
             : null;
