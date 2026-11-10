@@ -44,7 +44,7 @@
                         <td class="text-center align-middle">
                             @if ($d->online)
                                 @php
-                                    $diffInMinutes = $d->online->diffInMinutes(now());
+                                    $diffInMinutes = (int) $d->online->diffInMinutes(now(), true);
                                 @endphp
 
                                 @if ($diffInMinutes < 1)

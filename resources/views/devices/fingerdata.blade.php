@@ -27,7 +27,7 @@
                             @if ($device->oficina)
                                 — {{ $device->oficina->ubicacion }}
                             @endif
-                            @if (!$device->online || $device->online->diffInMinutes(now()) > 5)
+                            @if (!$device->online || (int) $device->online->diffInMinutes(now(), true) > 5)
                                 ({{ __('devices.offline_warning') }})
                             @endif
                         </option>

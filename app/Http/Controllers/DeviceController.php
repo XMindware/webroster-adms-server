@@ -359,7 +359,7 @@ class DeviceController extends Controller
                     $timestamp = $timestamp->setTimezone($tz);
                 }
 
-                return $updatedAt->diffInMinutes($timestamp) > 20;
+                return (int) $updatedAt->diffInMinutes($timestamp, true) > 20;
             });
         
             $filtered = $filtered->sortByDesc('updated_at')->values();

@@ -23,7 +23,7 @@ class MonitorDesfases extends Command
             $this->warn("Se encontraron {$desfasesEncontrados->count()} checadas con desfase:");
             
             foreach ($desfasesEncontrados as $attendance) {
-                $diffMinutes = $attendance->created_at->diffInMinutes($attendance->timestamp);
+                $diffMinutes = (int) $attendance->created_at->diffInMinutes($attendance->timestamp, true);
                 $device = $attendance->device;
                 $oficina = $device ? $device->oficina : null;
                 
@@ -59,7 +59,7 @@ class MonitorDesfases extends Command
             ->get()
             ->filter(function ($attendance) use ($threshold) {
                 // Calcular diferencia en minutos entre created_at y timestamp
-                $diffMinutes = $attendance->created_at->diffInMinutes($attendance->timestamp);
+                $diffMinutes = (int) $attendance->created_at->diffInMinutes($attendance->timestamp, true);
                 
                 // Si hay oficina con timezone, usar lógica más precisa
                 if ($attendance->device && $attendance->device->oficina && $attendance->device->oficina->timezone) {
@@ -69,7 +69,7 @@ class MonitorDesfases extends Command
                     $attendanceTimeInOfficeTz = $attendance->timestamp->setTimezone($officeTimezone);
                     $createdTimeInOfficeTz = $attendance->created_at->setTimezone($officeTimezone);
                     
-                    $diffMinutes = $createdTimeInOfficeTz->diffInMinutes($attendanceTimeInOfficeTz);
+                    $diffMinutes = (int) $createdTimeInOfficeTz->diffInMinutes($attendanceTimeInOfficeTz, true);
                 }
                 
                 return $diffMinutes > $threshold;

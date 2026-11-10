@@ -29,7 +29,7 @@ Attendence Log
 
 Before you begin, ensure you have the following installed on your system:
 
--   PHP >= 8.0
+-   PHP >= 8.2
 -   Composer
 -   MySQL or any other supported database
 -   Web server (Apache, Nginx, etc.)

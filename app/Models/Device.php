@@ -60,7 +60,7 @@ class Device extends Model
                 ->get();
 
             foreach ($checadasHoy as $attendance) {
-                if ($attendance->created_at->diffInMinutes($attendance->timestamp) > 20) {
+                if ((int) $attendance->created_at->diffInMinutes($attendance->timestamp, true) > 20) {
                     $hayDesfases = true;
                     break;
                 }
@@ -85,8 +85,8 @@ class Device extends Model
             
             // Calculate difference in minutes between when the record was created and the actual attendance time
             // Both times are now in the same timezone (office timezone)
-            $diffInMinutes = $attendance->created_at->setTimezone($officeTimezone)
-                ->diffInMinutes($attendanceTimeInOfficeTz);
+            $diffInMinutes = (int) $attendance->created_at->setTimezone($officeTimezone)
+                ->diffInMinutes($attendanceTimeInOfficeTz, true);
             
             if ($diffInMinutes > 20) {
                 $hayDesfases = true;
@@ -240,8 +240,8 @@ class Device extends Model
         
         foreach ($checadasHoy as $attendance) {
             $attendanceTimeInOfficeTz = $attendance->timestamp->setTimezone($officeTimezone);
-            $diffInMinutes = $attendance->created_at->setTimezone($officeTimezone)
-                ->diffInMinutes($attendanceTimeInOfficeTz);
+            $diffInMinutes = (int) $attendance->created_at->setTimezone($officeTimezone)
+                ->diffInMinutes($attendanceTimeInOfficeTz, true);
             
             if ($diffInMinutes > 20) {
                 $discrepancyCount++;

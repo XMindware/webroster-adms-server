@@ -26,7 +26,14 @@ return new class extends Migration
         if (!Schema::hasColumn('attendances', 'idoficina')) {
             $table->unsignedSmallInteger('idoficina')->nullable();
 
-            $table->foreign('idoficina')->references('idoficina')->on('oficinas')->onDelete('cascade');
+            // oficinas.idoficina is indexed but not unique. MySQL accepts a
+            // foreign key to it; SQLite rejects every write to the child table
+            // ("foreign key mismatch"). Laravel 10 silently skipped foreign
+            // keys added to an existing SQLite table, Laravel 11+ creates
+            // them, so keep SQLite (the test database) as it always was.
+            if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+                $table->foreign('idoficina')->references('idoficina')->on('oficinas')->onDelete('cascade');
+            }
         }
     });
 }
@@ -38,7 +45,9 @@ return new class extends Migration
     {
         Schema::table('attendances', function (Blueprint $table) {
             if (Schema::hasColumn('attendances', 'idoficina')) {
-                $table->dropForeign(['idoficina']);
+                if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+                    $table->dropForeign(['idoficina']);
+                }
                 $table->dropColumn('idoficina');
             }
             if(Schema::hasColumn('attendances', 'idoficina')) {
