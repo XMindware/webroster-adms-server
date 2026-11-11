@@ -11,6 +11,7 @@ use App\Services\Adms\AdmsCommandService;
 use App\Services\Adms\AdmsProtocol;
 use App\Services\BiometricRecordParser;
 use App\Services\FingerprintIngestService;
+use App\Services\PullFingerprintsService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -62,6 +63,8 @@ class iclockController extends Controller
                 return 'ERROR: Device not found';
             }
 
+            $this->rememberPushVersion($device, $request->input('pushver'));
+
             return $this->handshakeOptions((string) $request->input('SN'), $device);
         } catch (Throwable $e) {
             $data['error'] = $e;
@@ -94,7 +97,7 @@ class iclockController extends Controller
 
         return "GET OPTION FROM: {$sn}\r\n" .
             "Stamp=9999\r\n" .
-            "OpStamp=" . time() . "\r\n" .
+            "OpStamp=" . $this->handshakeOpStamp($sn) . "\r\n" .
             "ErrorDelay=60\r\n" .
             "Delay=30\r\n" .
             "ResLogDay=18250\r\n" .
@@ -109,6 +112,56 @@ class iclockController extends Controller
             ($timezone === null ? '' : "TimeZone={$timezone}\r\n") .
             "Realtime=1\r\n" .
             "Encrypt=0";
+    }
+
+    /**
+     * What to answer for OpStamp: normally "now", and "0" exactly once after a
+     * bulk pull asked for a full resend.
+     *
+     * A terminal only uploads user data newer than the stamp the server gives
+     * it, so a CHECK alone re-sends nothing that was enrolled before the
+     * server existed. OpStamp=0 says "I hold nothing", and the terminal
+     * re-uploads every user, fingerprint, face template and comparison photo.
+     * The flag is consumed here so the next handshake goes back to normal —
+     * otherwise every poll would ask for a full resend.
+     */
+    private function handshakeOpStamp(string $sn): string
+    {
+        if (!PullFingerprintsService::consumeResend($sn)) {
+            return (string) time();
+        }
+
+        Log::info('handshake: full resend requested', ['sn' => $sn]);
+
+        return '0';
+    }
+
+    /**
+     * Keep the protocol version the terminal announces (pushver=2.4.1, ...),
+     * which decides the commands a pull sends it. Written only when it
+     * changes, and never allowed to fail a handshake — not even when the
+     * column is missing because the migration has not run yet.
+     */
+    protected function rememberPushVersion(Device $device, $pushver): void
+    {
+        $pushver = substr(trim((string) $pushver), 0, 16);
+
+        if ($pushver === '' || $pushver === (string) $device->push_version) {
+            return;
+        }
+
+        try {
+            DB::table('devices')
+                ->where('id', $device->id)
+                ->update(['push_version' => $pushver]);
+
+            $device->push_version = $pushver;
+        } catch (Throwable $e) {
+            Log::warning('handshake: could not record push version', [
+                'sn' => $device->serial_number,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -241,7 +294,18 @@ class iclockController extends Controller
         $content['url'] = json_encode($request->all());
         $content['data'] = $request->getContent();
 
-        DB::table('finger_log')->insert($content);
+        // finger_log.data is a TEXT column. A face upload — a comparison photo
+        // is tens of KB of base64 — is routinely larger than that, and letting
+        // the insert fail would turn into a 500 that the terminal retries
+        // forever. The log keeps a prefix, and can never stop the payload from
+        // being processed.
+        $content['data'] = substr((string) $content['data'], 0, 60000);
+
+        try {
+            DB::table('finger_log')->insert($content);
+        } catch (Throwable $e) {
+            Log::error('receiveRecords finger log ', ['error' => $e->getMessage()]);
+        }
 
         try {
             $sn = $request->input('SN');
@@ -279,8 +343,9 @@ class iclockController extends Controller
 
     /**
      * User / biometric upload (table=OPERLOG). Templates go to
-     * fingerprint_templates via FingerprintIngestService; anything else in the
-     * payload keeps its old home in device_options.
+     * fingerprint_templates, face_templates and face_photos via
+     * FingerprintIngestService; anything else in the payload keeps its old home
+     * in device_options.
      */
     protected function receiveBiometricRecords(
         ?string $sn,
@@ -627,7 +692,9 @@ class iclockController extends Controller
     {
         Log::info('---------call querydata', ['request' => $request->all()]);
         Log::info('querydata', ['url' => json_encode($request->all())]);
-        Log::info('querydata', ['data' => $request->getContent()]);
+        // Truncated: a face photo is tens of KB of base64 and would bloat the
+        // log for no benefit.
+        Log::info('querydata', ['data' => substr((string) $request->getContent(), 0, 2000)]);
 
         $endpoint = parse_url($request->url(), PHP_URL_PATH);
 
@@ -655,9 +722,33 @@ class iclockController extends Controller
 
         $this->markDeviceOnline($sn);
 
-        Log::info('querydata', ['response' => 'OK']);
+        $response = 'OK';
 
-        return 'OK';
+        // PUSH 3.x firmware answers a DATA QUERY here instead of on
+        // /iclock/cdata. Whatever templates come back this way must not be
+        // dropped, and the terminal expects "<table>=<records taken>" back.
+        try {
+            $body = (string) $request->getContent();
+
+            if (app(BiometricRecordParser::class)->looksLikeBiometricPayload($body)) {
+                $result = app(FingerprintIngestService::class)->ingest($sn, $body);
+
+                Log::info('querydata: biometric payload', array_merge($result, ['sn' => $sn]));
+
+                $tablename = strtolower((string) $request->input('tablename'));
+
+                if (in_array($tablename, ['biodata', 'biophoto'], true)) {
+                    $response = $tablename . '='
+                        . ($result['fingerprints'] + $result['faces'] + $result['face_photos']);
+                }
+            }
+        } catch (Throwable $e) {
+            Log::error('querydata', ['error' => $e->getMessage()]);
+        }
+
+        Log::info('querydata', ['response' => $response]);
+
+        return $response;
     }
 
     public function test(Request $request)

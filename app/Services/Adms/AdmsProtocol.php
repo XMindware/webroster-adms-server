@@ -64,6 +64,9 @@ final class AdmsProtocol
     /** Ask for a user record. */
     public const TYPE_PULL_USERINFO = 'pull_userinfo';
 
+    /** Ask for face data through a unified-template table query. */
+    public const TYPE_PULL_FACE = 'pull_face';
+
     /** Distribute a stored template to a terminal. */
     public const TYPE_PUSH_FINGERTMP = 'push_fingertmp';
 
@@ -132,6 +135,25 @@ final class AdmsProtocol
     public static function queryFingerTmp(string|int|null $pin, int $fid): string
     {
         return "DATA QUERY FINGERTMP PIN={$pin}\tFingerID={$fid}";
+    }
+
+    /**
+     * Ask for a unified template table: `DATA QUERY tablename=biodata,
+     * fielddesc=*,filter=Type=2`.
+     *
+     * This is the table form of the query, and it is what face data is pulled
+     * with: `biodata` holds the templates, `biophoto` the comparison photos a
+     * visible-light terminal enrols a face from. Only PUSH 3.x firmware answers
+     * it — 2.x refuses with Return=-1004 — which is why the caller decides
+     * whether to send it at all (see PullFingerprintsService::faces()).
+     *
+     * $filter is passed through verbatim: the syntax for narrowing to one PIN
+     * is firmware-specific and guessing at it is worse than asking for
+     * everything, since re-receiving a face is idempotent.
+     */
+    public static function queryTable(string $table, string $filter = '*'): string
+    {
+        return "DATA QUERY tablename={$table},fielddesc=*,filter={$filter}";
     }
 
     /**

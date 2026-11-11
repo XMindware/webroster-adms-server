@@ -138,9 +138,10 @@ class DeviceController extends Controller
         }
 
         if ($mode === 'pin' && $pin !== '') {
-            $queued = $service->forPin($device, $pin);
+            // Faces can only be asked for terminal-wide; see faces().
+            $queued = $service->forPin($device, $pin) + $service->faces($device);
         } elseif ($mode === 'roster') {
-            $queued = $service->forDevice($device);
+            $queued = $service->forDevice($device) + $service->faces($device);
         } else {
             $queued = $service->bulk($device);
         }

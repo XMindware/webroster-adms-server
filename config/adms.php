@@ -47,6 +47,42 @@ return [
     'query_userinfo' => (bool) env('ADMS_QUERY_USERINFO', true),
 
     /*
+    |--------------------------------------------------------------------------
+    | Face pull
+    |--------------------------------------------------------------------------
+    |
+    | pull_faces  Also ask for face templates whenever fingerprints are pulled.
+    |
+    | face_types  Biometric types queried (DATA QUERY tablename=biodata,
+    |             ...,filter=Type=n): 2 = near-infrared face, 9 = visible-light
+    |             face. Only PUSH 3.x firmware answers these; anything else
+    |             reports the command as failed, which is harmless.
+    |
+    | resend_on_pull  PUSH 2.x firmware has no face query: it hands faces over
+    |             only when it re-uploads all its user data. With this on, a
+    |             bulk pull makes the terminal's next handshake answer
+    |             OpStamp=0, once, which triggers exactly that. The request
+    |             lapses after resend_window_minutes if no handshake comes.
+    |
+    | Note that these queries are what makes faces arrive without changing
+    | trans_flag. Turning on the FACE position of that mask (9) would also make
+    | terminals push a face as soon as it is enrolled, which is a change in
+    | traffic for every device in the fleet — see the TransFlag note above
+    | before doing that.
+    |
+    */
+    'pull_faces' => (bool) env('ADMS_PULL_FACES', true),
+
+    'resend_on_pull' => (bool) env('ADMS_RESEND_ON_PULL', true),
+
+    'resend_window_minutes' => (int) env('ADMS_RESEND_WINDOW_MINUTES', 15),
+
+    'face_types' => array_map(
+        'intval',
+        explode(',', (string) env('ADMS_FACE_TYPES', '2,9'))
+    ),
+
+    /*
     | Guard against queueing thousands of commands in a single click.
     */
     'max_pull_commands' => (int) env('ADMS_MAX_PULL_COMMANDS', 2000),

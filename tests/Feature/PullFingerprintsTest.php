@@ -5,8 +5,11 @@ namespace Tests\Feature;
 use App\Models\Agente;
 use App\Models\Command;
 use App\Models\Device;
+use App\Models\FacePhoto;
+use App\Models\FaceTemplate;
 use App\Models\FingerprintTemplate;
 use App\Models\Oficina;
+use App\Services\FingerprintIngestService;
 use App\Services\PullFingerprintsService;
 use App\Services\PushFingerprintsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -54,11 +57,314 @@ class PullFingerprintsTest extends TestCase
 
         $queued = app(PullFingerprintsService::class)->bulk($device);
 
-        $this->assertSame(2, $queued); // CHECK + DATA QUERY USERINFO
+        // CHECK + DATA QUERY USERINFO + one query per face type + face photos
+        $this->assertSame(5, $queued);
         $this->assertStringContainsString(
             ':CHECK',
             $device->commands()->where('type', PullFingerprintsService::TYPE_CHECK)->first()->data
         );
+    }
+
+    public function test_bulk_pull_also_asks_for_face_data(): void
+    {
+        $this->office();
+        $device = $this->device();
+
+        app(PullFingerprintsService::class)->bulk($device);
+
+        $faces = $device->commands()
+            ->where('type', PullFingerprintsService::TYPE_QUERY_FACE)
+            ->orderBy('id')
+            ->get();
+
+        $this->assertCount(3, $faces);
+        $this->assertStringEndsWith(':DATA QUERY tablename=biodata,fielddesc=*,filter=Type=2', $faces[0]->data);
+        $this->assertStringEndsWith(':DATA QUERY tablename=biodata,fielddesc=*,filter=Type=9', $faces[1]->data);
+        $this->assertStringEndsWith(':DATA QUERY tablename=biophoto,fielddesc=*,filter=*', $faces[2]->data);
+        $this->assertSame('TYPE:9', $faces[1]->reference);
+    }
+
+    public function test_an_identical_pending_face_pull_is_not_queued_twice(): void
+    {
+        config(['adms.face_types' => [9]]);
+
+        $this->office();
+        $device = $this->device();
+        $service = app(PullFingerprintsService::class);
+
+        // One template query + one photo query.
+        $this->assertSame(2, $service->faces($device));
+        $this->assertSame(0, $service->faces($device));
+    }
+
+    /**
+     * A bulk pull only queues a CHECK, and a terminal only uploads data newer
+     * than the stamp the server gives it — so nothing enrolled before the
+     * server existed would ever come back. OpStamp=0 says "I hold nothing" and
+     * makes the terminal re-upload everything, exactly once.
+     */
+    public function test_a_bulk_pull_makes_the_next_handshake_ask_for_a_full_resend_once(): void
+    {
+        $this->office();
+        $device = $this->device();
+
+        $this->get('/iclock/cdata?SN=SN-1&options=all')->assertDontSee("OpStamp=0\r\n", false);
+
+        app(PullFingerprintsService::class)->bulk($device);
+
+        // Another terminal must not be told to resend.
+        $this->device('SN-2');
+        $this->get('/iclock/cdata?SN=SN-2&options=all')->assertDontSee("OpStamp=0\r\n", false);
+
+        $this->get('/iclock/cdata?SN=SN-1&options=all')->assertSee("OpStamp=0\r\n", false);
+        // Only once: the terminal must not re-upload everything on every poll.
+        $this->get('/iclock/cdata?SN=SN-1&options=all')->assertDontSee("OpStamp=0\r\n", false);
+    }
+
+    public function test_a_2x_terminal_is_not_sent_table_queries_it_would_refuse(): void
+    {
+        $this->office();
+        $device = $this->device();
+        $device->update(['push_version' => '2.4.1']);
+
+        // CHECK + DATA QUERY USERINFO only.
+        $this->assertSame(2, app(PullFingerprintsService::class)->bulk($device));
+        $this->assertSame(
+            0,
+            $device->commands()->where('type', PullFingerprintsService::TYPE_QUERY_FACE)->count()
+        );
+
+        // Its faces come through the full resend instead.
+        $this->get('/iclock/cdata?SN=SN-1&options=all&pushver=2.4.1')->assertSee("OpStamp=0\r\n", false);
+    }
+
+    public function test_a_3x_terminal_is_sent_the_table_queries(): void
+    {
+        $this->office();
+        $device = $this->device();
+        $device->update(['push_version' => '3.1.2']);
+
+        app(PullFingerprintsService::class)->bulk($device);
+
+        $this->assertSame(
+            3,
+            $device->commands()->where('type', PullFingerprintsService::TYPE_QUERY_FACE)->count()
+        );
+    }
+
+    public function test_the_handshake_records_the_terminals_push_version(): void
+    {
+        $this->office();
+        $device = $this->device();
+
+        $this->get('/iclock/cdata?SN=SN-1&options=all&pushver=2.4.1')->assertSee('GET OPTION FROM: SN-1');
+        $this->assertSame('2.4.1', $device->fresh()->push_version);
+
+        // A handshake that does not announce a version leaves it alone.
+        $this->get('/iclock/cdata?SN=SN-1&options=all')->assertSee('GET OPTION FROM: SN-1');
+        $this->assertSame('2.4.1', $device->fresh()->push_version);
+    }
+
+    public function test_the_full_resend_can_be_switched_off(): void
+    {
+        config(['adms.resend_on_pull' => false]);
+
+        $this->office();
+        $device = $this->device();
+
+        app(PullFingerprintsService::class)->bulk($device);
+
+        $this->get('/iclock/cdata?SN=SN-1&options=all')->assertDontSee("OpStamp=0\r\n", false);
+    }
+
+    public function test_face_pull_can_be_switched_off(): void
+    {
+        config(['adms.pull_faces' => false]);
+
+        $this->office();
+        $device = $this->device();
+
+        $this->assertSame(2, app(PullFingerprintsService::class)->bulk($device));
+        $this->assertSame(
+            0,
+            $device->commands()->where('type', PullFingerprintsService::TYPE_QUERY_FACE)->count()
+        );
+    }
+
+    public function test_stored_faces_and_photos_are_counted_in_the_ingest_result(): void
+    {
+        $this->office();
+        $device = $this->device();
+        $ingest = app(FingerprintIngestService::class);
+
+        $body = "BIODATA Pin=1234\tNo=0\tIndex=0\tValid=1\tDuress=0\tType=9\tTmp=RkFDRQ==\r\n"
+            . "BIOPHOTO PIN=1234\tFileName=1234.jpg\tType=9\tSize=4\tContent=QUJD";
+
+        $first = $ingest->ingest('SN-1', $body, $device);
+        $this->assertSame(1, $first['faces']);
+        $this->assertSame(1, $first['face_photos']);
+        $this->assertSame(2, $first['stored']);
+
+        // The same data again: seen, nothing new.
+        $second = $ingest->ingest('SN-1', $body, $device);
+        $this->assertSame(0, $second['stored']);
+        $this->assertSame(2, $second['unchanged']);
+
+        // A different template for the same face replaces it.
+        $third = $ingest->ingest('SN-1', "BIODATA Pin=1234\tNo=0\tIndex=0\tValid=1\tType=9\tTmp=T1RIRVI=", $device);
+        $this->assertSame(1, $third['updated']);
+        $this->assertSame(1, FaceTemplate::count());
+    }
+
+    public function test_a_face_template_uploaded_by_the_terminal_is_stored(): void
+    {
+        $this->office();
+        $device = $this->device();
+
+        $body = "BIODATA Pin=1234\tNo=0\tValid=1\tType=9\tTmp=RkFDRQ==\r\n";
+
+        $this->postCdata('/iclock/cdata?SN=SN-1&table=OPERLOG', $body)->assertOk();
+        // Re-sending the same face must update, not duplicate.
+        $this->postCdata('/iclock/cdata?SN=SN-1&table=OPERLOG', $body)->assertOk();
+
+        $this->assertSame(1, FaceTemplate::count());
+
+        $face = FaceTemplate::first();
+
+        $this->assertSame('1234', $face->pin);
+        $this->assertSame('RkFDRQ==', $face->template);
+        $this->assertEquals($device->id, $face->device_id);
+        $this->assertEquals('1', $face->idempresa);
+        $this->assertEquals('2', $face->idoficina);
+        $this->assertSame(9, $face->bio_type);
+        $this->assertSame(0, FingerprintTemplate::count());
+    }
+
+    public function test_every_template_of_a_multi_template_face_is_kept(): void
+    {
+        $this->office();
+        $this->device();
+
+        // A near-infrared face is several templates under one No.
+        $body = "BIODATA Pin=1234\tNo=0\tIndex=0\tValid=1\tDuress=0\tType=2\tTmp=QQ==\r\n"
+            . "BIODATA Pin=1234\tNo=0\tIndex=1\tValid=1\tDuress=0\tType=2\tTmp=Qg==";
+
+        $this->postCdata('/iclock/cdata?SN=SN-1&table=BIODATA&Stamp=1', $body)->assertOk();
+
+        $this->assertSame(['QQ==', 'Qg=='], FaceTemplate::orderBy('fid')->pluck('template')->all());
+        $this->assertSame([0, 1], FaceTemplate::orderBy('fid')->pluck('fid')->all());
+    }
+
+    public function test_a_face_comparison_photo_uploaded_by_the_terminal_is_stored(): void
+    {
+        $this->office();
+        $device = $this->device();
+
+        $jpeg = base64_encode(str_repeat('x', 3000));
+        $body = "BIOPHOTO PIN=1234\tFileName=1234.jpg\tType=9\tSize=" . strlen($jpeg) . "\tContent={$jpeg}\r\n";
+
+        $this->postCdata('/iclock/cdata?SN=SN-1&table=BIOPHOTO&Stamp=1', $body)->assertOk();
+        // A re-upload replaces the photo instead of piling up.
+        $this->postCdata('/iclock/cdata?SN=SN-1&table=BIOPHOTO&Stamp=1', $body)->assertOk();
+
+        $this->assertSame(1, FacePhoto::count());
+
+        $photo = FacePhoto::first();
+
+        $this->assertSame('1234', $photo->pin);
+        $this->assertSame(9, $photo->bio_type);
+        $this->assertSame('1234.jpg', $photo->file_name);
+        $this->assertSame($jpeg, $photo->content);
+        $this->assertEquals($device->id, $photo->device_id);
+        $this->assertEquals('2', $photo->idoficina);
+        // It must not be mistaken for an attendance punch or a template.
+        $this->assertDatabaseCount('attendances', 0);
+        $this->assertSame(0, FaceTemplate::count());
+    }
+
+    /**
+     * finger_log.data is a TEXT column, so a photo upload is larger than it can
+     * hold. Letting that insert fail would 500 the request and the terminal
+     * would retry the same payload forever.
+     */
+    public function test_an_upload_larger_than_the_raw_log_column_is_still_processed(): void
+    {
+        $this->office();
+        $this->device();
+
+        $jpeg = base64_encode(str_repeat('x', 90000));
+
+        $this->postCdata(
+            '/iclock/cdata?SN=SN-1&table=BIOPHOTO',
+            "BIOPHOTO PIN=1234\tFileName=1234.jpg\tType=9\tSize=" . strlen($jpeg) . "\tContent={$jpeg}"
+        )->assertOk();
+
+        $this->assertSame($jpeg, FacePhoto::first()->content);
+        $this->assertLessThanOrEqual(60000, strlen(\DB::table('finger_log')->value('data')));
+    }
+
+    /**
+     * PUSH 3.x firmware answers a DATA QUERY on /iclock/querydata instead of
+     * /iclock/cdata, and expects "<table>=<records taken>" back.
+     */
+    public function test_templates_answered_on_querydata_are_stored(): void
+    {
+        $this->office();
+        $this->device();
+
+        $this->postCdata(
+            '/iclock/querydata?SN=SN-1&type=BioData&tablename=biodata&count=1',
+            "biodata pin=1234\tno=0\tindex=0\tvalid=1\tduress=0\ttype=9\tmajorver=5\tminorver=8\tformat=0\ttmp=RkFDRQ=="
+        )->assertOk()->assertSee('biodata=1');
+
+        $face = FaceTemplate::first();
+
+        $this->assertNotNull($face);
+        $this->assertSame('1234', $face->pin);
+        $this->assertSame('5.8', $face->version);
+    }
+
+    public function test_face_photos_answered_on_querydata_are_stored(): void
+    {
+        $this->office();
+        $this->device();
+
+        $this->postCdata(
+            '/iclock/querydata?SN=SN-1&type=tabledata&tablename=biophoto&count=1',
+            "biophoto pin=1234\tfilename=1234.jpg\ttype=9\tsize=4\tcontent=QUJD"
+        )->assertOk()->assertSee('biophoto=1');
+
+        $this->assertSame('QUJD', FacePhoto::first()->content);
+    }
+
+    /**
+     * The employees list is the only place a pulled face is visible, so the
+     * counts have to reach it: a badge per employee, zero included.
+     */
+    public function test_the_employees_list_shows_what_has_been_pulled(): void
+    {
+        $this->office();
+        $this->device();
+
+        Agente::create([
+            'idempresa' => 1, 'idoficina' => 2, 'idagente' => 1234,
+            'shortname' => 'x', 'fullname' => 'X',
+        ]);
+
+        FaceTemplate::create([
+            'sn' => 'SN-1', 'pin' => '1234', 'fid' => 0, 'bio_type' => 9,
+            'size' => 4, 'valid' => 1, 'template' => 'QQ==',
+            'template_hash' => sha1('QQ=='), 'idempresa' => '1', 'idoficina' => '2',
+            'captured_at' => now(),
+        ]);
+
+        $response = $this->actingAs(\App\Models\User::factory()->create())
+            ->get(route('agentes.index', ['selectedOficina' => 2, 'idempresa' => 1]));
+
+        $response->assertOk();
+        $response->assertSee(__('agentes.fingerprints'));
+        $response->assertSee(__('agentes.biometrics_none'));
+        $response->assertSee(__('agentes.biometrics_pulled', ['count' => 1]));
     }
 
     public function test_targeted_pull_queues_one_query_per_finger(): void

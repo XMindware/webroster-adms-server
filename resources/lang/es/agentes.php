@@ -35,6 +35,10 @@ return [
     'shortname' => 'Shortname',
     'fullname' => 'Fullname',
     'last_update' => 'Last Update',
+    'fingerprints' => 'Huellas',
+    'face' => 'Rostro',
+    'biometrics_pulled' => 'Descargado (:count)',
+    'biometrics_none' => 'Sin descargar',
     'run_request' => 'Ejecutar Solicitud',
 
     // Mensajes de respuesta

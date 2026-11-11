@@ -49,7 +49,75 @@ class BiometricRecordParserTest extends TestCase
         $this->assertSame([], $this->parser()->parseFingerprints($payload));
 
         $records = $this->parser()->parse($payload);
-        $this->assertSame('biometric', $records[0]['kind']);
+        $this->assertSame('face', $records[0]['kind']);
+        $this->assertSame(2, $records[0]['bio_type']);
+    }
+
+    public function test_it_parses_a_visible_light_face_template(): void
+    {
+        $payload = "BIODATA Pin=77\tNo=0\tIndex=0\tValid=1\tDuress=0\tType=9\tTmp=RkFDRQ==";
+
+        $faces = $this->parser()->parseFaces($payload);
+
+        $this->assertCount(1, $faces);
+        $this->assertSame('77', $faces[0]['pin']);
+        $this->assertSame(9, $faces[0]['bio_type']);
+        $this->assertSame('RkFDRQ==', $faces[0]['template']);
+    }
+
+    /**
+     * A near-infrared face is several templates under one No, told apart by
+     * Index. Keying them on No alone would make each overwrite the last.
+     */
+    public function test_it_gives_each_template_of_one_face_its_own_slot(): void
+    {
+        $payload = implode("\r\n", [
+            "BIODATA Pin=77\tNo=1\tIndex=0\tValid=1\tType=2\tTmp=QQ==",
+            "BIODATA Pin=77\tNo=1\tIndex=1\tValid=1\tType=2\tTmp=Qg==",
+        ]);
+
+        $fids = array_map(fn ($f) => $f['fid'], $this->parser()->parseFaces($payload));
+
+        $this->assertSame([100, 101], $fids);
+    }
+
+    public function test_it_parses_a_legacy_face_record_as_near_infrared(): void
+    {
+        $payload = "FACE PIN=77\tFID=50\tSIZE=1704\tVALID=1\tTMP=QQ==";
+
+        $faces = $this->parser()->parseFaces($payload);
+
+        $this->assertCount(1, $faces);
+        $this->assertSame(50, $faces[0]['fid']);
+        $this->assertSame(BiometricRecordParser::TYPE_FACE_NIR, $faces[0]['bio_type']);
+    }
+
+    public function test_it_parses_a_face_comparison_photo(): void
+    {
+        $payload = "BIOPHOTO PIN=77\tFileName=77.jpg\tType=9\tSize=4\tContent=QUJD";
+
+        $photos = $this->parser()->parseFacePhotos($payload);
+
+        $this->assertCount(1, $photos);
+        $this->assertSame('77', $photos[0]['pin']);
+        $this->assertSame(9, $photos[0]['bio_type']);
+        $this->assertSame('77.jpg', $photos[0]['file_name']);
+        $this->assertSame('QUJD', $photos[0]['content']);
+        // The photo is not a template, so it must not land in either bucket.
+        $this->assertSame([], $this->parser()->parseFaces($payload));
+        $this->assertSame([], $this->parser()->parseFingerprints($payload));
+    }
+
+    /**
+     * Palm and vein templates are not faces: they are kept as generic
+     * biometric records rather than being filed under a face slot.
+     */
+    public function test_it_keeps_other_biometric_types_out_of_the_face_table(): void
+    {
+        $payload = "BIODATA Pin=77\tNo=0\tValid=1\tType=7\tTmp=QQ==";
+
+        $this->assertSame([], $this->parser()->parseFaces($payload));
+        $this->assertSame('biometric', $this->parser()->parse($payload)[0]['kind']);
     }
 
     public function test_it_keeps_names_containing_spaces_intact(): void

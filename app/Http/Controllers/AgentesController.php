@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Oficina;
 use App\Models\Agente;
+use App\Models\FacePhoto;
+use App\Models\FaceTemplate;
+use App\Models\FingerprintTemplate;
 use App\Services\SyncStationEmployeesService;
 use App\Services\RemoveStationEmployeesService;
 use Illuminate\Support\Facades\Log;
@@ -15,17 +18,55 @@ class AgentesController extends Controller
     {        
         $selectedOficina = $request->query('selectedOficina');
 		$idempresa = $request->query('idempresa');
+        $selected = null;
+
         if ($selectedOficina) {
 			$q = Agente::where('idoficina', $selectedOficina);
+            $qo = Oficina::where('idoficina', $selectedOficina);
 			if (!empty($idempresa)) {
 				$q->where('idempresa', $idempresa);
+                $qo->where('idempresa', $idempresa);
 			}
 			$agentes = $q->get()->sortBy('idagente');
+            $selected = $qo->first();
         } else {
             $agentes = Agente::all()->sortBy('idagente');
         }
         $oficinas = Oficina::all();
-        return view('agentes.index', compact('agentes', 'oficinas', 'selectedOficina'));
+
+        $fingerCounts = $this->templateCounts(FingerprintTemplate::valid(), $selected);
+        $faceCounts = $this->templateCounts(FaceTemplate::valid(), $selected);
+
+        // A visible-light terminal may hand over only the comparison photo, so
+        // an employee with a photo and no template still counts as pulled.
+        foreach ($this->templateCounts(FacePhoto::query(), $selected, 'bio_type') as $key => $photos) {
+            $faceCounts[$key] = max($faceCounts[$key] ?? 0, $photos);
+        }
+
+        return view('agentes.index', compact('agentes', 'oficinas', 'selectedOficina', 'fingerCounts', 'faceCounts'));
+    }
+
+    /**
+     * Valid biometric templates already pulled, keyed empresa|oficina|pin (pin
+     * on the terminal == agentes.idagente). Counts distinct slots so the same
+     * finger/face held by several terminals is not counted twice.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param string $slot column that tells one template of a PIN from another
+     */
+    protected function templateCounts($query, ?Oficina $office, string $slot = 'fid')
+    {
+        $query = $query
+            ->selectRaw("idempresa, idoficina, pin, COUNT(DISTINCT {$slot}) as slots")
+            ->groupBy('idempresa', 'idoficina', 'pin');
+
+        if ($office) {
+            $query->forOffice($office->idempresa, $office->idoficina);
+        }
+
+        return $query->get()->mapWithKeys(fn ($row) => [
+            "{$row->idempresa}|{$row->idoficina}|{$row->pin}" => (int) $row->slots,
+        ]);
     }
 
     public function pullAgentes(Request $request)

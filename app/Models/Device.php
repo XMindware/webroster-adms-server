@@ -25,6 +25,7 @@ class Device extends Model
         'idoficina',
         'modelo',
         'timezone_format',
+        'push_version',
     ];
 
     protected $casts = [

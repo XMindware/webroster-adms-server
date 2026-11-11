@@ -8,11 +8,12 @@ use App\Models\Oficina;
 use App\Services\Adms\AdmsCommandService;
 use App\Services\Adms\AdmsProtocol;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Queues the ADMS commands that make a terminal hand its fingerprint templates
- * back to the server.
+ * Queues the ADMS commands that make a terminal hand its fingerprint and face
+ * templates back to the server.
  *
  * Two mechanisms, because neither alone is enough in practice:
  *
@@ -25,6 +26,12 @@ use Illuminate\Support\Facades\Log;
  *  - Targeted (`DATA QUERY FINGERTMP PIN=x FingerID=n`): asks for one finger of
  *    one employee. Precise and firmware-independent, but costs one command per
  *    finger, so pulling a full office this way is expensive.
+ *
+ *  - Faces: PUSH 3.x firmware answers `DATA QUERY tablename=biodata,...` and
+ *    `tablename=biophoto`; PUSH 2.x firmware has no face query at all and only
+ *    hands faces over in a full resend, so a bulk pull also asks for one (see
+ *    requestResend). Every pull queues the queries unless adms.pull_faces is
+ *    off.
  *
  * Either way the templates come back asynchronously: the terminal POSTs them to
  * /iclock/cdata, where iclockController hands them to FingerprintIngestService.
@@ -41,6 +48,7 @@ class PullFingerprintsService
     public const TYPE_CHECK = AdmsProtocol::TYPE_PULL_CHECK;
     public const TYPE_QUERY_FP = AdmsProtocol::TYPE_PULL_FINGERTMP;
     public const TYPE_QUERY_USER = AdmsProtocol::TYPE_PULL_USERINFO;
+    public const TYPE_QUERY_FACE = AdmsProtocol::TYPE_PULL_FACE;
 
     protected AdmsCommandService $commands;
 
@@ -74,6 +82,12 @@ class PullFingerprintsService
             );
         }
 
+        $queued += $this->faces($device);
+
+        // CHECK makes the terminal come back for its options; answer that
+        // handshake with OpStamp=0 so it re-sends what it already holds.
+        $this->requestResend($device);
+
         Log::info('PullFingerprintsService: bulk pull queued', [
             'device_id' => $device->id,
             'sn' => $device->serial_number,
@@ -81,6 +95,111 @@ class PullFingerprintsService
         ]);
 
         return $queued;
+    }
+
+    /**
+     * Ask a terminal for the face data it holds: one unified-template query per
+     * face type, plus one for the comparison photos.
+     *
+     * This is the table form of the query, which is what PUSH 3.x firmware
+     * answers (on /iclock/querydata). PUSH 2.x firmware has no face query at
+     * all — an earlier `DATA QUERY BIODATA Type=n` was refused with Return=-3
+     * by real terminals — and hands faces over only as part of a full resend,
+     * which is what requestResend() arranges. A terminal that does not know
+     * these commands just fails them, which is recorded on /iclock/devicecmd
+     * like any other.
+     *
+     * Always the whole terminal: the filter syntax for narrowing to one PIN is
+     * not something to guess at, and re-receiving a face is idempotent.
+     *
+     * @return int number of commands queued (0 when adms.pull_faces is off, or
+     *             the terminal is known not to answer table queries)
+     */
+    public function faces(Device $device): int
+    {
+        if (!config('adms.pull_faces', true) || !$this->answersTableQueries($device)) {
+            return 0;
+        }
+
+        $types = array_values(array_unique(array_map(
+            'intval',
+            (array) config('adms.face_types', BiometricRecordParser::TYPES_FACE)
+        )));
+
+        $queued = 0;
+
+        foreach ($types as $type) {
+            $queued += $this->queue(
+                $device,
+                AdmsProtocol::queryTable('biodata', 'Type=' . $type),
+                self::TYPE_QUERY_FACE,
+                "TYPE:{$type}"
+            );
+        }
+
+        $queued += $this->queue(
+            $device,
+            AdmsProtocol::queryTable('biophoto'),
+            self::TYPE_QUERY_FACE,
+            'PHOTO'
+        );
+
+        Log::info('PullFingerprintsService: face pull queued', [
+            'device_id' => $device->id,
+            'sn' => $device->serial_number,
+            'commands' => $queued,
+        ]);
+
+        return $queued;
+    }
+
+    /**
+     * Table queries are a PUSH 3.x feature; 2.x firmware refuses them with
+     * Return=-1004, so sending them only leaves failed commands behind. A
+     * terminal whose version is not known yet is given the benefit of the
+     * doubt.
+     */
+    protected function answersTableQueries(Device $device): bool
+    {
+        $version = trim((string) $device->push_version);
+
+        return $version === '' || version_compare($version, '3.0.0', '>=');
+    }
+
+    /**
+     * Make the terminal's next handshake answer OpStamp=0, once.
+     *
+     * A terminal only uploads user data newer than the stamp the server gives
+     * it, so a CHECK on its own re-sends nothing that was enrolled earlier.
+     * OpStamp=0 tells it the server holds nothing, and it re-uploads every
+     * user, fingerprint, face template and comparison photo. The flag is
+     * consumed by the first handshake that sees it (the CHECK queued by a bulk
+     * pull triggers one; so does a restart) and expires on its own otherwise.
+     */
+    public function requestResend(Device $device): void
+    {
+        if (!config('adms.resend_on_pull', true) || !$device->serial_number) {
+            return;
+        }
+
+        Cache::put(
+            self::resendCacheKey($device->serial_number),
+            true,
+            now()->addMinutes((int) config('adms.resend_window_minutes', 15))
+        );
+    }
+
+    /**
+     * True, once, when a resend was requested for this serial number.
+     */
+    public static function consumeResend(?string $sn): bool
+    {
+        return $sn !== null && $sn !== '' && (bool) Cache::pull(self::resendCacheKey($sn));
+    }
+
+    protected static function resendCacheKey(string $sn): string
+    {
+        return 'adms:resend:' . $sn;
     }
 
     /**
