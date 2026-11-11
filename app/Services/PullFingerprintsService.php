@@ -106,11 +106,12 @@ class PullFingerprintsService
      * Always the whole terminal: the filter syntax for narrowing to one PIN
      * is not something to guess at, and re-receiving a face is idempotent.
      *
-     * @return int number of commands queued (0 when adms.pull_faces is off)
+     * @return int number of commands queued (0 when adms.pull_faces is off, or
+     *             the terminal is known not to answer table queries)
      */
     public function faces(Device $device): int
     {
-        if (!config('adms.pull_faces', true)) {
+        if (!config('adms.pull_faces', true) || !$this->answersTableQueries($device)) {
             return 0;
         }
 
@@ -144,6 +145,19 @@ class PullFingerprintsService
         ]);
 
         return $queued;
+    }
+
+    /**
+     * Table queries are a PUSH 3.x feature; 2.x firmware refuses them with
+     * Return=-1004, so sending them only leaves failed commands behind. A
+     * terminal whose version is not known yet is given the benefit of the
+     * doubt.
+     */
+    protected function answersTableQueries(Device $device): bool
+    {
+        $version = trim((string) $device->push_version);
+
+        return $version === '' || version_compare($version, '3.0.0', '>=');
     }
 
     /**

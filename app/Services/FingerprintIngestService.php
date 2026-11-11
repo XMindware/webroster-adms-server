@@ -8,6 +8,7 @@ use App\Models\Device;
 use App\Models\FacePhoto;
 use App\Models\FaceTemplate;
 use App\Models\FingerprintTemplate;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -74,7 +75,7 @@ class FingerprintIngestService
                 $result['faces']++;
 
                 try {
-                    $this->storeFaceTemplate($sn, $device, $record);
+                    $result[$this->storeFaceTemplate($sn, $device, $record)]++;
                 } catch (Throwable $e) {
                     Log::error('FingerprintIngestService: failed to store face template', [
                         'sn' => $sn,
@@ -90,7 +91,7 @@ class FingerprintIngestService
                 $result['face_photos']++;
 
                 try {
-                    $this->storeFacePhoto($sn, $device, $record);
+                    $result[$this->storeFacePhoto($sn, $device, $record)]++;
                 } catch (Throwable $e) {
                     Log::error('FingerprintIngestService: failed to store face photo', [
                         'sn' => $sn,
@@ -138,10 +139,11 @@ class FingerprintIngestService
      * Upsert one face template, keyed (sn, pin, fid) like fingerprints.
      *
      * @param array<string, mixed> $record
+     * @return 'stored'|'updated'|'unchanged'
      */
-    protected function storeFaceTemplate(string $sn, ?Device $device, array $record): void
+    protected function storeFaceTemplate(string $sn, ?Device $device, array $record): string
     {
-        FaceTemplate::updateOrCreate(
+        $face = FaceTemplate::updateOrCreate(
             ['sn' => $sn, 'pin' => (string) $record['pin'], 'fid' => (int) $record['fid']],
             [
                 'device_id' => $device->id ?? null,
@@ -157,16 +159,19 @@ class FingerprintIngestService
                 'captured_at' => now(),
             ]
         );
+
+        return $this->upsertOutcome($face, 'template_hash');
     }
 
     /**
      * Upsert one face comparison photo, keyed (sn, pin, bio_type).
      *
      * @param array<string, mixed> $record
+     * @return 'stored'|'updated'|'unchanged'
      */
-    protected function storeFacePhoto(string $sn, ?Device $device, array $record): void
+    protected function storeFacePhoto(string $sn, ?Device $device, array $record): string
     {
-        FacePhoto::updateOrCreate(
+        $photo = FacePhoto::updateOrCreate(
             ['sn' => $sn, 'pin' => (string) $record['pin'], 'bio_type' => (int) $record['bio_type']],
             [
                 'device_id' => $device->id ?? null,
@@ -179,6 +184,24 @@ class FingerprintIngestService
                 'captured_at' => now(),
             ]
         );
+
+        return $this->upsertOutcome($photo, 'content_hash');
+    }
+
+    /**
+     * What an updateOrCreate did, in the same terms fingerprints are counted
+     * in. captured_at moves on every upload, so only the hash says whether
+     * the data itself changed.
+     *
+     * @return 'stored'|'updated'|'unchanged'
+     */
+    protected function upsertOutcome(Model $model, string $hashColumn): string
+    {
+        if ($model->wasRecentlyCreated) {
+            return 'stored';
+        }
+
+        return $model->wasChanged($hashColumn) ? 'updated' : 'unchanged';
     }
 
     /**

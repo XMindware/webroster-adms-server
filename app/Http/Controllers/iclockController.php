@@ -55,6 +55,8 @@ class iclockController extends Controller
                 Log::error('handshake', ['error' => 'Device not found']);
                 return "ERROR: Device not found";
             }
+
+            $this->rememberPushVersion($device, $request->input('pushver'));
             $cityTimezone = $device->oficina ? $device->oficina->timezone : 'America/Mexico_City';
             $timezone = $device->oficina ? $device->oficina->timezone : 'America/Mexico_City';
 
@@ -106,6 +108,32 @@ class iclockController extends Controller
             DB::table('error_log')->insert($data);
             report($e);
             return "ERROR: ".$e."\n";
+        }
+    }
+
+    /**
+     * Keep the protocol version the terminal announces (pushver=2.4.1, ...),
+     * which decides the commands a pull sends it. Written only when it
+     * changes, and never allowed to fail a handshake — not even when the
+     * column is missing because the migration has not run yet.
+     */
+    protected function rememberPushVersion(Device $device, $pushver): void
+    {
+        $pushver = substr(trim((string) $pushver), 0, 16);
+
+        if ($pushver === '' || $pushver === (string) $device->push_version) {
+            return;
+        }
+
+        try {
+            DB::table('devices')
+                ->where('id', $device->id)
+                ->update(['push_version' => $pushver]);
+        } catch (Throwable $e) {
+            Log::warning('handshake: could not record push version', [
+                'sn' => $device->serial_number,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
