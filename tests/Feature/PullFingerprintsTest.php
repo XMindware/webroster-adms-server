@@ -111,6 +111,69 @@ class PullFingerprintsTest extends TestCase
         $this->get('/iclock/cdata?SN=SN-1&options=all')->assertDontSee("OpStamp=0\r\n", false);
     }
 
+    public function test_a_2x_terminal_is_not_sent_table_queries_it_would_refuse(): void
+    {
+        $this->office();
+        $device = $this->device();
+        $device->update(['push_version' => '2.4.1']);
+
+        // CHECK + DATA QUERY USERINFO only.
+        $this->assertSame(2, app(PullFingerprintsService::class)->bulk($device));
+        $this->assertSame(0, $device->commands()->where('type', PullFingerprintsService::TYPE_QUERY_FACE)->count());
+
+        // Its faces come through the full resend instead.
+        $this->get('/iclock/cdata?SN=SN-1&options=all&pushver=2.4.1')->assertSee("OpStamp=0\r\n", false);
+    }
+
+    public function test_a_3x_terminal_is_sent_the_table_queries(): void
+    {
+        $this->office();
+        $device = $this->device();
+        $device->update(['push_version' => '3.1.2']);
+
+        app(PullFingerprintsService::class)->bulk($device);
+
+        $this->assertSame(3, $device->commands()->where('type', PullFingerprintsService::TYPE_QUERY_FACE)->count());
+    }
+
+    public function test_the_handshake_records_the_terminals_push_version(): void
+    {
+        $this->office();
+        $device = $this->device();
+
+        $this->get('/iclock/cdata?SN=SN-1&options=all&pushver=2.4.1&language=101')->assertSee('GET OPTION FROM: SN-1');
+        $this->assertSame('2.4.1', $device->fresh()->push_version);
+
+        // A handshake that does not announce a version leaves it alone.
+        $this->get('/iclock/cdata?SN=SN-1&options=all')->assertSee('GET OPTION FROM: SN-1');
+        $this->assertSame('2.4.1', $device->fresh()->push_version);
+    }
+
+    public function test_stored_faces_and_photos_are_counted_in_the_ingest_result(): void
+    {
+        $this->office();
+        $device = $this->device();
+        $ingest = app(\App\Services\FingerprintIngestService::class);
+
+        $body = "BIODATA Pin=1234\tNo=0\tIndex=0\tValid=1\tDuress=0\tType=9\tTmp=RkFDRQ==\r\n"
+            . "BIOPHOTO PIN=1234\tFileName=1234.jpg\tType=9\tSize=4\tContent=QUJD";
+
+        $first = $ingest->ingest('SN-1', $body, $device);
+        $this->assertSame(1, $first['faces']);
+        $this->assertSame(1, $first['face_photos']);
+        $this->assertSame(2, $first['stored']);
+
+        // The same data again: seen, nothing new.
+        $second = $ingest->ingest('SN-1', $body, $device);
+        $this->assertSame(0, $second['stored']);
+        $this->assertSame(2, $second['unchanged']);
+
+        // A different template for the same face replaces it.
+        $third = $ingest->ingest('SN-1', "BIODATA Pin=1234\tNo=0\tIndex=0\tValid=1\tType=9\tTmp=T1RIRVI=", $device);
+        $this->assertSame(1, $third['updated']);
+        $this->assertSame(1, FaceTemplate::count());
+    }
+
     public function test_the_full_resend_can_be_switched_off(): void
     {
         config(['adms.resend_on_pull' => false]);
