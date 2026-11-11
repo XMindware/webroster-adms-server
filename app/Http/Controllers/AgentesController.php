@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\ResolvesSelectedOficina;
 use App\Models\Oficina;
 use App\Models\Agente;
 use App\Models\FacePhoto;
@@ -14,24 +15,22 @@ use Illuminate\Support\Facades\Log;
 
 class AgentesController extends Controller
 {
-    public function index(Request $request)
-    {        
-        $selectedOficina = $request->query('selectedOficina');
-		$idempresa = $request->query('idempresa');
-        $selected = null;
+    use ResolvesSelectedOficina;
 
-        if ($selectedOficina) {
-			$q = Agente::where('idoficina', $selectedOficina);
-            $qo = Oficina::where('idoficina', $selectedOficina);
-			if (!empty($idempresa)) {
-				$q->where('idempresa', $idempresa);
-                $qo->where('idempresa', $idempresa);
-			}
-			$agentes = $q->get()->sortBy('idagente');
-            $selected = $qo->first();
+    public function index(Request $request)
+    {
+        // oficinas.id is the only unique key: idoficina repeats across empresas.
+        $selected = $this->resolveSelectedOficina($request);
+
+        if ($selected) {
+            $agentes = Agente::where('idoficina', $selected->idoficina)
+                ->where('idempresa', $selected->idempresa)
+                ->get()
+                ->sortBy('idagente');
         } else {
             $agentes = Agente::all()->sortBy('idagente');
         }
+
         $oficinas = Oficina::all();
 
         $fingerCounts = $this->templateCounts(FingerprintTemplate::valid(), $selected);
@@ -43,7 +42,15 @@ class AgentesController extends Controller
             $faceCounts[$key] = max($faceCounts[$key] ?? 0, $photos);
         }
 
-        return view('agentes.index', compact('agentes', 'oficinas', 'selectedOficina', 'fingerCounts', 'faceCounts'));
+        return view('agentes.index', [
+            'agentes' => $agentes,
+            'oficinas' => $oficinas,
+            'selectedOficina' => $selected?->idoficina,
+            'selectedEmpresa' => $selected?->idempresa,
+            'selectedOficinaId' => $selected?->id,
+            'fingerCounts' => $fingerCounts,
+            'faceCounts' => $faceCounts,
+        ]);
     }
 
     /**
@@ -77,18 +84,13 @@ class AgentesController extends Controller
 
     public function runPullAgentes(Request $request, SyncStationEmployeesService $service)
     {
-		$idoficina = $request->input('oficina');
-		$idempresa = $request->input('idempresa');
-		$oficinaQuery = Oficina::where('idoficina', $idoficina);
-		if (!empty($idempresa)) {
-			$oficinaQuery->where('idempresa', $idempresa);
-		}
-		$oficina = $oficinaQuery->first();
+		$oficina = $this->resolveSelectedOficina($request, 'oficina');
 
 		if (!$oficina) {
 			Log::warning('runPullAgentes: office not found', [
-				'idoficina' => $idoficina,
-				'idempresa' => $idempresa,
+				'oficina_id' => $request->input('oficina_id'),
+				'oficina' => $request->input('oficina'),
+				'idempresa' => $request->input('idempresa'),
 			]);
 
 			$request->session()->flash('pull_result', [
@@ -129,19 +131,13 @@ class AgentesController extends Controller
      */
     public function runPurgeRemoved(Request $request, RemoveStationEmployeesService $service)
     {
-        $idoficina = $request->input('oficina');
-        $idempresa = $request->input('idempresa');
-
-        $oficinaQuery = Oficina::where('idoficina', $idoficina);
-        if (!empty($idempresa)) {
-            $oficinaQuery->where('idempresa', $idempresa);
-        }
-        $oficina = $oficinaQuery->first();
+        $oficina = $this->resolveSelectedOficina($request, 'oficina');
 
         if (!$oficina) {
             Log::warning('runPurgeRemoved: office not found', [
-                'idoficina' => $idoficina,
-                'idempresa' => $idempresa,
+                'oficina_id' => $request->input('oficina_id'),
+                'oficina' => $request->input('oficina'),
+                'idempresa' => $request->input('idempresa'),
             ]);
 
             $request->session()->flash('purge_result', [
@@ -149,10 +145,7 @@ class AgentesController extends Controller
                 'message' => __('agentes.office_not_found'),
             ]);
 
-            return redirect()->route('agentes.index', [
-                'selectedOficina' => $idoficina,
-                'idempresa' => $idempresa,
-            ]);
+            return redirect()->route('agentes.index');
         }
 
         Log::debug('runPurgeRemoved: manual purge triggered', [
@@ -172,9 +165,6 @@ class AgentesController extends Controller
             'oficina' => $oficina->ubicacion,
         ]));
 
-        return redirect()->route('agentes.index', [
-            'selectedOficina' => $oficina->idoficina,
-            'idempresa' => $oficina->idempresa,
-        ]);
+        return redirect()->route('agentes.index', ['oficina_id' => $oficina->id]);
     }
 }

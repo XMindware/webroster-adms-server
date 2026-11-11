@@ -6,29 +6,14 @@
         <form method="post" action="{{ route('agentes.runpull') }}">
             @csrf
             <div class="form-group">
-                <label for="oficina">{{ __('devices.oficina') }}</label>
-                <select name="oficina" class="form-control" id="oficina">
+                <label for="oficina_id">{{ __('devices.oficina') }}</label>
+                <select name="oficina_id" class="form-control" id="oficina_id">
                     @foreach ($oficinas as $oficina)
-                        <option value="{{ $oficina->idoficina }}" data-idempresa="{{ $oficina->idempresa }}">{{ $oficina->ubicacion }}</option>
+                        <option value="{{ $oficina->id }}">{{ $oficina->ubicacion }}</option>
                     @endforeach
                 </select>
             </div>
-            <input type="hidden" name="idempresa" id="idempresa" value="">
             <button type="submit" class="btn btn-primary">{{ __('agentes.run_request') }}</button>
         </form>
     </div>
-    <script>
-        (function(){
-            var select = document.getElementById('oficina');
-            var inputEmpresa = document.getElementById('idempresa');
-            function syncEmpresa() {
-                var opt = select.options[select.selectedIndex];
-                if (opt && opt.dataset && opt.dataset.idempresa) {
-                    inputEmpresa.value = opt.dataset.idempresa;
-                }
-            }
-            select.addEventListener('change', syncEmpresa);
-            syncEmpresa();
-        })();
-    </script>
 @endsection

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\Oficina;
+use App\Http\Controllers\Concerns\ResolvesSelectedOficina;
 use App\Services\UpdateChecadaService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -17,6 +18,8 @@ use Illuminate\Support\Facades\Log;
  */
 class AttendanceController extends Controller
 {
+    use ResolvesSelectedOficina;
+
     /**
      * Employee ids whose punches are hidden from the attendance list.
      */
@@ -26,25 +29,24 @@ class AttendanceController extends Controller
 
     public function index(Request $request)
     {
-        $selectedOficina = $request->query('selectedOficina');
+        $oficina = $this->resolveSelectedOficina($request);
+        $selectedOficinaId = $oficina?->id;
         $selectedDate = $request->query('selectedDate'); // YYYY-MM-DD
-        $idempresa = $request->query('idempresa');
         $page = $request->query('page', 1);
 
         $query = Attendance::query()->with(['device.oficina']);
 
-        $officeTimezone = $this->officeTimezone($selectedOficina, $idempresa);
+        $officeTimezone = $oficina?->timezone;
 
-        if ($selectedOficina) {
-            $query->whereIn('sn', function ($q) use ($selectedOficina, $idempresa) {
+        if ($oficina) {
+            // Both halves of the office key: the same idoficina can exist under
+            // another empresa, and its punches must not leak into this list.
+            $query->whereIn('sn', function ($q) use ($oficina) {
                 $q->select('serial_number')
                     ->from('devices')
                     ->whereNotIn('employee_id', self::EXCLUDED_EMPLOYEES)
-                    ->where('idoficina', $selectedOficina);
-
-                if (!empty($idempresa)) {
-                    $q->where('idempresa', $idempresa);
-                }
+                    ->where('idoficina', $oficina->idoficina)
+                    ->where('idempresa', $oficina->idempresa);
             });
         }
 
@@ -64,8 +66,7 @@ class AttendanceController extends Controller
         return view('devices.attendance', [
             'attendances' => $paginator,
             'oficinas' => $oficinas,
-            'selectedOficina' => $selectedOficina,
-            'idempresa' => $idempresa,
+            'selectedOficinaId' => $selectedOficinaId,
             'selectedDate' => $selectedDate,
             'page' => $page,
         ]);
@@ -138,24 +139,6 @@ class AttendanceController extends Controller
         $attendanceRecord->save();
 
         return redirect()->route('devices.attendance')->with('success', __('devices.attendance_updated_successfully'));
-    }
-
-    /**
-     * The office timezone that applies to the selected office, if one is set.
-     */
-    private function officeTimezone(?string $selectedOficina, ?string $idempresa): ?string
-    {
-        if (!$selectedOficina) {
-            return null;
-        }
-
-        $oficinaQuery = Oficina::where('idoficina', $selectedOficina);
-
-        if (!empty($idempresa)) {
-            $oficinaQuery->where('idempresa', $idempresa);
-        }
-
-        return optional($oficinaQuery->first())->timezone;
     }
 
     /**

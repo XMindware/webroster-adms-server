@@ -6,6 +6,7 @@ use App\Models\Device;
 use App\Models\Oficina;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -85,10 +86,23 @@ class OficinaController extends Controller
             return $this->notFound();
         }
 
-        // Removing an office removes the terminals installed in it.
-        Device::where('idoficina', $oficina->idoficina)->delete();
+        // Removing an office removes the terminals installed in it — but only
+        // those of *this* office. Filtering on idoficina alone deleted the
+        // devices of every empresa that happens to use the same office number.
+        DB::transaction(function () use ($oficina) {
+            $devices = Device::where('idoficina', $oficina->idoficina)
+                ->where('idempresa', $oficina->idempresa)
+                ->get();
 
-        $oficina->delete();
+            foreach ($devices as $device) {
+                // device_commands.device_id points at devices, so the queue has
+                // to go first or the delete fails on the foreign key.
+                $device->commands()->delete();
+                $device->delete();
+            }
+
+            $oficina->delete();
+        });
 
         return redirect()->route('devices.oficinas')->with('success', __('oficinas.deleted_successfully'));
     }

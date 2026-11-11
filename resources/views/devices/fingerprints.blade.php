@@ -13,11 +13,11 @@
 
         <form method="get" class="row g-2 align-items-end mb-3">
             <div class="col-auto">
-                <label for="selectedOficina" class="form-label">{{ __('devices.oficina') }}</label>
-                <select name="selectedOficina" id="selectedOficina" class="form-control">
+                <label for="oficina_id" class="form-label">{{ __('devices.oficina') }}</label>
+                <select name="oficina_id" id="oficina_id" class="form-control">
                     <option value="">{{ __('devices.all_offices') }}</option>
                     @foreach ($oficinas as $oficina)
-                        <option value="{{ $oficina->idoficina }}" @selected($selectedOficina == $oficina->idoficina)>
+                        <option value="{{ $oficina->id }}" @selected($selectedOficinaId == $oficina->id)>
                             {{ $oficina->ubicacion }}
                         </option>
                     @endforeach

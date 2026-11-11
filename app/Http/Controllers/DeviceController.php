@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ResolvesSelectedOficina;
 use App\Models\Agente;
 use App\Models\Command;
 use App\Models\Device;
@@ -29,6 +30,8 @@ use Illuminate\Support\Facades\Log;
  */
 class DeviceController extends Controller
 {
+    use ResolvesSelectedOficina;
+
     /**
      * List all devices.
      */
@@ -83,11 +86,12 @@ class DeviceController extends Controller
     {
         $title = __('devices.fingerprints_captured');
 
-        $selectedOficina = $request->query('selectedOficina');
+        $oficina = $this->resolveSelectedOficina($request);
+        $selectedOficinaId = $oficina?->id;
         $pin = $request->query('pin');
 
         $templates = FingerprintTemplate::query()
-            ->when($selectedOficina, fn ($q) => $q->where('idoficina', $selectedOficina))
+            ->when($oficina, fn ($q) => $q->forOffice($oficina->idempresa, $oficina->idoficina))
             ->when($pin, fn ($q) => $q->where('pin', $pin))
             ->orderByDesc('captured_at')
             ->orderBy('pin')
@@ -106,7 +110,7 @@ class DeviceController extends Controller
 
         $oficinas = Oficina::all();
 
-        return view('devices.fingerprints', compact('templates', 'title', 'oficinas', 'selectedOficina', 'pin'));
+        return view('devices.fingerprints', compact('templates', 'title', 'oficinas', 'selectedOficinaId', 'pin'));
     }
 
     /**
@@ -407,13 +411,13 @@ class DeviceController extends Controller
         $device->idreloj = $request->input('idreloj');
         $device->timezone_format = $this->timezoneFormat($request);
 
-        if ($request->filled('idoficina')) {
-            $oficina = Oficina::where('idoficina', $request->input('idoficina'))->first();
+        // The form posts oficinas.id, so the device takes both halves of the
+        // office key from the office itself rather than from a hidden field.
+        $oficina = $this->resolveSelectedOficina($request, 'idoficina');
 
-            if ($oficina) {
-                $device->idoficina = $oficina->idoficina;
-                $device->idempresa = $request->input('idempresa') ?? $oficina->idempresa;
-            }
+        if ($oficina) {
+            $device->idoficina = $oficina->idoficina;
+            $device->idempresa = $oficina->idempresa;
         }
 
         $device->save();
@@ -439,7 +443,7 @@ class DeviceController extends Controller
     public function update(Request $request, $id)
     {
         $device = Device::find($id);
-        $oficina = Oficina::where('idoficina', $request->input('idoficina'))->first();
+        $oficina = $this->resolveSelectedOficina($request, 'idoficina');
 
         if (!$oficina) {
             return redirect()->route('devices.index')->with('error', __('oficinas.not_found'));
@@ -449,7 +453,7 @@ class DeviceController extends Controller
         $device->serial_number = $request->input('serial_number');
         $device->idreloj = $request->input('idreloj') ?? '999999';
         $device->idoficina = $oficina->idoficina;
-        $device->idempresa = $request->input('idempresa') ?? $oficina->idempresa;
+        $device->idempresa = $oficina->idempresa;
         $device->timezone_format = $this->timezoneFormat($request);
         $device->save();
 
