@@ -181,6 +181,25 @@ return [
     'remove_fingerprints_queued' => ':count perintah diantrekan untuk PIN :pin di :device. :invalidated template tersimpan ditandai tidak berlaku.',
     'remove_nothing_queued' => 'Tidak ada yang diantrekan - penghapusan yang sama sudah menunggu di device itu.',
 
+    // Backup perangkat
+    'backup_device' => 'Backup perangkat ini',
+    'backups' => 'Backup',
+    'backups_title' => 'Backup Perangkat',
+    'backups_explainer' => 'Semua backup yang sudah dibuat, terbaru di atas. Backup adalah berkas JSON yang disimpan di server - unduh untuk menyimpannya di tempat lain. Tidak ada yang dikirim ke terminal.',
+    'backup_generated_at' => 'Dibuat',
+    'backup_size' => 'Ukuran',
+    'backup_contents' => 'Isi',
+    'backup_contents_value' => ':employees karyawan, :fingerprints sidik jari, :faces wajah, :attendances presensi',
+    'backup_created_by' => 'Dibuat oleh',
+    'backup_download' => 'Unduh',
+    'backup_delete' => 'Hapus',
+    'backup_delete_confirm' => 'Hapus backup ini? Berkasnya dihapus dari server dan tidak bisa dikembalikan.',
+    'backup_deleted' => 'Backup dihapus.',
+    'backup_failed' => 'Backup gagal: :error',
+    'backup_not_found' => 'Backup tidak ditemukan.',
+    'backup_file_missing' => 'Berkas backup sudah tidak ada di server.',
+    'no_backups_yet' => 'Belum ada backup. Pakai tombol backup di baris perangkat untuk membuatnya.',
+
     'invalid_timezone' => "Zona waktu tidak valid: ':value'. Gunakan pengenal IANA, "
         . "misalnya Asia/Jakarta (UTC+7) atau America/Mexico_City (UTC-6). "
         . "Format seperti UTC+7 tidak diterima.",

@@ -6,12 +6,14 @@ use App\Http\Controllers\Concerns\ResolvesSelectedOficina;
 use App\Models\Agente;
 use App\Models\Command;
 use App\Models\Device;
+use App\Models\DeviceBackup;
 use App\Models\DeviceLog;
 use App\Models\FingerLog;
 use App\Models\FingerprintTemplate;
 use App\Models\Oficina;
 use App\Services\Adms\AdmsCommandService;
 use App\Services\Adms\AdmsProtocol;
+use App\Services\DeviceBackupService;
 use App\Services\DeviceMigrationService;
 use App\Services\PullFingerprintsService;
 use App\Services\PushFingerprintsService;
@@ -759,6 +761,104 @@ class DeviceController extends Controller
 
             return redirect()->route('devices.index')->with('error', __('devices.error_loading_monitor', ['error' => $e->getMessage()]));
         }
+    }
+
+    /**
+     * Snapshot this terminal's data and hand the file straight to the operator.
+     *
+     * The download is the response on purpose: a backup button that only said
+     * "done" would leave the operator hunting for the file. The snapshot is
+     * also recorded, so it can be fetched again later from the backups screen.
+     *
+     * Nothing is sent to the terminal - see DeviceBackupService.
+     */
+    public function backup(Request $request, $id, DeviceBackupService $service)
+    {
+        $device = Device::find($id);
+
+        if (!$device) {
+            return $this->deviceNotFound('devices.index');
+        }
+
+        try {
+            $backup = $service->create($device, $this->actorIdentifier($request));
+        } catch (\Throwable $e) {
+            Log::error('Device backup failed', [
+                'device_id' => $device->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('devices.index')
+                ->with('error', __('devices.backup_failed', ['error' => $e->getMessage()]));
+        }
+
+        Log::info('Device backup created', [
+            'device_id' => $device->id,
+            'backup_id' => $backup->id,
+            'file' => $backup->file_name,
+            'size_bytes' => $backup->size_bytes,
+            'triggered_by' => $this->actorIdentifier($request),
+        ]);
+
+        return $service->download($backup);
+    }
+
+    /**
+     * Every snapshot taken so far, newest first.
+     */
+    public function backups(Request $request)
+    {
+        $title = __('devices.backups_title');
+
+        $backups = DeviceBackup::query()
+            ->when($request->query('device'), fn ($q, $deviceId) => $q->where('device_id', $deviceId))
+            ->orderByDesc('id')
+            ->paginate(50)
+            ->appends($request->except('page'));
+
+        return view('devices.backups', compact('title', 'backups'));
+    }
+
+    /**
+     * Fetch a stored snapshot again.
+     */
+    public function downloadBackup(Request $request, $id, DeviceBackupService $service)
+    {
+        $backup = DeviceBackup::find($id);
+
+        if (!$backup) {
+            return redirect()->route('devices.backups')->with('error', __('devices.backup_not_found'));
+        }
+
+        // The row can outlive its file, so say so instead of returning a 404
+        // page from inside a redirect chain the operator did not ask for.
+        if (!$service->exists($backup)) {
+            return redirect()->route('devices.backups')->with('error', __('devices.backup_file_missing'));
+        }
+
+        return $service->download($backup);
+    }
+
+    /**
+     * Drop a snapshot: file and row together.
+     */
+    public function deleteBackup(Request $request, $id, DeviceBackupService $service)
+    {
+        $backup = DeviceBackup::find($id);
+
+        if (!$backup) {
+            return redirect()->route('devices.backups')->with('error', __('devices.backup_not_found'));
+        }
+
+        $service->delete($backup);
+
+        Log::info('Device backup deleted', [
+            'backup_id' => $backup->id,
+            'file' => $backup->file_name,
+            'triggered_by' => $this->actorIdentifier($request),
+        ]);
+
+        return redirect()->route('devices.backups')->with('success', __('devices.backup_deleted'));
     }
 
     /**

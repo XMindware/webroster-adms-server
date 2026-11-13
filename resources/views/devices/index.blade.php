@@ -20,6 +20,11 @@
             <a href="{{ route('devices.monitor') }}" class="btn btn-success">
                 <i class="fas fa-traffic-light"></i> {{ __('devices.monitor_status') }}
             </a>
+            <a href="{{ route('devices.backups') }}" class="btn btn-outline-dark">
+                <!-- fa-archive, not fa-box-archive: the layout loads Font Awesome
+                     5.15, where box-archive does not exist yet. -->
+                <i class="fas fa-archive"></i> {{ __('devices.backups') }}
+            </a>
         </div>
         <!-- success message -->
         @if(session('success'))
@@ -102,6 +107,19 @@
                                     <i class="fas fa-share"></i>
                                 </button>
                             </form>
+                            <!--
+                                Backup: downloads a snapshot of everything the
+                                server holds for this terminal. POST because it
+                                creates a record and a file; the file is the
+                                response, so one click is enough.
+                            -->
+                            <form method="post" action="{{ route('devices.backup', ['id' => $d->id ]) }}" class="d-inline backup-form">
+                                @csrf
+                                <button type="submit" class="btn btn-dark"
+                                        title="{{ __('devices.backup_device') }}">
+                                    <i class="fas fa-database"></i>
+                                </button>
+                            </form>
                         </td>
                     </tr>
                 @endforeach
@@ -169,9 +187,20 @@
             });
 
             // refresh data-table every 25 seconds
-            setInterval(function () {
+            let reloadTimer = setInterval(function () {
                 window.location.reload();
             }, 25000);
+
+            // A backup is a file download that can take longer than the refresh
+            // interval. The reload would navigate away mid-transfer, so the
+            // timer is stopped as soon as one is asked for - the download
+            // response leaves this page in place, so it would otherwise keep
+            // ticking against it.
+            document.querySelectorAll('.backup-form').forEach(function (form) {
+                form.addEventListener('submit', function () {
+                    clearInterval(reloadTimer);
+                });
+            });
         });
     </script>
 @endsection

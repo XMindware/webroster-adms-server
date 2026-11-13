@@ -181,6 +181,25 @@ return [
     'remove_fingerprints_queued' => ':count command(s) queued for PIN :pin on :device. :invalidated stored template(s) marked invalid.',
     'remove_nothing_queued' => 'Nothing queued - an identical removal is already pending for that device.',
 
+    // Device backup
+    'backup_device' => 'Back up this device',
+    'backups' => 'Backups',
+    'backups_title' => 'Device Backups',
+    'backups_explainer' => 'Every snapshot taken so far, newest first. A backup is a JSON file kept on the server - download it to store it somewhere safe. Nothing is sent to the terminal.',
+    'backup_generated_at' => 'Created',
+    'backup_size' => 'Size',
+    'backup_contents' => 'Contents',
+    'backup_contents_value' => ':employees employee(s), :fingerprints fingerprint(s), :faces face(s), :attendances punch(es)',
+    'backup_created_by' => 'Created by',
+    'backup_download' => 'Download',
+    'backup_delete' => 'Delete',
+    'backup_delete_confirm' => 'Delete this backup? The file is removed from the server and cannot be recovered.',
+    'backup_deleted' => 'Backup deleted.',
+    'backup_failed' => 'Backup failed: :error',
+    'backup_not_found' => 'Backup not found.',
+    'backup_file_missing' => 'The backup file is no longer on the server.',
+    'no_backups_yet' => 'No backups yet. Use the backup button on a device row to create one.',
+
     'invalid_timezone' => "Invalid timezone: ':value'. Use an IANA identifier, "
         . "for example Asia/Jakarta (UTC+7) or America/Mexico_City (UTC-6). "
         . "Formats like UTC+7 are not accepted.",

@@ -181,6 +181,25 @@ return [
     'remove_fingerprints_queued' => ':count comando(s) en cola para el PIN :pin en :device. :invalidated plantilla(s) guardada(s) marcada(s) como no válida(s).',
     'remove_nothing_queued' => 'Nada en cola: ya hay una eliminación idéntica pendiente para ese dispositivo.',
 
+    // Respaldo de dispositivos
+    'backup_device' => 'Respaldar este dispositivo',
+    'backups' => 'Respaldos',
+    'backups_title' => 'Respaldos de Dispositivos',
+    'backups_explainer' => 'Todas las copias tomadas hasta ahora, la más reciente primero. Un respaldo es un archivo JSON guardado en el servidor: descárgalo para llevarlo a un lugar seguro. No se envía nada al terminal.',
+    'backup_generated_at' => 'Creado',
+    'backup_size' => 'Tamaño',
+    'backup_contents' => 'Contenido',
+    'backup_contents_value' => ':employees empleado(s), :fingerprints huella(s), :faces rostro(s), :attendances marcación(es)',
+    'backup_created_by' => 'Creado por',
+    'backup_download' => 'Descargar',
+    'backup_delete' => 'Eliminar',
+    'backup_delete_confirm' => '¿Eliminar este respaldo? El archivo se borra del servidor y no se puede recuperar.',
+    'backup_deleted' => 'Respaldo eliminado.',
+    'backup_failed' => 'El respaldo falló: :error',
+    'backup_not_found' => 'Respaldo no encontrado.',
+    'backup_file_missing' => 'El archivo del respaldo ya no está en el servidor.',
+    'no_backups_yet' => 'Aún no hay respaldos. Usa el botón de respaldo en la fila de un dispositivo para crear uno.',
+
     'invalid_timezone' => "Zona horaria no válida: ':value'. Usa un identificador IANA, "
         . "por ejemplo Asia/Jakarta (UTC+7) o America/Mexico_City (UTC-6). "
         . "No se aceptan formatos como UTC+7.",

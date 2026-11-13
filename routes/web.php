@@ -55,6 +55,13 @@ Route::middleware(['auth'])
         Route::post('devices/retrieve/fingerdata', 'runRetrieveFingerData')->name('devices.runRetrieveFingerData');
         Route::get('devices/{id}/pull-fingerprints', 'pullFingerprints')->name('devices.pullFingerprints');
         Route::post('devices/{id}/push-fingerprints', 'pushFingerprints')->name('devices.pushFingerprints');
+        // Snapshot everything the server holds for one terminal, as a file.
+        // POST because it creates a snapshot (and a file); the download is the
+        // response, so one click is all an operator needs.
+        Route::post('devices/{id}/backup', 'backup')->name('devices.backup');
+        Route::get('devices/backups', 'backups')->name('devices.backups');
+        Route::get('devices/backups/{id}/download', 'downloadBackup')->name('devices.backups.download');
+        Route::post('devices/backups/{id}/delete', 'deleteBackup')->name('devices.backups.delete');
         // Ask one terminal about one employee.
         Route::get('devices/query-user', 'queryUser')->name('devices.queryUser');
         Route::post('devices/query-user', 'runQueryUser')->name('devices.runQueryUser');
