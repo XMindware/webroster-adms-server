@@ -12,6 +12,7 @@ return [
     'idempresa' => 'ID Perusahaan',
     'idoficina' => 'ID Kantor',
     'public_url' => 'URL Publik',
+    'public_url_help' => 'Alamat aplikasi stasiun (roster), bukan server ADMS ini. Contoh: https://stasiun.contoh.com',
     'token' => 'Token',
     'iatacode' => 'Kode IATA',
     'city_timezone' => 'Zona Waktu Kota',

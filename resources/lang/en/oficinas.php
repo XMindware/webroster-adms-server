@@ -12,6 +12,7 @@ return [
     'idempresa' => 'Company ID',
     'idoficina' => 'Office ID',
     'public_url' => 'Public URL',
+    'public_url_help' => 'Address of the station (roster) app, not this ADMS server. Example: https://station.example.com',
     'token' => 'Token',
     'iatacode' => 'IATA Code',
     'city_timezone' => 'City Timezone',

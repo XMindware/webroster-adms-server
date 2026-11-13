@@ -43,6 +43,8 @@ return [
 
     // Response messages
     'office_not_found' => 'Office not found.',
-    'station_unexpected_body' => 'Unexpected or empty response body from station.',
+    'station_missing_url' => 'Office ":oficina" (:idempresa/:idoficina) has no public URL configured. Set it on the office form.',
+    'station_url_is_this_server' => 'Office ":oficina" points its public URL at this ADMS server (:host) instead of the station app. Replace it on the office form with the station app address.',
+    'station_unexpected_body' => 'Station replied HTTP :status but the body is not JSON: :body',
     'station_http_error' => 'HTTP :status: :body',
 ];

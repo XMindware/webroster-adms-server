@@ -43,6 +43,8 @@ return [
 
     // Pesan respons
     'office_not_found' => 'Kantor tidak ditemukan.',
-    'station_unexpected_body' => 'Respons tidak terduga atau kosong dari stasiun.',
+    'station_missing_url' => 'Kantor ":oficina" (:idempresa/:idoficina) belum punya URL publik. Isi di form kantor.',
+    'station_url_is_this_server' => 'URL publik kantor ":oficina" mengarah ke server ADMS ini (:host), bukan ke aplikasi stasiun. Ganti di form kantor dengan alamat aplikasi stasiun.',
+    'station_unexpected_body' => 'Stasiun membalas HTTP :status tetapi isinya bukan JSON: :body',
     'station_http_error' => 'HTTP :status: :body',
 ];

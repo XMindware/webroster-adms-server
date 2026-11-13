@@ -20,6 +20,7 @@
             <div class="form-group">
                 <label for="public_url">{{ __('oficinas.public_url') }}</label>
                 <input type="text" name="public_url" class="form-control" id="public_url" value="{{ $oficina->public_url }}">
+                <small class="form-text text-muted">{{ __('oficinas.public_url_help') }}</small>
             </div>
             <div class="form-group">
                 <label for="token">{{ __('oficinas.token') }}</label>

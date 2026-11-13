@@ -43,6 +43,8 @@ return [
 
     // Mensajes de respuesta
     'office_not_found' => 'Oficina no encontrada.',
-    'station_unexpected_body' => 'Respuesta inesperada o vacía del servidor de estación.',
+    'station_missing_url' => 'La oficina ":oficina" (:idempresa/:idoficina) no tiene URL pública configurada. Configúrela en el formulario de la oficina.',
+    'station_url_is_this_server' => 'La oficina ":oficina" apunta su URL pública a este servidor ADMS (:host) en lugar de a la aplicación de la estación. Reemplácela en el formulario de la oficina por la dirección de la aplicación de la estación.',
+    'station_unexpected_body' => 'La estación respondió HTTP :status pero el cuerpo no es JSON: :body',
     'station_http_error' => 'HTTP :status: :body',
 ];
