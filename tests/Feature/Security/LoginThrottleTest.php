@@ -92,4 +92,24 @@ class LoginThrottleTest extends TestCase
 
         $this->assertSame(429, $last->status());
     }
+
+    public function test_no_password_rule_caps_length_at_twelve(): void
+    {
+        $source = file_get_contents(app_path('Http/Controllers/AuthController.php'));
+
+        $this->assertDoesNotMatchRegularExpression('/max:12\b/', $source);
+    }
+
+    public function test_email_case_and_whitespace_share_one_lockout_counter(): void
+    {
+        $this->makeUser();
+
+        foreach (['ADMIN@example.com', ' admin@EXAMPLE.com ', 'Admin@Example.com', 'admin@example.com', 'ADMIN@EXAMPLE.COM'] as $i => $email) {
+            $this->post('/login-user', ['email' => $email, 'password' => 'wrong-'.$i]);
+        }
+
+        $this->post('/login-user', ['email' => 'admin@example.com', 'password' => self::PASSWORD])
+            ->assertSessionHasErrors('email');
+        $this->assertGuest();
+    }
 }
