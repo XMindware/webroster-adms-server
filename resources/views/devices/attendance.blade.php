@@ -54,7 +54,8 @@
                         <td>{{ $attendance->id }}</td>
                         <td>{{ $attendance->device ? $attendance->device->name : 'No registrado' }}</td>
                         <td>{{ $attendance->employee_id }}</td>
-                        <td>{!! $attendance->getEmployee()?->fullname ?? '<em>Unknown</em>' !!}</td>
+                        @php($employeeName = $attendance->getEmployee()?->fullname)
+                        <td>@if ($employeeName !== null){{ $employeeName }}@else<em>Unknown</em>@endif</td>
                         <td>{{ $attendance->timestamp }}</td>
                         <td>{{ $attendance->updated_at }}</td>
                         <td class="{{ $attendance->updated_at->diffInMinutes($attendance->timestamp) > 3 ? 'text-danger' : '' }}">
@@ -113,8 +114,13 @@ function showFloatingMessage(message, isSuccess) {
 
     const el = document.createElement('div');
     el.className = 'floating-message ' + (isSuccess ? 'success' : 'error');
-    el.innerHTML = '<span class="title">' + (isSuccess ? 'Éxito' : 'Error') + ':</span>' +
-                   '<span>' + (message || (isSuccess ? 'Operación completada' : 'Ocurrió un error')) + '</span>';
+    // Build with textContent: the message can come from the server response.
+    const title = document.createElement('span');
+    title.className = 'title';
+    title.textContent = (isSuccess ? 'Éxito' : 'Error') + ':';
+    const body = document.createElement('span');
+    body.textContent = message || (isSuccess ? 'Operación completada' : 'Ocurrió un error');
+    el.append(title, body);
 
     container.appendChild(el);
     // Force reflow to play transition

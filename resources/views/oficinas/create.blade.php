@@ -20,6 +20,7 @@
             <div class="form-group">
                 <label for="public_url">Public URL</label>
                 <input type="text" name="public_url" class="form-control" id="public_url" value="{{ old('public_url') }}">
+                @error('public_url') <div class="text-danger">{{ $message }}</div> @enderror
             </div>
             <div class="form-group">
                 <label for="token">Token</label>
