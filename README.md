@@ -79,7 +79,14 @@ Before you begin, ensure you have the following installed on your system:
     php artisan migrate
     ```
 
-7. **Serve the application**
+7. **Create an admin user**
+   There is no public sign-up. Create each account from the command line (you are prompted for a password of at least 12 characters):
+
+    ```bash
+    php artisan user:create admin@example.com --name="Admin"
+    ```
+
+8. **Serve the application**
     ```bash
     php artisan serve
     ```
