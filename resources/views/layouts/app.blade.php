@@ -167,7 +167,10 @@
                         </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('logout') }}">{{ __('navigation.logout') }}</a>
+                        <form method="post" action="{{ route('logout') }}" class="d-inline">
+                            @csrf
+                            <button type="submit" class="nav-link btn btn-link">{{ __('navigation.logout') }}</button>
+                        </form>
                     </li>
                 </ul>
             </div>
