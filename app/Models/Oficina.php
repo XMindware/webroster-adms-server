@@ -22,6 +22,9 @@ class Oficina extends Model
         'token',
     ];
 
+    /** S3: the WebRoster per-office token must never be serialized or logged. */
+    protected $hidden = ['token'];
+
     public $timestamps = [
         'created_at',
         'updated_at',

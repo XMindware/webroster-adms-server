@@ -84,6 +84,17 @@ Before you begin, ensure you have the following installed on your system:
     php artisan serve
     ```
 
+### 🔒 Device request logging
+
+Device requests (`/iclock/*`) are logged as metadata only: method, path, an allowlist of protocol query parameters (`SN`, `table`, `pushver`, ...) and the body size. Bodies carry fingerprint and face templates and are never written to log files, `device_log` or `finger_log`.
+
+Installations that ran an earlier version have payloads stored already. Clean them up once after deploying:
+
+```bash
+php artisan logs:scrub-payloads              # rewrites device_log and finger_log rows to metadata
+php artisan logs:scrub-payloads --with-files # also deletes request_response, laravel and error log files
+```
+
 ### 📡 Monitoring Device Status
 
 You can monitor the status of devices by querying the `devices` table where the `online` field indicates the last time the device was online.
