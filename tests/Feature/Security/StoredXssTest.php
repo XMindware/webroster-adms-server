@@ -53,7 +53,7 @@ class StoredXssTest extends TestCase
 
     private function attendance(array $attributes): Attendance
     {
-        $attendance = new Attendance();
+        $attendance = new Attendance;
         $attendance->forceFill($attributes + ['table' => 'ATTLOG', 'stamp' => '1'])->save();
 
         return $attendance;
