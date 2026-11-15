@@ -18,4 +18,5 @@ return [
     'registration_successful' => 'Registro exitoso.',
     'login_failed' => 'Credenciales inválidas.',
     'registration_failed' => 'Registro fallido. Por favor intente de nuevo.',
+    'throttle' => 'Demasiados intentos de inicio de sesión. Inténtalo de nuevo en :seconds segundos.',
 ];

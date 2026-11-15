@@ -22,7 +22,7 @@ Route::controller(AuthController::class)->group(function(){
     Route::get('/registration','registration')->middleware('isLoggedIn');
     Route::post('/registration-user','registerUser')->name('isLoggedIn');
     Route::get('/login','login')->middleware('alreadyLoggedIn')->name('login');
-    Route::post('/login-user','loginUser')->name('login-user');
+    Route::post('/login-user','loginUser')->middleware('throttle:login')->name('login-user');
     Route::get('/logout','logout')->name('logout');
     Route::get('/language/{locale}', function ($locale) {
         if (in_array($locale, config('app.available_locales'))) {

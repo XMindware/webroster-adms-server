@@ -18,4 +18,5 @@ return [
     'registration_successful' => 'Pendaftaran berhasil.',
     'login_failed' => 'Kredensial tidak valid.',
     'registration_failed' => 'Pendaftaran gagal. Silakan coba lagi.',
+    'throttle' => 'Terlalu banyak percobaan masuk. Silakan coba lagi dalam :seconds detik.',
 ];
