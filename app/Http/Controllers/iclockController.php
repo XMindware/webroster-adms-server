@@ -211,8 +211,8 @@ class iclockController extends Controller
                 if (!$command) {
                     Log::warning('deviceCommand: ack for unknown command', [
                         'sn' => $request->input('SN'),
-                        'id' => $ack['id'],
-                        'return' => $ack['return'],
+                        'id' => mb_substr((string) $ack['id'], 0, 16),
+                        'return' => mb_substr((string) $ack['return'], 0, 16),
                         'cmd' => mb_substr((string) ($ack['cmd'] ?? ''), 0, 16),
                     ]);
                     continue;

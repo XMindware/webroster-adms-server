@@ -19,7 +19,7 @@ class ScrubLoggedPayloads extends Command
 {
     protected $signature = 'logs:scrub-payloads
         {--force : Run without asking for confirmation}
-        {--with-files : Also delete storage/logs/request_response.log and laravel*.log}';
+        {--with-files : Also delete storage/logs/request_response*.log, laravel*.log and error*.log}';
 
     protected $description = 'Remove request payloads (biometric templates) from device_log, finger_log and, optionally, log files';
 
@@ -46,6 +46,7 @@ class ScrubLoggedPayloads extends Command
             $files = array_merge(
                 File::glob(storage_path('logs/request_response*.log')),
                 File::glob(storage_path('logs/laravel*.log')),
+                File::glob(storage_path('logs/error*.log')),
             );
             foreach ($files as $file) {
                 File::delete($file);

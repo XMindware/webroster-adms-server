@@ -92,7 +92,7 @@ Installations that ran an earlier version have payloads stored already. Clean th
 
 ```bash
 php artisan logs:scrub-payloads              # rewrites device_log and finger_log rows to metadata
-php artisan logs:scrub-payloads --with-files # also deletes request_response.log and laravel*.log
+php artisan logs:scrub-payloads --with-files # also deletes request_response, laravel and error log files
 ```
 
 ### 📡 Monitoring Device Status

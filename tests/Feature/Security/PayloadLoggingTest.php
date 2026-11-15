@@ -6,10 +6,12 @@ namespace Tests\Feature\Security;
 
 use App\Models\Device;
 use App\Models\Oficina;
+use App\Services\PushChecadaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /**
@@ -145,5 +147,25 @@ class PayloadLoggingTest extends TestCase
         $row = json_decode(DB::table('device_log')->first()->data, true);
         $this->assertSame('SN-1', $row['SN']);
         $this->assertSame('OPERLOG', $row['table']);
+    }
+
+    public function test_bodies_posted_to_unknown_paths_are_not_logged(): void
+    {
+        $this->post('/iclock/does-not-exist?SN=SN-1', ['TMP' => self::SECRET])->assertNotFound();
+        $this->postJson('/nowhere', ['Tmp' => self::SECRET])->assertNotFound();
+
+        $this->assertSecretNowhere();
+    }
+
+    public function test_office_token_is_never_logged_or_serialized(): void
+    {
+        Http::fake(['*' => Http::response(['ok' => true])]);
+
+        app(PushChecadaService::class)->postData([
+            'idempresa' => 1, 'idoficina' => 2, 'employee_id' => 1234, 'timestamp' => '2026-11-15 10:00:00',
+        ]);
+
+        $this->assertSecretNowhere('office-token');
+        $this->assertArrayNotHasKey('token', Oficina::firstOrFail()->toArray());
     }
 }
