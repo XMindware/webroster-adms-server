@@ -18,3 +18,13 @@ yarn-error.log
 /.idea
 /.vscode
 .history
+
+# Ruflo local secrets and runtime data
+.env.local
+.env.*.local
+.claude-flow/
+.swarm/
+.hive-mind/
+.agents/
+.claude/settings.local.json
+.claude/*.bak-*
