@@ -155,4 +155,55 @@ class DeviceAuthTest extends TestCase
         $this->enforce();
         $this->get('/iclock/getrequest?SN=SN-OK')->assertForbidden();
     }
+
+    public function test_enforce_rejects_a_body_serial_that_differs_from_the_query(): void
+    {
+        $this->enforce();
+
+        // Form body SN overrides the query in $request->input().
+        $this->call('POST', '/iclock/cdata?SN=SN-OK&table=ATTLOG', ['SN' => 'SN-EVIL'])->assertForbidden();
+
+        // JSON body, on POST and on GET.
+        $this->call('POST', '/iclock/cdata?SN=SN-OK&table=ATTLOG', [], [], [], ['CONTENT_TYPE' => 'application/json'], '{"SN":"SN-EVIL"}')
+            ->assertForbidden();
+        $this->call('GET', '/iclock/cdata?SN=SN-OK&options=all', [], [], [], ['CONTENT_TYPE' => 'application/json'], '{"SN":"SN-EVIL"}')
+            ->assertForbidden();
+        $this->call('GET', '/iclock/rtdata?SN=SN-OK', [], [], [], ['CONTENT_TYPE' => 'application/json'], '{"SN":"SN-EVIL"}')
+            ->assertForbidden();
+
+        // upload-log reads lowercase sn.
+        $this->post('/iclock/upload-log?SN=SN-OK', ['sn' => 'SN-EVIL'])->assertForbidden();
+
+        $this->assertDatabaseMissing('devices', ['serial_number' => 'SN-EVIL']);
+        $this->assertDatabaseMissing('attendances', ['sn' => 'SN-EVIL']);
+        $this->assertSame(0, DB::table('log_entries')->count());
+    }
+
+    public function test_matching_serials_in_query_and_body_are_accepted(): void
+    {
+        $this->enforce();
+
+        $this->call('POST', '/iclock/cdata?SN=SN-OK&table=ATTLOG', ['SN' => 'SN-OK'])->assertOk();
+    }
+
+    public function test_controller_sees_only_the_checked_serial_in_log_mode(): void
+    {
+        // Log mode serves the request, but the serial the controller stores
+        // must be the one that was checked (the query SN), not the body's.
+        $this->call('GET', '/iclock/cdata?SN=SN-OK&options=all', [], [], [], ['CONTENT_TYPE' => 'application/json'], '{"SN":"SN-EVIL"}')
+            ->assertOk()
+            ->assertSee('GET OPTION FROM: SN-OK');
+
+        $this->assertDatabaseMissing('devices', ['serial_number' => 'SN-EVIL']);
+    }
+
+    public function test_device_endpoints_have_a_per_ip_ceiling_across_serials(): void
+    {
+        config(['adms.device_rate_limit' => 1000, 'adms.device_rate_limit_per_ip' => 3]);
+
+        for ($i = 0; $i < 3; $i++) {
+            $this->get('/iclock/getrequest?SN=ROTATE-'.$i);
+        }
+        $this->get('/iclock/getrequest?SN=ROTATE-99')->assertStatus(429);
+    }
 }

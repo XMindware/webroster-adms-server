@@ -92,8 +92,9 @@ Only registered, enabled serial numbers should talk to the device endpoints. Two
 | --- | --- | --- |
 | `ADMS_DEVICE_AUTH` | `log` | `log`: unknown or disabled serials are logged as warnings (`device auth: unregistered serial number`) and still served. `enforce`: they get `403 ERROR: Device not registered` and nothing is stored. Any other value means `enforce`. |
 | `ADMS_DEVICE_RATE_LIMIT` | `600` | Requests per minute per serial number + IP. `0` disables it. |
+| `ADMS_DEVICE_RATE_LIMIT_PER_IP` | `3000` | Requests per minute per IP across all serials (clocks behind one NAT share it). `0` disables it. |
 
-Rollout: run in `log` mode for a week, compare the warned serials with the `devices` table, register the real clocks (and delete any that were auto-created by unknown callers), then set `ADMS_DEVICE_AUTH=enforce`. A device can be switched off with the **Habilitado** checkbox on its edit page.
+Rollout: run in `log` mode for a week, compare the warned serials with the `devices` table, register the real clocks (and delete any that were auto-created by unknown callers), then set `ADMS_DEVICE_AUTH=enforce`. A device can be switched off with the **Habilitado** checkbox on its edit page. A request whose query-string and body serial numbers disagree is treated as unauthenticated.
 
 ### 📡 Monitoring Device Status
 

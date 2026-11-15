@@ -28,14 +28,23 @@ class AuthenticateDevice
 
     public function handle(Request $request, Closure $next): Response
     {
-        $sn = self::serialNumber($request);
-        $device = $sn === '' ? null : Device::where('serial_number', $sn)->first(['id', 'enabled']);
+        $candidates = self::serialCandidates($request);
+        $sn = $candidates[0] ?? '';
+        $conflict = count(array_unique($candidates)) > 1;
+
+        $device = $sn === '' || $conflict ? null : Device::where('serial_number', $sn)->first(['id', 'enabled']);
 
         $reason = match (true) {
+            $conflict => 'conflicting',
             $device === null => 'unregistered',
             ! $device->enabled => 'disabled',
             default => null,
         };
+
+        // The controller reads $request->input('SN'/'sn'), where a body value
+        // beats the query string. Pin every source to the serial checked
+        // here, so what is stored is always what was authenticated.
+        self::pinSerial($request, $sn);
 
         if ($reason === null) {
             return $next($request);
@@ -52,13 +61,55 @@ class AuthenticateDevice
     }
 
     /**
-     * Terminals send SN in the query string; upload-log sends it as "sn".
+     * The serial number this request claims: query SN first, then the body.
      */
     public static function serialNumber(Request $request): string
     {
-        $sn = $request->query('SN') ?? $request->input('SN') ?? $request->input('sn') ?? '';
+        return self::serialCandidates($request)[0] ?? '';
+    }
 
-        return is_scalar($sn) ? trim((string) $sn) : '';
+    /**
+     * Every non-empty serial the request carries, in order: query SN, query
+     * sn, body SN, body sn (form or JSON). Terminals send SN in the query
+     * string; upload-log sends it as "sn". A non-scalar value counts as a
+     * conflict so it can never be silently ignored.
+     *
+     * @return list<string>
+     */
+    private static function serialCandidates(Request $request): array
+    {
+        $body = $request->isJson() ? $request->json()->all() : $request->request->all();
+        $sources = [
+            $request->query->all()['SN'] ?? null,
+            $request->query->all()['sn'] ?? null,
+            $body['SN'] ?? null,
+            $body['sn'] ?? null,
+        ];
+
+        $values = [];
+        foreach ($sources as $value) {
+            if ($value === null) {
+                continue;
+            }
+            $values[] = is_scalar($value) ? trim((string) $value) : "\0invalid";
+        }
+
+        return array_values(array_filter($values, fn (string $v) => $v !== ''));
+    }
+
+    private static function pinSerial(Request $request, string $sn): void
+    {
+        foreach (['SN', 'sn'] as $key) {
+            if ($request->query->has($key)) {
+                $request->query->set($key, $sn);
+            }
+            if ($request->request->has($key)) {
+                $request->request->set($key, $sn);
+            }
+            if ($request->isJson() && $request->json()->has($key)) {
+                $request->json()->set($key, $sn);
+            }
+        }
     }
 
     /**

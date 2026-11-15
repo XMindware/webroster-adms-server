@@ -166,4 +166,10 @@ return [
     */
     'device_rate_limit' => (int) env('ADMS_DEVICE_RATE_LIMIT', 600),
 
+    /*
+    | Requests per minute per IP across all serials (serials are chosen by the
+    | client). Clocks behind one NAT address share it. 0 = no limit.
+    */
+    'device_rate_limit_per_ip' => (int) env('ADMS_DEVICE_RATE_LIMIT_PER_IP', 3000),
+
 ];
