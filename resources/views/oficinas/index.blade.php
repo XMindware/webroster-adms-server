@@ -40,7 +40,13 @@
                         <td>{{ $oficina->idempresa }}</td>
                         <td>{{ $oficina->idoficina }}</td>
                         <td>{{ $oficina->ubicacion }}</td>
-                        <td><a href="{{ $oficina->public_url }}" target="_blank">{{ $oficina->public_url }}</a></td>
+                        <td>
+                            @if (\Illuminate\Support\Str::startsWith((string) $oficina->public_url, ['https://', 'http://']))
+                                <a href="{{ $oficina->public_url }}" target="_blank" rel="noopener noreferrer">{{ $oficina->public_url }}</a>
+                            @else
+                                {{ $oficina->public_url }}
+                            @endif
+                        </td>
                         <td>{{ $oficina->iatacode }}</td>
                         <td>{{ $oficina->city_timezone }}</td>
                         <td>{{ $oficina->timezone }}</td>

@@ -6,6 +6,7 @@ namespace Tests\Feature\Security;
 
 use App\Models\Agente;
 use App\Models\Attendance;
+use App\Models\Oficina;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
@@ -75,5 +76,37 @@ class StoredXssTest extends TestCase
         }
 
         $this->assertSame([], $offenders, 'Unescaped Blade output found: '.implode(', ', $offenders));
+    }
+
+    public function test_office_link_with_a_javascript_url_is_not_rendered_as_a_link(): void
+    {
+        Oficina::create([
+            'idempresa' => 1, 'idoficina' => 2, 'ubicacion' => 'Cancun',
+            'public_url' => 'javascript:alert(1)', 'token' => 'token', 'iatacode' => 'CUN',
+        ]);
+
+        $this->actingAs(User::factory()->create())->get('/oficinas')
+            ->assertOk()
+            ->assertDontSee('href="javascript:', false);
+    }
+
+    public function test_office_public_url_must_be_http_or_https(): void
+    {
+        $user = User::factory()->create();
+        $fields = ['idempresa' => 1, 'idoficina' => 2, 'ubicacion' => 'Cancun', 'token' => 't', 'iatacode' => 'CUN'];
+
+        $this->actingAs($user)->post('/oficinas/store', $fields + ['public_url' => 'javascript:alert(1)'])
+            ->assertSessionHasErrors('public_url');
+        $this->assertDatabaseCount('oficinas', 0);
+
+        $this->actingAs($user)->post('/oficinas/store', $fields + ['public_url' => 'https://station.test'])
+            ->assertRedirect(route('devices.oficinas'));
+        $office = Oficina::firstOrFail();
+
+        $this->actingAs($user)->post("/oficinas/{$office->id}/update", $fields + ['public_url' => 'javascript:alert(1)'])
+            ->assertSessionHasErrors('public_url');
+        $this->assertSame('https://station.test', $office->fresh()->public_url);
+
+        $this->get("/oficinas/{$office->id}/edit")->assertOk();
     }
 }

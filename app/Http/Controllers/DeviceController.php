@@ -22,6 +22,8 @@ use DB;
 
 class DeviceController extends Controller
 {
+    private const OFICINA_URL_RULES = ['public_url' => ['required', 'url:http,https', 'max:255']];
+
     const EXCLUDED_EMPLOYEES = [
         '300101', // Exclude employee 300101 admin
     ];
@@ -245,6 +247,10 @@ class DeviceController extends Controller
 
     public function storeOficina(Request $request)
     {
+        // S6: public_url is rendered as a link and used as the WebRoster
+        // base URL, so only absolute http(s) URLs are accepted.
+        $request->validate(self::OFICINA_URL_RULES);
+
         $oficina = new Oficina();
         $oficina->ubicacion = $request->input('ubicacion');
         $oficina->idempresa = $request->input('idempresa');
@@ -274,6 +280,10 @@ class DeviceController extends Controller
         if (!$oficina) {
             return redirect()->route('devices.oficinas')->with('error', 'Oficina no encontrada');
         }
+        // S6: public_url is rendered as a link and used as the WebRoster
+        // base URL, so only absolute http(s) URLs are accepted.
+        $request->validate(self::OFICINA_URL_RULES);
+
         $oficina->ubicacion = $request->input('ubicacion');
         $oficina->idempresa = $request->input('idempresa');
         $oficina->idoficina = $request->input('idoficina');
