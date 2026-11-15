@@ -34,6 +34,11 @@
                     <option value="minutes" @if($device->timezone_format === 'minutes') selected @endif>Minutos (-360)</option>
                 </select>
             </div>
+            <div class="form-check">
+                <input type="hidden" name="enabled" value="0">
+                <input type="checkbox" name="enabled" value="1" class="form-check-input" id="enabled" @if($device->enabled) checked @endif>
+                <label class="form-check-label" for="enabled">Habilitado (puede conectarse a /iclock)</label>
+            </div>
             <div class="form-group">
                 <label for="online">Online</label>
                 <input type="text" name="online" class="form-control" id="online" value="{{ $device->online }}">

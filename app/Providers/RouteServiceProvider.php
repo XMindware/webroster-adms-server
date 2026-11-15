@@ -28,6 +28,18 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
+        // S2: per serial number and IP, so one spoofed or looping clock
+        // cannot flood ingest. 0 disables the limit.
+        RateLimiter::for('device', function (Request $request) {
+            $perMinute = (int) config('adms.device_rate_limit', 600);
+            if ($perMinute <= 0) {
+                return Limit::none();
+            }
+
+            return Limit::perMinute($perMinute)
+                ->by(\App\Http\Middleware\AuthenticateDevice::serialNumber($request).'|'.$request->ip());
+        });
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')
