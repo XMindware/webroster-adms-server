@@ -41,8 +41,13 @@
             <br/>
             <button type="submit" class="btn btn-primary">Update</button>
             <!-- remove device -->
-            <a href="{{ route('devices.delete', ['id' => $device->id ]) }}" class="btn btn-danger">Delete</a>
+            <button type="submit" form="delete-device-form" class="btn btn-danger">Delete</button>
             <a href="{{ route('devices.index') }}" class="btn btn-secondary">Cancel</a>
+        </form>
+        <form id="delete-device-form" method="post" action="{{ route('devices.delete', ['id' => $device->id ]) }}"
+              onsubmit="return confirm('Delete this device and its pending commands?');">
+            @csrf
+            @method('DELETE')
         </form>
     </div>
 @endsection

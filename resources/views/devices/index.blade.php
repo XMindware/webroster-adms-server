@@ -67,13 +67,21 @@
                         @endif                    
                         </td>
                         <td>
-                            <a href="{{ route('devices.populate', ['id' => $d->id ]) }}" class="btn btn-info">{{ __('navigation.employees') }}</a>                            
+                            <form method="post" action="{{ route('devices.populate', ['id' => $d->id ]) }}" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-info">{{ __('navigation.employees') }}</button>
+                            </form>
                             <a href="{{ route('devices.edit', ['id' => $d->id ]) }}" class="btn btn-primary">{{ __('common.edit') }}</a>
-                            <a href="{{ route('devices.restart', ['id' => $d->id ]) }}" class="btn btn-primary restart-btn">{{ __('devices.restart') }}</a>                            
-                            <a href="{{ route('devices.pullFingerprints', ['id' => $d->id ]) }}" class="btn btn-secondary"
-                               title="{{ __('devices.pull_fingerprints') }}">
-                                <i class="fas fa-fingerprint"></i>
-                            </a>
+                            <form method="post" action="{{ route('devices.restart', ['id' => $d->id ]) }}" class="d-inline restart-form">
+                                @csrf
+                                <button type="submit" class="btn btn-primary">{{ __('devices.restart') }}</button>
+                            </form>
+                            <form method="post" action="{{ route('devices.pullFingerprints', ['id' => $d->id ]) }}" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-secondary" title="{{ __('devices.pull_fingerprints') }}">
+                                    <i class="fas fa-fingerprint"></i>
+                                </button>
+                            </form>
                             <a href="{{ route('devices.activity', ['id' => $d->id ]) }}" class="btn btn-warning">
                                 <i class="fas fa-chart-line"></i>
                             </a>
@@ -119,18 +127,19 @@
 @section('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            let targetUrl = '';
+            let targetForm = null;
 
-            document.querySelectorAll('.restart-btn').forEach(function (button) {
-                button.addEventListener('click', function (event) {
+            document.querySelectorAll('.restart-form').forEach(function (form) {
+                form.addEventListener('submit', function (event) {
                     event.preventDefault();
-                    targetUrl = this.href;
+                    targetForm = this;
                     $('#confirmModal').modal('show');
                 });
             });
 
             document.getElementById('confirmBtn').addEventListener('click', function () {
-                window.location.href = targetUrl;
+                // HTMLFormElement.submit() skips the submit listener above.
+                if (targetForm) targetForm.submit();
             });
 
             document.getElementById('cancelModal').addEventListener('click', function () {

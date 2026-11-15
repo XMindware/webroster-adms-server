@@ -401,9 +401,9 @@
 					"response": []
 				},
 				{
-					"name": "Logout (GET logout)",
+					"name": "Logout (POST logout)",
 					"request": {
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/logout",
@@ -451,9 +451,9 @@
 					"response": []
 				},
 				{
-					"name": "Restart Device (GET devices/:id/restart)",
+					"name": "Restart Device (POST devices/:id/restart)",
 					"request": {
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/devices/1/restart",
@@ -464,9 +464,9 @@
 					"response": []
 				},
 				{
-					"name": "Populate Device (GET devices/:id/populate)",
+					"name": "Populate Device (POST devices/:id/populate)",
 					"request": {
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/devices/1/populate",
