@@ -86,4 +86,19 @@ class PublicSignupTest extends TestCase
             ->expectsQuestion('Confirm password', 'a-long-enough-passphrase')
             ->assertFailed();
     }
+
+    public function test_user_created_with_a_long_password_can_log_in(): void
+    {
+        $this->artisan('user:create', ['email' => 'admin@example.com', '--name' => 'Admin'])
+            ->expectsQuestion('Password', 'a-long-passphrase-of-more-than-twelve-chars')
+            ->expectsQuestion('Confirm password', 'a-long-passphrase-of-more-than-twelve-chars')
+            ->assertSuccessful();
+
+        $this->post('/login-user', [
+            'email' => 'admin@example.com',
+            'password' => 'a-long-passphrase-of-more-than-twelve-chars',
+        ])->assertRedirect('devices');
+
+        $this->assertAuthenticated();
+    }
 }

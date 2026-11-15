@@ -19,7 +19,7 @@ class AuthController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
-            'password' => 'required|min:8|max:12',
+            'password' => 'required|string|max:1024',
         ]);
     
         $credentials = $request->only('email', 'password');
