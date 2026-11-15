@@ -4,7 +4,7 @@ namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 
-class DeviceTests extends TestCase
+class DeviceTest extends TestCase
 {
     /**
      * A basic test example.
