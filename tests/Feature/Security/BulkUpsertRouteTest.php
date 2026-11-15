@@ -21,6 +21,9 @@ class BulkUpsertRouteTest extends TestCase
     public function test_every_api_route_points_at_an_existing_controller_method(): void
     {
         foreach (Route::getRoutes() as $route) {
+            if (! str_starts_with($route->uri(), 'api/')) {
+                continue;
+            }
             $action = $route->getAction('uses');
             if (! is_string($action) || ! str_contains($action, '@')) {
                 continue;
