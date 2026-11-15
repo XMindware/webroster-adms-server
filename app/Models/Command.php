@@ -14,9 +14,19 @@ class Command extends Model
     protected $fillable = [
         'device_id',
         'command',
+        'type',
+        'reference',
         'data',
         'response',
-        'executed_at'
+        'executed_at',
+        'completed_at',
+        'failed_at',
+    ];
+
+    protected $casts = [
+        'executed_at' => 'datetime',
+        'completed_at' => 'datetime',
+        'failed_at' => 'datetime',
     ];
 
     public $timestamps = [
@@ -54,5 +64,21 @@ class Command extends Model
     {
         return $query->where('device_id', $device->id);
     }
-    
+
+    public function scopeOfType($query, string $type)
+    {
+        return $query->where('type', $type);
+    }
+
+    /**
+     * Sent to the terminal but never acknowledged on /iclock/devicecmd — the
+     * commands worth looking at when a fingerprint pull produced nothing.
+     */
+    public function scopeUnacknowledged($query)
+    {
+        return $query->whereNotNull('executed_at')
+            ->whereNull('completed_at')
+            ->whereNull('failed_at');
+    }
+
 }

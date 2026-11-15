@@ -50,6 +50,9 @@ Route::middleware(['auth'])
         Route::get('devices/delete/employee', 'deleteEmployeeRecord')->name('devices.deleteEmployeeRecord');
         Route::post('devices/delete/employee', 'runDeleteFingerRecord')->name('devices.runDeleteFingerRecord');
         Route::get('devices/retrieve/fingerdata', 'retrieveFingerData')->name('devices.retrieveFingerData');
+        Route::post('devices/retrieve/fingerdata', 'runRetrieveFingerData')->name('devices.runRetrieveFingerData');
+        Route::get('devices/{id}/pull-fingerprints', 'pullFingerprints')->name('devices.pullFingerprints');
+        Route::post('devices/{id}/push-fingerprints', 'pushFingerprints')->name('devices.pushFingerprints');
         Route::get('devices/retrieve/attendance/{id}', 'editAttendance')->name('devices.attendance.edit');
         Route::get('devices/retrieve/attendance/fix/{id}', 'fixAttendance')->name('devices.attendance.fix');
         Route::post('devices/retrieve/attendance', 'updateAttendance')->name('devices.attendance.update');
@@ -70,6 +73,7 @@ Route::middleware(['auth'])
         Route::get('agentes', 'index')->name('agentes.index');
         Route::get('agentes/pull', 'pullAgentes')->name('agentes.pull');
         Route::post('agentes/runpull', 'runPullAgentes')->name('agentes.runpull');
+        Route::post('agentes/runpurge', 'runPurgeRemoved')->name('agentes.runpurge');
     });
 
 // handshake

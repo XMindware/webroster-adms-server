@@ -7,9 +7,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use App\Services\GetStationAgentsService;
+use App\Services\SyncStationEmployeesService;
 use Illuminate\Support\Facades\Log;
-use App\Models\Agente;
 
 class pullEmployeesJob implements ShouldQueue
 {
@@ -28,36 +27,13 @@ class pullEmployeesJob implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(GetStationAgentsService $service)
+    public function handle(SyncStationEmployeesService $service)
     {
         Log::info('Job started', ['job' => self::class]);
 
-        $agents = $service->getStationAgents($this->data);
-        //if agent is not null and has status property and status is failed
-        if ($agents && isset($agents->status) && $agents->status == 'failed') {
-            Log::error('Failed to get agents', ['job' => self::class, 'error' => $agents->message]);
-            return;
-        }
-        Log::info('Agents retrieved', ['agents' => $agents]);
-        
-        // populate the agents table
-        foreach ($agents as $agent) {
-            
-            // check if agent exists
-            $agent = Agente::updateOrCreate(
-                ['idagente' => $agent['idagente']],
-                [
-                    'idempresa' => $this->data->idempresa,
-                    'idoficina' => $this->data->idoficina,
-                    'idagente' => $agent['idagente'],
-                    'shortname' => $agent['shortname'],
-                    'fullname' => $agent['nombre'] . ' ' . $agent['apellidos']
-                ]
-            );
-        }
+        $result = $service->syncOffice($this->data);
 
-
-        Log::info('Job completed', ['job' => self::class]);
+        Log::info('Job completed', ['job' => self::class, 'result' => $result]);
 
     }
 }

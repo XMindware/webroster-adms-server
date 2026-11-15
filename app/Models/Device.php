@@ -9,6 +9,9 @@ use App\Models\Command;
 use App\Models\Oficina;
 use App\Models\Attendance;
 use App\Services\PopulateEmployeesService;
+use App\Services\PullFingerprintsService;
+use App\Services\PushFingerprintsService;
+use App\Services\RemoveEmployeesService;
 
 class Device extends Model
 {
@@ -23,6 +26,8 @@ class Device extends Model
         'idempresa',
         'idoficina',
         'modelo',
+        'timezone_format',
+        'push_version',
     ];
 
     protected $casts = [
@@ -44,18 +49,17 @@ class Device extends Model
         return Attendance::where('sn', $this->serial_number)->orderBy('id', 'desc')->first();
     }
 
-        public function hayDesfasesHoy()
+    public function hayDesfasesHoy()
     {
-        // Get today's attendances for this device
-        $checadasHoy = Attendance::where('sn', $this->serial_number)
-            ->whereDate('created_at', now()->toDateString())
-            ->get();
-        
         $hayDesfases = false;
-        
+
         // Check if device has an office with timezone
         if (!$this->oficina || !$this->oficina->timezone) {
             // If no timezone info, use default behavior
+            $checadasHoy = Attendance::where('sn', $this->serial_number)
+                ->whereDate('created_at', now()->toDateString())
+                ->get();
+
             foreach ($checadasHoy as $attendance) {
                 if ($attendance->created_at->diffInMinutes($attendance->timestamp) > 20) {
                     $hayDesfases = true;
@@ -64,11 +68,17 @@ class Device extends Model
             }
             return $hayDesfases;
         }
-        
-        // Get current time in office timezone
+
+        // Get today's range in office timezone and convert to UTC for querying
         $officeTimezone = $this->oficina->timezone;
-        $nowInOfficeTz = now()->setTimezone($officeTimezone);
-        
+        $startOfDayUtc = now($officeTimezone)->startOfDay()->setTimezone('UTC');
+        $endOfDayUtc = now($officeTimezone)->endOfDay()->setTimezone('UTC');
+
+        // Get today's attendances for this device based on office local date
+        $checadasHoy = Attendance::where('sn', $this->serial_number)
+            ->whereBetween('created_at', [$startOfDayUtc, $endOfDayUtc])
+            ->get();
+
         // go through the attendances and check if there are differences between created_at and timestamp for more than 20min
         foreach ($checadasHoy as $attendance) {
             // Convert attendance timestamp to office timezone for proper comparison
@@ -103,17 +113,84 @@ class Device extends Model
         return $this->commands()->pending()->get();
     }
 
-    public function populate()
+    public function populate($employees = null)
     {
         try {
             $service = new PopulateEmployeesService($this);
-            $service->run();
+            return $service->run($employees);
         } catch (\Exception $e) {
             // log the error
             \Log::error($e->getMessage());
-        }        
+            return 0;
+        }
+    }
+
+    /**
+     * Queue DATA DELETE USERINFO commands for the given employees on this device.
+     * Counterpart of populate(); returns the number of commands queued.
+     */
+    public function depopulate($employees = null)
+    {
+        try {
+            $service = new RemoveEmployeesService($this);
+            return $service->run($employees);
+        } catch (\Exception $e) {
+            \Log::error($e->getMessage());
+            return 0;
+        }
     }
     
+    /**
+     * Fingerprint templates this terminal has handed back to the server.
+     */
+    public function fingerprintTemplates()
+    {
+        return $this->hasMany(FingerprintTemplate::class, 'sn', 'serial_number');
+    }
+
+    /**
+     * Ask this terminal for fingerprint templates.
+     *
+     * Bulk mode queues a single CHECK (the terminal decides what to re-upload);
+     * targeted mode queues one DATA QUERY FINGERTMP per employee per finger.
+     * Templates arrive later, on the terminal's own schedule, via /iclock/cdata.
+     *
+     * @param array<int, int>|null $fids
+     * @return int commands queued
+     */
+    public function pullFingerprints(bool $bulk = true, $employees = null, ?array $fids = null)
+    {
+        try {
+            $service = app(PullFingerprintsService::class);
+
+            return $bulk
+                ? $service->bulk($this)
+                : $service->forDevice($this, $employees, $fids);
+        } catch (\Exception $e) {
+            \Log::error('pullFingerprints failed: ' . $e->getMessage(), ['device_id' => $this->id]);
+
+            return 0;
+        }
+    }
+
+    /**
+     * Distribute stored templates to this terminal. Manual only — see
+     * PushFingerprintsService.
+     *
+     * @param array<int, string|int>|null $pins
+     * @return array{candidates: int, commands: int, skipped: int}
+     */
+    public function pushFingerprints(?array $pins = null)
+    {
+        try {
+            return app(PushFingerprintsService::class)->toDevice($this, $pins);
+        } catch (\Exception $e) {
+            \Log::error('pushFingerprints failed: ' . $e->getMessage(), ['device_id' => $this->id]);
+
+            return ['candidates' => 0, 'commands' => 0, 'skipped' => 0];
+        }
+    }
+
     /**
      * Get current time in the office's timezone
      * @return \Carbon\Carbon|null
@@ -150,16 +227,21 @@ class Device extends Model
         if (!$this->oficina || !$this->oficina->timezone) {
             return 0;
         }
-        
+
+        // Get today's range in office timezone and convert to UTC for querying
+        $officeTimezone = $this->oficina->timezone;
+        $startOfDayUtc = now($officeTimezone)->startOfDay()->setTimezone('UTC');
+        $endOfDayUtc = now($officeTimezone)->endOfDay()->setTimezone('UTC');
+
         $checadasHoy = Attendance::where('sn', $this->serial_number)
-            ->whereDate('created_at', now()->toDateString())
+            ->whereBetween('created_at', [$startOfDayUtc, $endOfDayUtc])
             ->get();
         
         $discrepancyCount = 0;
         
         foreach ($checadasHoy as $attendance) {
-            $attendanceTimeInOfficeTz = $attendance->timestamp->setTimezone($this->oficina->timezone);
-            $diffInMinutes = $attendance->created_at->setTimezone($this->oficina->timezone)
+            $attendanceTimeInOfficeTz = $attendance->timestamp->setTimezone($officeTimezone);
+            $diffInMinutes = $attendance->created_at->setTimezone($officeTimezone)
                 ->diffInMinutes($attendanceTimeInOfficeTz);
             
             if ($diffInMinutes > 20) {

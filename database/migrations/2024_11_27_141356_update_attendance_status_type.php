@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -11,6 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         // Update the type of the status column in the attendance table
         Schema::table('attendances', function (Blueprint $table) {
             $table->unsignedInteger('status1')->nullable()->change();
@@ -26,6 +31,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         // Revert the type of the status column in the attendance table
         Schema::table('attendances', function (Blueprint $table) {
             $table->tinyInteger('status1')->nullable()->change();

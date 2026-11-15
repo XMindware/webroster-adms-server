@@ -1,0 +1,546 @@
+{
+	"info": {
+		"_postman_id": "f3b1c9d2-7a44-4e2a-9c10-85978611e322",
+		"name": "WebRoster ADMS Server",
+		"description": "Postman collection for the WebRoster ADMS biometric integration server (Laravel / ZKTeco PUSH protocol).\n\nCovers:\n- **iclock PUSH protocol** endpoints used by ZKTeco devices (handshake, attendance, operlog, commands, realtime, query, log upload).\n- **App / web** routes (auth, devices, oficinas, agentes).\n\nUse the `WebRoster ADMS` environment and set `base_url` and `serial_number` before running.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "ADMS - iclock PUSH protocol",
+			"description": "Endpoints invoked by ZKTeco devices using the PUSH/ADMS protocol. The device replaces `{{serial_number}}` with its own SN.",
+			"item": [
+				{
+					"name": "Handshake / Initialization (GET cdata)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/iclock/cdata?SN={{serial_number}}&options=all&language=69&pushver=2.4.0&DeviceType=middle%20east&PushOptionsFlag=1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"iclock",
+								"cdata"
+							],
+							"query": [
+								{ "key": "SN", "value": "{{serial_number}}" },
+								{ "key": "options", "value": "all" },
+								{ "key": "language", "value": "69" },
+								{ "key": "pushver", "value": "2.4.0" },
+								{ "key": "DeviceType", "value": "middle%20east" },
+								{ "key": "PushOptionsFlag", "value": "1" }
+							]
+						},
+						"description": "Device handshake. Server returns the GET OPTION block (Stamp, TimeZone, Delay, Realtime, etc.). Also marks the device online and creates a device log entry."
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Attendance (POST cdata ATTLOG)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "text/plain" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "1\t2024-07-28 01:25:24\t0\t1\t\t0\t0\t\r\n1\t2024-07-28 10:41:21\t0\t1\t\t0\t0\t\r\n4\t2024-07-28 10:41:31\t0\t1\t\t0\t0\t\r\n",
+							"options": { "raw": { "language": "text" } }
+						},
+						"url": {
+							"raw": "{{base_url}}/iclock/cdata?SN={{serial_number}}&table=ATTLOG&Stamp=9999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"iclock",
+								"cdata"
+							],
+							"query": [
+								{ "key": "SN", "value": "{{serial_number}}" },
+								{ "key": "table", "value": "ATTLOG" },
+								{ "key": "Stamp", "value": "9999" }
+							]
+						},
+						"description": "Tab-separated attendance records. Columns: PIN, time, status, verify, workcode, reserved, reserved. Server returns OK: <count>."
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Operation Log (POST cdata OPERLOG)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "text/plain" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "OPLOG 4\t0\t2024-06-13 12:44:02\t0\t0\t0\t0\r\nOPLOG 5\t0\t2024-06-13 12:51:22\t26\t0\t0\t0\r\nFP PIN=1\tFID=0\tSize=440\tValid=1\tTMP=ocoYgZ6nVgELiKpaARWTJERBGG4rEAEIS64xwRA\r\n",
+							"options": { "raw": { "language": "text" } }
+						},
+						"url": {
+							"raw": "{{base_url}}/iclock/cdata?SN={{serial_number}}&table=OPERLOG&Stamp=9999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"iclock",
+								"cdata"
+							],
+							"query": [
+								{ "key": "SN", "value": "{{serial_number}}" },
+								{ "key": "table", "value": "OPERLOG" },
+								{ "key": "Stamp", "value": "9999" }
+							]
+						},
+						"description": "Operation log records and fingerprint templates (OPLOG / FP / USER lines). Server parses and stores them."
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Operation Count (POST cdata OPLOG)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "text/plain" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "OPLOG 4\t0\t2024-06-13 12:44:02\t0\t0\t0\t0\r\nOPLOG 5\t0\t2024-06-13 12:51:22\t26\t0\t0\t0\r\n",
+							"options": { "raw": { "language": "text" } }
+						},
+						"url": {
+							"raw": "{{base_url}}/iclock/cdata?SN={{serial_number}}&table=OPLOG&Stamp=9999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"iclock",
+								"cdata"
+							],
+							"query": [
+								{ "key": "SN", "value": "{{serial_number}}" },
+								{ "key": "table", "value": "OPLOG" },
+								{ "key": "Stamp", "value": "9999" }
+							]
+						},
+						"description": "When table=OPLOG the server returns OK: <count> of received lines."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Pending Commands (GET getrequest)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/iclock/getrequest?SN={{serial_number}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"iclock",
+								"getrequest"
+							],
+							"query": [
+								{ "key": "SN", "value": "{{serial_number}}" }
+							]
+						},
+						"description": "Device polls for pending commands. Returns OK if none, otherwise the C:<id>:... command list. Requires the device SN to exist in the devices table."
+					},
+					"response": []
+				},
+				{
+					"name": "Device Command Result (POST devicecmd)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "text/plain" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "ID=1&Return=0&CMD=DATA",
+							"options": { "raw": { "language": "text" } }
+						},
+						"url": {
+							"raw": "{{base_url}}/iclock/devicecmd?SN={{serial_number}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"iclock",
+								"devicecmd"
+							],
+							"query": [
+								{ "key": "SN", "value": "{{serial_number}}" }
+							]
+						},
+						"description": "Device reports the result of an executed command. Server logs it and returns OK."
+					},
+					"response": []
+				},
+				{
+					"name": "Realtime Data (GET rtdata)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/iclock/rtdata?SN={{serial_number}}&type=time",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"iclock",
+								"rtdata"
+							],
+							"query": [
+								{ "key": "SN", "value": "{{serial_number}}" },
+								{ "key": "type", "value": "time" }
+							]
+						},
+						"description": "Realtime channel. Marks the device online and returns ok."
+					},
+					"response": []
+				},
+				{
+					"name": "Query Data (POST querydata)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "text/plain" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": { "raw": { "language": "text" } }
+						},
+						"url": {
+							"raw": "{{base_url}}/iclock/querydata?SN={{serial_number}}&table=ATTLOG",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"iclock",
+								"querydata"
+							],
+							"query": [
+								{ "key": "SN", "value": "{{serial_number}}" },
+								{ "key": "table", "value": "ATTLOG" }
+							]
+						},
+						"description": "Query data channel. Marks the device online and returns OK."
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Log File (POST upload-log)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{ "key": "sn", "value": "{{serial_number}}", "type": "text" },
+								{ "key": "file", "type": "file", "src": [] }
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/iclock/upload-log",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"iclock",
+								"upload-log"
+							]
+						},
+						"description": "Multipart upload of a device log file. Fields: sn (text), file (the log file). Returns {\"status\":\"OK\"} or 400 on invalid file."
+					},
+					"response": []
+				},
+				{
+					"name": "Test (GET test)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/iclock/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"iclock",
+								"test"
+							]
+						},
+						"description": "Simple connectivity test. Returns OK."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "API",
+			"description": "JSON API endpoints.",
+			"item": [
+				{
+					"name": "Quick Status (GET api/test)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"test"
+							]
+						},
+						"description": "Health/status endpoint. Returns JSON {status: ok} or the latest error_log entry."
+					},
+					"response": []
+				},
+				{
+					"name": "Agentes Bulk Upsert (POST api/agentes/bulk-upsert)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Accept", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"agentes\": [\n    {\n      \"idagente\": 1001,\n      \"nombre\": \"Juan Perez\",\n      \"idoficina\": 1,\n      \"idempresa\": 1\n    }\n  ]\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{base_url}}/api/agentes/bulk-upsert",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"agentes",
+								"bulk-upsert"
+							]
+						},
+						"description": "Bulk create/update agents. Adjust the payload to match your DeviceController handler."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "App - Auth",
+			"description": "Session-based web authentication routes. Run Login first to get the session cookie; Postman stores it automatically in the cookie jar.",
+			"item": [
+				{
+					"name": "Login page (GET login)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/login",
+							"host": [ "{{base_url}}" ],
+							"path": [ "login" ]
+						},
+						"description": "Loads the login view. Fetch this first to obtain the XSRF/session cookie."
+					},
+					"response": []
+				},
+				{
+					"name": "Login (POST login-user)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{ "key": "email", "value": "{{user_email}}", "type": "text" },
+								{ "key": "password", "value": "{{user_password}}", "type": "text" }
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/login-user",
+							"host": [ "{{base_url}}" ],
+							"path": [ "login-user" ]
+						},
+						"description": "Authenticates the user and starts a web session. Adjust field names if your form uses username instead of email."
+					},
+					"response": []
+				},
+				{
+					"name": "Register (POST registration-user)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{ "key": "name", "value": "Admin", "type": "text" },
+								{ "key": "email", "value": "{{user_email}}", "type": "text" },
+								{ "key": "password", "value": "{{user_password}}", "type": "text" },
+								{ "key": "password_confirmation", "value": "{{user_password}}", "type": "text" }
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/registration-user",
+							"host": [ "{{base_url}}" ],
+							"path": [ "registration-user" ]
+						},
+						"description": "Registers a new user."
+					},
+					"response": []
+				},
+				{
+					"name": "Logout (GET logout)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/logout",
+							"host": [ "{{base_url}}" ],
+							"path": [ "logout" ]
+						},
+						"description": "Ends the current session."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "App - Devices",
+			"description": "Device management (requires authenticated session).",
+			"item": [
+				{
+					"name": "List Devices (GET devices)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{base_url}}/devices", "host": [ "{{base_url}}" ], "path": [ "devices" ] }
+					},
+					"response": []
+				},
+				{
+					"name": "Create Device (POST devices/store)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{ "key": "name", "value": "Reloj Entrada", "type": "text" },
+								{ "key": "no_sn", "value": "{{serial_number}}", "type": "text" },
+								{ "key": "idreloj", "value": "1", "type": "text" },
+								{ "key": "idoficina", "value": "1", "type": "text" },
+								{ "key": "idempresa", "value": "1", "type": "text" }
+							]
+						},
+						"url": { "raw": "{{base_url}}/devices/store", "host": [ "{{base_url}}" ], "path": [ "devices", "store" ] }
+					},
+					"response": []
+				},
+				{
+					"name": "Restart Device (GET devices/:id/restart)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/devices/1/restart",
+							"host": [ "{{base_url}}" ],
+							"path": [ "devices", "1", "restart" ]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Populate Device (GET devices/:id/populate)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/devices/1/populate",
+							"host": [ "{{base_url}}" ],
+							"path": [ "devices", "1", "populate" ]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Device Log (GET devices-log)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{base_url}}/devices-log", "host": [ "{{base_url}}" ], "path": [ "devices-log" ] }
+					},
+					"response": []
+				},
+				{
+					"name": "Attendance (GET attendance)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{base_url}}/attendance", "host": [ "{{base_url}}" ], "path": [ "attendance" ] }
+					},
+					"response": []
+				},
+				{
+					"name": "Monitor (GET devices/monitor)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{base_url}}/devices/monitor", "host": [ "{{base_url}}" ], "path": [ "devices", "monitor" ] }
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "App - Agentes",
+			"description": "Employee/agent sync (requires authenticated session).",
+			"item": [
+				{
+					"name": "List Agentes (GET agentes)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{base_url}}/agentes", "host": [ "{{base_url}}" ], "path": [ "agentes" ] }
+					},
+					"response": []
+				},
+				{
+					"name": "Run Pull Agentes (POST agentes/runpull)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{ "key": "oficina", "value": "1", "type": "text" },
+								{ "key": "idempresa", "value": "1", "type": "text" }
+							]
+						},
+						"url": { "raw": "{{base_url}}/agentes/runpull", "host": [ "{{base_url}}" ], "path": [ "agentes", "runpull" ] },
+						"description": "Dispatches the pullEmployeesJob for the given oficina/empresa."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{ "key": "base_url", "value": "http://localhost" }
+	]
+}

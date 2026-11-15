@@ -10,6 +10,7 @@ return [
     'device_log' => 'Device Log',
     'finger_log' => 'Finger Log',
     'fingerprints' => 'Fingerprints',
+    'pull_fingerprints' => 'Pull Fingerprints',
     'logout' => 'Logout',
     'login' => 'Login',
     'registration' => 'Registration',

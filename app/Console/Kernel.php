@@ -12,10 +12,10 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-
         $schedule->command('api:sincronizeAttendance')->everyMinute();
         $schedule->command('devices:check-status')->everyMinute();
         $schedule->command('monitor:desfases')->everyFiveMinutes();
+        $schedule->command('employees:sync-stations')->dailyAt('08:00')->withoutOverlapping();
     }
 
     /**

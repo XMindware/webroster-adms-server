@@ -19,14 +19,21 @@
                 <input type="text" name="idreloj" class="form-control" id="idreloj" value="{{ $device->idreloj }}">
             </div>
             <div class="form-group">
-                <label for="idoficina">Oficina</label>
-                <select name="idoficina" class="form-control" id="idoficina">
+                <label for="oficina_id">Oficina</label>
+                <select name="oficina_id" class="form-control" id="oficina_id">
                     @foreach ($oficinas as $oficina)
-                        <option value="{{ $oficina->idoficina }}" data-idempresa="{{ $oficina->idempresa }}" @if($device->idoficina == $oficina->idoficina) selected @endif>{{ $oficina->ubicacion }}</option>
+                        <option value="{{ $oficina->id }}" @if($device->idoficina == $oficina->idoficina && $device->idempresa == $oficina->idempresa) selected @endif>{{ $oficina->ubicacion }}</option>
                     @endforeach
                 </select>
             </div>   
-            <input type="hidden" name="idempresa" id="idempresa" value="{{ $device->idempresa }}">
+            <div class="form-group">
+                <label for="timezone_format">Formato de zona horaria (TimeZone)</label>
+                <select name="timezone_format" class="form-control" id="timezone_format">
+                    <option value="" @if(!$device->timezone_format) selected @endif>Nombre (America/Mexico_City) - predeterminado</option>
+                    <option value="hours" @if($device->timezone_format === 'hours') selected @endif>Horas (-6)</option>
+                    <option value="minutes" @if($device->timezone_format === 'minutes') selected @endif>Minutos (-360)</option>
+                </select>
+            </div>
             <div class="form-group">
                 <label for="online">Online</label>
                 <input type="text" name="online" class="form-control" id="online" value="{{ $device->online }}">
@@ -38,19 +45,4 @@
             <a href="{{ route('devices.index') }}" class="btn btn-secondary">Cancel</a>
         </form>
     </div>
-    <script>
-        (function(){
-            var select = document.getElementById('idoficina');
-            var inputEmpresa = document.getElementById('idempresa');
-            function syncEmpresa() {
-                var opt = select.options[select.selectedIndex];
-                if (opt && opt.dataset && opt.dataset.idempresa) {
-                    inputEmpresa.value = opt.dataset.idempresa;
-                }
-            }
-            select.addEventListener('change', syncEmpresa);
-            // ensure initial sync on load
-            syncEmpresa();
-        })();
-    </script>
 @endsection

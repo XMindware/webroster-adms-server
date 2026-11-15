@@ -1,0 +1,53 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  phpunit:
+    name: PHPUnit (PHP 8.2 / sqlite)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, curl, dom, fileinfo, bcmath, intl, zip, pdo, pdo_sqlite, sqlite3
+          coverage: none
+          tools: composer:v2
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache composer packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-php82-composer-${{ hashFiles('composer.json') }}
+          restore-keys: ${{ runner.os }}-php82-composer-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress --no-ansi
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          mkdir -p storage/framework/{cache/data,sessions,testing,views} storage/logs bootstrap/cache
+          chmod -R 777 storage bootstrap/cache
+
+      - name: Run PHPUnit
+        run: vendor/bin/phpunit --testdox --colors=always

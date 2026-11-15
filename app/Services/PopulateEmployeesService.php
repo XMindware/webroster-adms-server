@@ -4,12 +4,13 @@ namespace App\Services;
 
 use App\Models\Agente;
 use App\Models\Device;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 class PopulateEmployeesService
 {
     protected $device;
+    protected $commandIdService;
 
     /**
      * Constructor
@@ -19,9 +20,10 @@ class PopulateEmployeesService
      * @author XMindware
      * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/PopulateEmployeesService.php
      */
-    public function __construct(Device $device)
+    public function __construct(Device $device, ?CommandIdService $commandIdService = null)
     {
         $this->device = $device;
+        $this->commandIdService = $commandIdService ?? app(CommandIdService::class);
     }
 
     /**
@@ -32,30 +34,39 @@ class PopulateEmployeesService
      * @author XMindware
      * @link https://github.com/hallobayi/webroster-adms-server/blob/main/app/Services/PopulateEmployeesService.php
      */
-    public function run()
+    public function run($employees = null): int
     {
         Log::info('PopulateEmployeesService', ['job' => self::class]);
-        
-        $employees = Agente::where('idempresa', $this->device->idempresa)
-                            ->where('idoficina', $this->device->idoficina)->get();
-        Log::info('Employees retrieved', ['employees' => $employees]);
 
-        $lastCommand = $this->device->commands()->latest()->first();
+        $employees = $employees instanceof Collection
+            ? $employees->values()
+            : collect($employees ?? Agente::where('idempresa', $this->device->idempresa)
+                ->where('idoficina', $this->device->idoficina)
+                ->get())->values();
 
-        $CmdId = $lastCommand ? $lastCommand->id : 0;
+        if ($employees->isEmpty()) {
+            Log::info('No employees to populate', ['device_id' => $this->device->id]);
+            return 0;
+        }
+
+        Log::info('Employees retrieved', [
+            'device_id' => $this->device->id,
+            'employee_count' => $employees->count(),
+        ]);
 
         foreach ($employees as $employee) {
-            
+            $cmdId = $this->commandIdService->getNextCmdId();
+
             // create a command to populate the employee
             $command = $this->device->commands()->create([
-                'command' => $CmdId,
-                'status' => 'pending',
+                'command' => $cmdId,
                 'device_id' => $this->device->id,
-                'data' => $this->updateEmployee($employee, $CmdId)
-            ]);   
-            $CmdId++;
+                'data' => $this->updateEmployee($employee, $cmdId)
+            ]);
             Log::info('Command created', ['command' => $command]);
         }
+
+        return $employees->count();
     }
 
     /**

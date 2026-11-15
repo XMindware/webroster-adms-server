@@ -144,7 +144,8 @@
                             <li><a class="dropdown-item" href="{{ route('devices.oficinas') }}">{{ __('navigation.oficinas') }}</a></li>
                             <li><a class="dropdown-item" href="{{ route('devices.deviceLog') }}">{{ __('navigation.device_log') }}</a></li>
                             <li><a class="dropdown-item" href="{{ route('devices.fingerLog') }}">{{ __('navigation.finger_log') }}</a></li>
-                            <li><a class="dropdown-item" href="{{ route('devices.fingerprints') }}">{{ __('navigation.fingerprints') }}</a></li> 
+                            <li><a class="dropdown-item" href="{{ route('devices.fingerprints') }}">{{ __('navigation.fingerprints') }}</a></li>
+                            <li><a class="dropdown-item" href="{{ route('devices.retrieveFingerData') }}">{{ __('navigation.pull_fingerprints') }}</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown">

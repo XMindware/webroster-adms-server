@@ -10,6 +10,7 @@ return [
     'device_log' => 'Registro de Dispositivo',
     'finger_log' => 'Registro de Huella',
     'fingerprints' => 'Huellas Digitales',
+    'pull_fingerprints' => 'Descargar Huellas',
     'logout' => 'Cerrar Sesión',
     'login' => 'Iniciar Sesión',
     'registration' => 'Registro',

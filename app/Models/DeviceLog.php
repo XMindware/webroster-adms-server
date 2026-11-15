@@ -18,7 +18,10 @@ class DeviceLog extends Model
         'tgl',
         'sn',
         'option',
-        'url'
+        'url',
+        // Was being passed to create() but never fillable, so every row kept
+        // the '999999' default instead of the device's clock id.
+        'idreloj',
     ];
 
     public function getCreatedAtAttribute($value)

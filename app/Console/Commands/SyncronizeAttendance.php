@@ -77,6 +77,10 @@ class SyncronizeAttendance extends Command
         return [
             'idagente' => $record->employee_id,
             'timestamp' => $record->timestamp,
+            // Hora de pared del reloj, sin zona horaria. `timestamp` se serializa
+            // como UTC asumiendo la zona del ADMS, lo que corre la hora en relojes
+            // de otras zonas (p. ej. Cancún); webroster-api prefiere este campo.
+            'local_timestamp' => $record->timestamp?->format('Y-m-d H:i:s'),
             'serial_number' => $record->serial_number,
             'idreloj' => $record->device->idreloj,
             'status1' => $record->status1,

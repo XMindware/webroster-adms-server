@@ -70,9 +70,20 @@
                             <a href="{{ route('devices.populate', ['id' => $d->id ]) }}" class="btn btn-info">{{ __('navigation.employees') }}</a>                            
                             <a href="{{ route('devices.edit', ['id' => $d->id ]) }}" class="btn btn-primary">{{ __('common.edit') }}</a>
                             <a href="{{ route('devices.restart', ['id' => $d->id ]) }}" class="btn btn-primary restart-btn">{{ __('devices.restart') }}</a>                            
+                            <a href="{{ route('devices.pullFingerprints', ['id' => $d->id ]) }}" class="btn btn-secondary"
+                               title="{{ __('devices.pull_fingerprints') }}">
+                                <i class="fas fa-fingerprint"></i>
+                            </a>
                             <a href="{{ route('devices.activity', ['id' => $d->id ]) }}" class="btn btn-warning">
                                 <i class="fas fa-chart-line"></i>
                             </a>
+                            <form method="post" action="{{ route('devices.pushFingerprints', ['id' => $d->id ]) }}" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-secondary push-fp-btn"
+                                        title="{{ __('devices.push_fingerprints') }}">
+                                    <i class="fas fa-share"></i>
+                                </button>
+                            </form>
                         </td>
                     </tr>
                 @endforeach

@@ -15,6 +15,9 @@ use App\Models\Oficina;
 use App\Models\Attendance;
 use App\Models\Command;
 use App\Models\FingerLog;
+use App\Models\FingerprintTemplate;
+use App\Services\PullFingerprintsService;
+use App\Services\PushFingerprintsService;
 use DB;
 
 class DeviceController extends Controller
@@ -61,20 +64,170 @@ class DeviceController extends Controller
         return view('devices.log', compact('deviceLogs', 'title'));
     }
 
-    public function fingerprints(Request $request){
-        $title = "Fingerprints captured";
-        $deviceLogs = FingerLog::where('data', 'like', '%FP PIN%')
-            ->orderBy('updated_at', 'ASC')
-            ->paginate(40)
-            ->through(function ($log) {
-                preg_match('/FP PIN=(\d+)/', $log->data, $matches);
-                $log->idagente = $matches[1] ?? null; // Extracted FP PIN value
-                $data = json_decode($log->url);
-                $log->employee = Agente::where('idagente', $log->idagente)->first();
-                $log->device = Device::where('serial_number', $data->SN)->first();
-                return $log;
+    /**
+     * Resolve the office picked in a dropdown. oficinas.id is the only unique key
+     * (idoficina repeats across empresas); the legacy selectedOficina + idempresa
+     * pair is still honoured for old links.
+     */
+    private function resolveOficina(Request $request): ?Oficina
+    {
+        if ($request->filled('oficina_id')) {
+            return Oficina::find((int) $request->query('oficina_id'));
+        }
+        if ($request->filled('selectedOficina')) {
+            return Oficina::where('idoficina', $request->query('selectedOficina'))
+                ->when($request->filled('idempresa'), fn ($q) => $q->where('idempresa', $request->query('idempresa')))
+                ->first();
+        }
+
+        return null;
+    }
+
+    /**
+     * Templates actually captured from the terminals, one row per employee
+     * finger per device.
+     *
+     * This used to scrape `finger_log` with a LIKE '%FP PIN%' — a raw request
+     * log — because there was nowhere else the templates were being kept.
+     * They now have a table of their own.
+     */
+    public function fingerprints(Request $request)
+    {
+        $title = __('devices.fingerprints_captured');
+
+        $oficina = $this->resolveOficina($request);
+        $selectedOficinaId = $oficina?->id;
+        $pin = $request->query('pin');
+
+        $templates = FingerprintTemplate::query()
+            ->when($oficina, fn ($q) => $q->forOffice($oficina->idempresa, $oficina->idoficina))
+            ->when($pin, fn ($q) => $q->where('pin', $pin))
+            ->orderByDesc('captured_at')
+            ->orderBy('pin')
+            ->orderBy('fid')
+            ->paginate(50)
+            ->appends($request->except('page'))
+            ->through(function (FingerprintTemplate $template) {
+                $template->employee = Agente::where('idagente', $template->pin)
+                    ->where('idempresa', $template->idempresa)
+                    ->where('idoficina', $template->idoficina)
+                    ->first();
+                $template->deviceRow = Device::where('serial_number', $template->sn)->first();
+
+                return $template;
             });
-        return view('devices.fingerprints', compact('deviceLogs','title'));
+
+        $oficinas = Oficina::all();
+
+        return view('devices.fingerprints', compact('templates', 'title', 'oficinas', 'selectedOficinaId', 'pin'));
+    }
+
+    /**
+     * Form for pulling fingerprint templates off the terminals.
+     */
+    public function retrieveFingerData(Request $request)
+    {
+        $title = __('devices.pull_fingerprints');
+        $devices = Device::orderBy('idoficina')->get();
+        $oficinas = Oficina::all();
+
+        return view('devices.fingerdata', compact('title', 'devices', 'oficinas'));
+    }
+
+    /**
+     * Queue the pull. Nothing here waits for templates: the terminal answers
+     * on its own polling cycle, minutes later, into /iclock/cdata.
+     */
+    public function runRetrieveFingerData(Request $request, PullFingerprintsService $service)
+    {
+        $mode = $request->input('mode', 'bulk');
+        $deviceId = $request->input('device');
+        $pin = trim((string) $request->input('pin'));
+
+        $device = Device::find($deviceId);
+
+        if (!$device) {
+            return redirect()->route('devices.retrieveFingerData')
+                ->with('error', __('devices.device_not_found'));
+        }
+
+        if ($mode === 'pin' && $pin !== '') {
+            // Faces can only be asked for terminal-wide; see faces().
+            $queued = $service->forPin($device, $pin) + $service->faces($device);
+        } elseif ($mode === 'roster') {
+            $queued = $service->forDevice($device) + $service->faces($device);
+        } else {
+            $queued = $service->bulk($device);
+        }
+
+        Log::info('runRetrieveFingerData', [
+            'device_id' => $device->id,
+            'mode' => $mode,
+            'pin' => $pin ?: null,
+            'commands' => $queued,
+            'triggered_by' => optional($request->user())->email ?? optional($request->user())->id,
+        ]);
+
+        if ($queued === 0) {
+            return redirect()->route('devices.retrieveFingerData')
+                ->with('error', __('devices.pull_nothing_queued'));
+        }
+
+        return redirect()->route('devices.retrieveFingerData')
+            ->with('success', __('devices.pull_queued', ['count' => $queued, 'device' => $device->name ?: $device->serial_number]));
+    }
+
+    /**
+     * One-click bulk pull from the device list.
+     */
+    public function pullFingerprints(Request $request, $id, PullFingerprintsService $service)
+    {
+        $device = Device::find($id);
+
+        if (!$device) {
+            return redirect()->route('devices.index')->with('error', __('devices.device_not_found'));
+        }
+
+        $queued = $service->bulk($device);
+
+        return redirect()->route('devices.index')->with(
+            $queued > 0 ? 'success' : 'error',
+            $queued > 0
+                ? __('devices.pull_queued', ['count' => $queued, 'device' => $device->name ?: $device->serial_number])
+                : __('devices.pull_nothing_queued')
+        );
+    }
+
+    /**
+     * Distribute stored templates to a terminal. Manual on purpose — this
+     * rewrites biometric data on a live device, so it never runs as a side
+     * effect of a roster sync.
+     */
+    public function pushFingerprints(Request $request, $id, PushFingerprintsService $service)
+    {
+        $device = Device::find($id);
+
+        if (!$device) {
+            return redirect()->route('devices.index')->with('error', __('devices.device_not_found'));
+        }
+
+        $pins = $request->filled('pins')
+            ? array_filter(array_map('trim', explode(',', (string) $request->input('pins'))))
+            : null;
+
+        $result = $service->toDevice($device, $pins);
+
+        Log::info('pushFingerprints', array_merge($result, [
+            'device_id' => $device->id,
+            'triggered_by' => optional($request->user())->email ?? optional($request->user())->id,
+        ]));
+
+        return redirect()->back()->with(
+            $result['commands'] > 0 ? 'success' : 'error',
+            $result['commands'] > 0
+                ? __('devices.push_queued', ['count' => $result['commands'], 'device' => $device->name ?: $device->serial_number])
+                : __('devices.push_nothing_queued', ['skipped' => $result['skipped']])
+        );
     }
 
     // get oficinas list
@@ -141,12 +294,18 @@ class DeviceController extends Controller
     {
         $oficina = Oficina::find($request->input('id'));
         if ($oficina) {
-            // Check if there are devices associated with this oficina
-            $devices = Device::where('idoficina', $oficina->idoficina)->get();
-            foreach ($devices as $device) {
-                $device->delete();
-            }
-            $oficina->delete();
+            DB::transaction(function () use ($oficina) {
+                // Devices of this oficina (same idoficina can exist under another empresa)
+                $devices = Device::where('idoficina', $oficina->idoficina)
+                    ->where('idempresa', $oficina->idempresa)
+                    ->get();
+                foreach ($devices as $device) {
+                    // device_commands.device_id has a foreign key to devices
+                    $device->commands()->delete();
+                    $device->delete();
+                }
+                $oficina->delete();
+            });
             return redirect()->route('devices.oficinas')->with('success', 'Oficina eliminada correctamente');
         } else {
             return redirect()->route('devices.oficinas')->with('error', 'Oficina no encontrada');
@@ -154,33 +313,52 @@ class DeviceController extends Controller
     }
 
     public function Attendance(Request $request) {
-        $selectedOficina = $request->query('selectedOficina');
+        $oficina = $this->resolveOficina($request);
+        $selectedOficinaId = $oficina?->id;
 		$selectedDate = $request->query('selectedDate'); // YYYY-MM-DD
-		$idempresa = $request->query('idempresa');
         $page = $request->query('page', 1);
     
-        $query = Attendance::query();
+        $query = Attendance::query()->with(['device.oficina']);
+
+        $officeTimezone = $oficina?->timezone;
     
-        if ($selectedOficina) {
-			$query->whereIn('sn', function ($q) use ($selectedOficina, $idempresa) {
+        if ($oficina) {
+			$query->whereIn('sn', function ($q) use ($oficina) {
                 $q->select('serial_number')
                   ->from('devices')
                   ->whereNotIn('employee_id', self::EXCLUDED_EMPLOYEES) // Exclude devices with idreloj 999999 or 0
-                  ->where('idoficina', $selectedOficina);
-				if (!empty($idempresa)) {
-					$q->where('idempresa', $idempresa);
-				}
+                  ->where('idoficina', $oficina->idoficina)
+                  ->where('idempresa', $oficina->idempresa);
             });
         }
 		if ($selectedDate) {
-			$query->whereDate('timestamp', $selectedDate);
+            if ($officeTimezone) {
+                $startOfDayUtc = \Carbon\Carbon::parse($selectedDate, $officeTimezone)->startOfDay()->setTimezone('UTC');
+                $endOfDayUtc = \Carbon\Carbon::parse($selectedDate, $officeTimezone)->endOfDay()->setTimezone('UTC');
+                $query->whereBetween('timestamp', [$startOfDayUtc, $endOfDayUtc]);
+            } else {
+                $query->whereDate('timestamp', $selectedDate);
+            }
 		}
     
         $query->orderBy('updated_at', 'DESC'); // <--- Siempre se ordena por updated_at DESC
     
         if ($request->input('desfasados') === 'on') {
-            $filtered = $query->get()->filter(function ($attendance) {
-                return $attendance->updated_at->diffInMinutes($attendance->timestamp) > 20;
+            $filtered = $query->get()->filter(function ($attendance) use ($officeTimezone) {
+                $tz = $officeTimezone;
+                if (!$tz && $attendance->device && $attendance->device->oficina && $attendance->device->oficina->timezone) {
+                    $tz = $attendance->device->oficina->timezone;
+                }
+
+                $updatedAt = $attendance->updated_at;
+                $timestamp = $attendance->timestamp;
+
+                if ($tz) {
+                    $updatedAt = $updatedAt->setTimezone($tz);
+                    $timestamp = $timestamp->setTimezone($tz);
+                }
+
+                return $updatedAt->diffInMinutes($timestamp) > 20;
             });
         
             $filtered = $filtered->sortByDesc('updated_at')->values();
@@ -208,8 +386,7 @@ class DeviceController extends Controller
         return view('devices.attendance', [
             'attendances' => $paginator,
             'oficinas' => $oficinas,
-            'selectedOficina' => $selectedOficina,
-			'idempresa' => $idempresa,
+            'selectedOficinaId' => $selectedOficinaId,
 			'selectedDate' => $selectedDate,
             'page' => $page,
         ]);
@@ -311,8 +488,12 @@ public function monitor()
             try {
                 $lastAttendance = $device->getLastAttendance();
                 if ($lastAttendance && $lastAttendance->timestamp) {
-                    $device->last_attendance_time = $lastAttendance->timestamp;
-                    $device->last_attendance_human = $lastAttendance->timestamp->format('H:i');
+                    $officeTimezone = $device->oficina ? $device->oficina->timezone : null;
+                    $attendanceTime = $officeTimezone
+                        ? $lastAttendance->timestamp->setTimezone($officeTimezone)
+                        : $lastAttendance->timestamp;
+                    $device->last_attendance_time = $attendanceTime;
+                    $device->last_attendance_human = $attendanceTime->format('H:i');
                 } else {
                     $device->last_attendance_time = null;
                     $device->last_attendance_human = 'N/A';
@@ -432,18 +613,36 @@ public function monitor()
 		return view('devices.create', compact('oficinas'));
     }
 
+    /**
+     * Office chosen in the device form. idoficina repeats across empresas, so the
+     * form posts oficinas.id (oficina_id); idoficina + idempresa is the fallback.
+     */
+    private function resolveFormOficina(Request $request): ?Oficina
+    {
+        if ($request->filled('oficina_id')) {
+            return Oficina::find((int) $request->input('oficina_id'));
+        }
+        if ($request->filled('idoficina')) {
+            return Oficina::where('idoficina', $request->input('idoficina'))
+                ->when($request->filled('idempresa'), fn ($q) => $q->where('idempresa', $request->input('idempresa')))
+                ->first();
+        }
+        return null;
+    }
+
     public function store(Request $request)
     {
         $device = new Device();
         $device->name = $request->input('name');
         $device->serial_number = $request->input('no_sn');
         $device->idreloj = $request->input('idreloj');
-		if ($request->filled('idoficina')) {
-			$oficina = Oficina::where('idoficina', $request->input('idoficina'))->first();
-			if ($oficina) {
-				$device->idoficina = $oficina->idoficina;
-				$device->idempresa = $request->input('idempresa') ?? $oficina->idempresa;
-			}
+        $device->timezone_format = in_array($request->input('timezone_format'), ['hours', 'minutes'], true)
+            ? $request->input('timezone_format')
+            : null;
+		$oficina = $this->resolveFormOficina($request);
+		if ($oficina) {
+			$device->idoficina = $oficina->idoficina;
+			$device->idempresa = $oficina->idempresa;
 		}
         $device->save();
 
@@ -466,7 +665,7 @@ public function monitor()
     public function update(Request $request, $id)
     {
         $device = Device::find($id);
-        $oficina = Oficina::where('idoficina', $request->input('idoficina'))->first();
+        $oficina = $this->resolveFormOficina($request);
 
         if (!$oficina) {
             return redirect()->route('devices.index')->with('error', 'Oficina no encontrada');
@@ -475,7 +674,10 @@ public function monitor()
         $device->serial_number = $request->input('serial_number');
         $device->idreloj = $request->input('idreloj') ?? '999999';
         $device->idoficina = $oficina->idoficina;
-		$device->idempresa = $request->input('idempresa') ?? $oficina->idempresa;
+		$device->idempresa = $oficina->idempresa;
+        $device->timezone_format = in_array($request->input('timezone_format'), ['hours', 'minutes'], true)
+            ? $request->input('timezone_format')
+            : null;
         $device->save();
       return redirect()->route('devices.index')->with('success', 'Biométrico actualizado correctamente');
     }
