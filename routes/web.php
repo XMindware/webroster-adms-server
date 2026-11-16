@@ -20,7 +20,7 @@ use App\Http\Controllers\AgentesController;
 Route::controller(AuthController::class)->group(function(){
     Route::get('/login','login')->middleware('alreadyLoggedIn')->name('login');
     Route::post('/login-user','loginUser')->middleware('throttle:login')->name('login-user');
-    Route::get('/logout','logout')->name('logout');
+    Route::post('/logout','logout')->name('logout');
     Route::get('/language/{locale}', function ($locale) {
         if (in_array($locale, config('app.available_locales'))) {
             session(['locale' => $locale]);
@@ -35,23 +35,21 @@ Route::middleware(['auth'])
         Route::get('devices', 'index')->name('devices.index');
         Route::get('devices/create', 'create')->name('devices.create');
         Route::post('devices/store', 'store')->name('devices.store');
-        Route::get('devices/delete', 'deleteDevice')->name('devices.delete');
         Route::get('devices/{id}/edit', 'edit')->name('devices.edit');
         Route::post('devices/{id}/update', 'update')->name('devices.update');
-        Route::get('devices/{id}/populate', 'populate')->name('devices.populate');
-        Route::get('devices/{id}/restart', 'restart')->name('devices.restart');
+        Route::post('devices/{id}/populate', 'populate')->name('devices.populate');
+        Route::post('devices/{id}/restart', 'restart')->name('devices.restart');
+        Route::delete('devices/{id}', 'deleteDevice')->name('devices.delete');
         Route::get('devices-log', 'deviceLog')->name('devices.deviceLog');
         Route::get('finger-log', 'fingerLog')->name('devices.fingerLog');
         Route::get('fingerprints', 'fingerprints')->name('devices.fingerprints');
         Route::get('attendance', 'attendance')->name('devices.attendance');
-        Route::get('devices/delete/employee', 'deleteEmployeeRecord')->name('devices.deleteEmployeeRecord');
-        Route::post('devices/delete/employee', 'runDeleteFingerRecord')->name('devices.runDeleteFingerRecord');
         Route::get('devices/retrieve/fingerdata', 'retrieveFingerData')->name('devices.retrieveFingerData');
         Route::post('devices/retrieve/fingerdata', 'runRetrieveFingerData')->name('devices.runRetrieveFingerData');
-        Route::get('devices/{id}/pull-fingerprints', 'pullFingerprints')->name('devices.pullFingerprints');
+        Route::post('devices/{id}/pull-fingerprints', 'pullFingerprints')->name('devices.pullFingerprints');
         Route::post('devices/{id}/push-fingerprints', 'pushFingerprints')->name('devices.pushFingerprints');
         Route::get('devices/retrieve/attendance/{id}', 'editAttendance')->name('devices.attendance.edit');
-        Route::get('devices/retrieve/attendance/fix/{id}', 'fixAttendance')->name('devices.attendance.fix');
+        Route::post('devices/retrieve/attendance/fix/{id}', 'fixAttendance')->name('devices.attendance.fix');
         Route::post('devices/retrieve/attendance', 'updateAttendance')->name('devices.attendance.update');
         Route::get('/devices/activity/{id}', 'devicesActivity')->name('devices.activity');
         Route::get('/devices/monitor', 'monitor')->name('devices.monitor');
@@ -61,7 +59,7 @@ Route::middleware(['auth'])
         Route::post('oficinas/store', 'storeOficina')->name('oficinas.store');
         Route::get('oficinas/{id}/edit', 'editOficina')->name('oficinas.edit');
         Route::post('oficinas/{id}/update', 'updateOficina')->name('oficinas.update');
-        Route::get('oficinas/delete', 'deleteOficina')->name('oficinas.delete');
+        Route::delete('oficinas/{id}', 'deleteOficina')->name('oficinas.delete');
     });
 
 Route::middleware(['auth'])

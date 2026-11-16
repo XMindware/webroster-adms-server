@@ -143,9 +143,10 @@ async function fixAttendance(id, btn) {
 
     try {
         const res = await fetch(url, {
-            method: 'GET',
+            method: 'POST',
             headers: {
-                'Accept': 'application/json'
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
             credentials: 'same-origin'
         });

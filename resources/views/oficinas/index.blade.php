@@ -53,7 +53,11 @@
                         <td>{{ $oficina->updated_at?->diffForHumans() }}</td>
                         <td>
                             <a href="{{ route('oficinas.edit', ['id' => $oficina->id ]) }}" class="btn btn-primary">Edit</a>
-                            <a href="{{ route('oficinas.delete', ['id' => $oficina->id ]) }}" class="btn btn-danger delete-btn">Delete</a>
+                            <form method="post" action="{{ route('oficinas.delete', ['id' => $oficina->id ]) }}" class="d-inline delete-form">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
                         </td>
                     </tr>
                 @endforeach
@@ -89,18 +93,19 @@
 @section('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            let targetUrl = '';
+            let targetForm = null;
 
-            document.querySelectorAll('.delete-btn').forEach(function (button) {
-                button.addEventListener('click', function (event) {
+            document.querySelectorAll('.delete-form').forEach(function (form) {
+                form.addEventListener('submit', function (event) {
                     event.preventDefault();
-                    targetUrl = this.href;
+                    targetForm = this;
                     $('#confirmModal').modal('show');
                 });
             });
 
             document.getElementById('confirmBtn').addEventListener('click', function () {
-                window.location.href = targetUrl;
+                // HTMLFormElement.submit() skips the submit listener above.
+                if (targetForm) targetForm.submit();
             });
 
             document.getElementById('cancelModal').addEventListener('click', function () {

@@ -41,8 +41,13 @@
             </div>
             <br/>
             <button type="submit" class="btn btn-primary">Update</button>
-            <a href="{{ route('oficinas.delete', ['id' => $oficina->id ]) }}" class="btn btn-danger">Delete</a>
+            <button type="submit" form="delete-oficina-form" class="btn btn-danger">Delete</button>
             <a href="{{ route('devices.oficinas') }}" class="btn btn-secondary">Cancel</a>
+        </form>
+        <form id="delete-oficina-form" method="post" action="{{ route('oficinas.delete', ['id' => $oficina->id ]) }}"
+              onsubmit="return confirm('Delete this oficina and all of its devices?');">
+            @csrf
+            @method('DELETE')
         </form>
     </div>
 @endsection

@@ -43,9 +43,9 @@ class DeviceController extends Controller
         return view('devices.log', compact('deviceLogs', 'title'));
     }
 
-    public function deleteDevice(Request $request)
+    public function deleteDevice(Request $request, $id)
     {
-        $device = Device::find($request->input('id'));
+        $device = Device::find($id);
         if ($device) {
             // check for pending commands and delete them
             $pendingCommands = Command::where('device_id', $device->id)->get();
@@ -300,9 +300,9 @@ class DeviceController extends Controller
     }
 
 
-    public function deleteOficina(Request $request)
+    public function deleteOficina(Request $request, $id)
     {
-        $oficina = Oficina::find($request->input('id'));
+        $oficina = Oficina::find($id);
         if ($oficina) {
             DB::transaction(function () use ($oficina) {
                 // Devices of this oficina (same idoficina can exist under another empresa)
