@@ -30,18 +30,11 @@ class Handler extends ExceptionHandler
         });
 
         $this->renderable(function (NotFoundHttpException $e, $request) {
-            $requestData = $request->all();
-            
-            // Remove sensitive information
-            foreach ($this->dontFlash as $key) {
-                unset($requestData[$key]);
-            }
-
-            Log::error('404 Not Found: ' . $request->url(), [
-                'method' => $request->method(),
+            // S3: never log the request body; a clock posting templates to an
+            // unknown path would otherwise write them to the log.
+            Log::error('404 Not Found', \App\Support\DeviceRequestMetadata::fromRequest($request) + [
                 'ip' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-                'request_data' => $requestData
+                'user_agent' => mb_substr((string) $request->userAgent(), 0, 255),
             ]);
         });
     }

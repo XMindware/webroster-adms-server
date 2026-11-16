@@ -11,6 +11,7 @@ use App\Services\BiometricRecordParser;
 use App\Services\CommandIdService;
 use App\Services\FingerprintIngestService;
 use App\Services\PullFingerprintsService;
+use App\Support\DeviceRequestMetadata;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +35,7 @@ class iclockController extends Controller
     // handshake
     public function handshake(Request $request)
     {
-        Log::info('call handshake ', ['request' => $request->all()]);
+        Log::info('call handshake', DeviceRequestMetadata::fromRequest($request));
         try{
             
             $endpoint = parse_url($request->url(), PHP_URL_PATH);
@@ -42,7 +43,7 @@ class iclockController extends Controller
             // add to device logs
             $data = [
                 'url' => $endpoint,
-                'data' => json_encode($request->getContent()),
+                'data' => json_encode(DeviceRequestMetadata::fromRequest($request)),
                 'sn' => $request->input('SN'),
                 'option' => $request->input('option') ?? "handshake ",
             ];
@@ -183,8 +184,7 @@ class iclockController extends Controller
      */
     public function deviceCommand(Request $request)
     {
-        Log::info('call deviceCommand', ['request' => $request->all()]);
-        Log::info('deviceCommand content', ['data' => $request->getContent()]);
+        Log::info('call deviceCommand', DeviceRequestMetadata::fromRequest($request));
 
         try {
             $body = $request->getContent();
@@ -199,7 +199,7 @@ class iclockController extends Controller
             }
 
             if ($acks === []) {
-                Log::info('deviceCommand: no parsable acknowledgement', ['data' => $body]);
+                Log::info('deviceCommand: no parsable acknowledgement', DeviceRequestMetadata::bodySummary((string) $body));
 
                 return "OK";
             }
@@ -216,7 +216,9 @@ class iclockController extends Controller
                 if (!$command) {
                     Log::warning('deviceCommand: ack for unknown command', [
                         'sn' => $request->input('SN'),
-                        'ack' => $ack,
+                        'id' => mb_substr((string) $ack['id'], 0, 16),
+                        'return' => mb_substr((string) $ack['return'], 0, 16),
+                        'cmd' => mb_substr((string) ($ack['cmd'] ?? ''), 0, 16),
                     ]);
                     continue;
                 }
@@ -254,16 +256,16 @@ class iclockController extends Controller
      */
     public function receiveRecords(Request $request)
     {
-        Log::info('call receiveRecords', ['request' => $request->all()]);
+        $metadata = DeviceRequestMetadata::fromRequest($request);
+        Log::info('call receiveRecords', $metadata);
 
-        // finger_log.data is a TEXT column. A face upload is routinely larger
-        // than that, and letting the insert fail would turn into a 500 that
-        // the terminal retries forever — so the log keeps a prefix, and can
-        // never stop the payload from being processed.
+        // finger_log keeps metadata only (S3): the body carries fingerprint
+        // and face templates. A logging failure must never stop the payload
+        // from being processed.
         try {
             DB::table('finger_log')->insert([
-                'url' => json_encode($request->all()),
-                'data' => substr((string) $request->getContent(), 0, 60000),
+                'url' => json_encode($metadata),
+                'data' => json_encode(DeviceRequestMetadata::bodySummary((string) $request->getContent())),
             ]);
         } catch (Throwable $e) {
             Log::error('receiveRecords finger log ', ['error' => $e->getMessage()]);
@@ -289,7 +291,7 @@ class iclockController extends Controller
             try {
                 DeviceLog::create([
                     'url' => parse_url($request->url(), PHP_URL_PATH),
-                    'data' => json_encode($request->all()),
+                    'data' => json_encode($metadata),
                     'tgl' => now(),
                     'sn' => $sn,
                     'option' => $request->input('option') ?? '',
@@ -307,7 +309,7 @@ class iclockController extends Controller
             if ($table === 'OPTIONS') {
                 Log::info('receiveRecords: device options', [
                     'sn' => $sn,
-                    'options' => substr($body, 0, 4000),
+                    'options' => $this->shortDeviceOptions($body),
                 ]);
 
                 return "OK";
@@ -453,19 +455,7 @@ class iclockController extends Controller
 
     public function rtdata(Request $request)
     {
-        // log header and content
-        Log::info('rtdata', ['url' => json_encode($request->all())]);
-        Log::info('rtdata', ['data' => $request->getContent()]);
-        // log SN and type
-
-
-        $data = [
-            'url' => json_encode($request->all()),
-            'data' => $request->getContent(),
-            'sn' => $request->input('SN'),
-            'type' => $request->input('type'),
-        ];
-        Log::info('rtdata', ['data' => $data]);
+        Log::info('rtdata', DeviceRequestMetadata::fromRequest($request));
 
 
         // update status device
@@ -492,20 +482,7 @@ class iclockController extends Controller
 
     public function querydata(Request $request)
     {
-        Log::info('---------call querydata', ['request' => $request->all()]);
-        // log header and content
-        Log::info('querydata', ['url' => json_encode($request->all())]);
-        Log::info('querydata', ['data' => substr((string) $request->getContent(), 0, 2000)]);
-        $endpoint = parse_url($request->url(), PHP_URL_PATH);
-
-        // add to device logs
-        $data = [
-            'url' => $endpoint,
-            'data' => json_encode($request->all()),
-            'sn' => $request->input('SN'),
-            'table' => $request->input('table'),
-        ];
-        Log::info('querydata', ['data' => $data]);
+        Log::info('call querydata', DeviceRequestMetadata::fromRequest($request));
 
         // update status device
         DB::table('devices')->updateOrInsert(
@@ -546,7 +523,8 @@ class iclockController extends Controller
 
     public function getrequest(Request $request)
     {
-        Log::info('call getrequest', ['request' => $request->all()]);
+        $metadata = DeviceRequestMetadata::fromRequest($request);
+        Log::info('call getrequest', $metadata);
 
         try {
             $device = Device::where('serial_number', $request->input('SN'))->first();
@@ -562,14 +540,13 @@ class iclockController extends Controller
             try {
                 $data = [
                     'url' => $endpoint,
-                    'data' => json_encode($request->all()),
+                    'data' => json_encode($metadata),
                     'tgl' => now(),
                     'sn' => $request->input('SN'),
                     'option' => $request->input('option') ?? '',
                     'idreloj' => $device->idreloj ?? '999999',
                 ];
                 DeviceLog::create($data);
-                Log::debug("inserted data ", $data);
             } catch (Throwable $e) {
                 Log::error('getrequest device log', ['error' => $e->getMessage()]);
             }
@@ -634,8 +611,7 @@ class iclockController extends Controller
             return $response;
 
         } catch (Throwable $e) {
-            $data['data'] = $e;
-            Log::error('getrequest', ['data' => $data]);
+            Log::error('getrequest', $metadata + ['error' => $e->getMessage()]);
             report($e);
             return "OK";
         }
@@ -643,7 +619,7 @@ class iclockController extends Controller
 
     public function quickStatus(Request $request)
     {
-        Log::info('call quickStatus', ['request' => $request->all()]);
+        Log::info('call quickStatus', DeviceRequestMetadata::fromRequest($request));
 
         $lastError = DB::table('error_log')
             ->orderBy('created_at', 'desc')
@@ -653,6 +629,7 @@ class iclockController extends Controller
         if ($lastError) {
             // Unauthenticated endpoint (S8): report that an error exists and
             // when, never its contents.
+            Log::info('quickStatus', ['last_error_id' => $lastError->id]);
             $data = [
                 'status' => 'error',
                 'message' => 'Error logged',
@@ -676,7 +653,10 @@ class iclockController extends Controller
 
     public function uploadLog(Request $request)
     {
-        Log::info('📥 Received uploadLog', ['inputs' => $request->all()]);
+        Log::info('Received uploadLog', DeviceRequestMetadata::fromRequest($request) + [
+            'sn' => (string) $request->input('sn'),
+            'file_bytes' => $request->file('file')?->getSize(),
+        ]);
 
         if (!$request->hasFile('file') || !$request->file('file')->isValid()) {
             return response()->json(['error' => 'Invalid log file'], 400);
@@ -717,6 +697,26 @@ class iclockController extends Controller
 
         return response()->json(['status' => 'OK']);
     }
+    /**
+     * Device options (FaceFunOn=1, FWVersion=...) are useful when a pull
+     * misbehaves, but the body is never logged whole: keep key=value pairs
+     * with short values only, which drops anything template-sized.
+     *
+     * @return array<string, string>
+     */
+    private function shortDeviceOptions(string $body): array
+    {
+        $options = [];
+        foreach (preg_split('/[\r\n,]+/', $body) ?: [] as $pair) {
+            [$key, $value] = array_pad(explode('=', trim($pair), 2), 2, '');
+            if ($key !== '' && strlen($key) <= 32 && strlen($value) <= 32 && count($options) < 100) {
+                $options[$key] = $value;
+            }
+        }
+
+        return $options;
+    }
+
     private function validateAndFormatInteger($value)
     {
         return isset($value) && $value !== '' ? (int)$value : null;
