@@ -18,7 +18,8 @@ class VerifyCsrfToken extends Middleware
         'iclock/getrequest',
         'iclock/devicecmd',
         'iclock/querydata',
-        // iclock/upload-log stays CSRF-protected until S8 adds size limits
-        // and a registered-device check to it.
+        // S8: clocks cannot send a token; uploadLog checks the serial number
+        // against registered devices and caps size and lines instead.
+        'iclock/upload-log',
     ];
 }

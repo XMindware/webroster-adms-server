@@ -19,11 +19,10 @@ class DeviceCsrfContractTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * Not part of the ZKTeco protocol and unhardened until S8, so CSRF is
-     * the only thing rejecting anonymous uploads. Remove an entry here only
-     * together with the change that protects that route another way.
+     * POST routes under iclock/ that must keep CSRF. Add an entry only for a
+     * route that has no other protection.
      */
-    private const STILL_PROTECTED = ['iclock/upload-log'];
+    private const STILL_PROTECTED = [];
 
     protected function setUp(): void
     {
@@ -54,6 +53,7 @@ class DeviceCsrfContractTest extends TestCase
         }
 
         $this->assertContains('iclock/querydata', $uris);
+        $this->assertContains('iclock/upload-log', $uris);
 
         foreach ($uris as $uri) {
             if (in_array($uri, self::STILL_PROTECTED, true)) {
@@ -65,11 +65,6 @@ class DeviceCsrfContractTest extends TestCase
 
             $this->assertNotSame(419, $status, "POST /{$uri} was rejected by CSRF; clocks cannot send a token");
         }
-    }
-
-    public function test_upload_log_still_requires_a_csrf_token_until_s8(): void
-    {
-        $this->post('/iclock/upload-log?SN=CSRF-TEST')->assertStatus(419);
     }
 
     public function test_no_iclock_route_relies_on_a_login_session(): void
