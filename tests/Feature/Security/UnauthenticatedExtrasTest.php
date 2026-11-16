@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Security;
 
+use App\Http\Middleware\VerifyCsrfToken;
 use App\Models\Device;
 use App\Models\LogEntry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -85,5 +86,29 @@ class UnauthenticatedExtrasTest extends TestCase
         ])->assertOk()->assertJson(['status' => 'OK']);
 
         $this->assertSame(2, LogEntry::where('sn', 'SN-LOG')->count());
+    }
+
+    public function test_registered_device_can_upload_a_log_without_a_csrf_token(): void
+    {
+        // Clocks have no session. Laravel skips CSRF in tests, so re-enable it.
+        $this->app->instance(VerifyCsrfToken::class, new class($this->app, $this->app['encrypter']) extends VerifyCsrfToken
+        {
+            protected function runningUnitTests(): bool
+            {
+                return false;
+            }
+        });
+        Device::create(['serial_number' => 'SN-LOG', 'idempresa' => 1, 'idoficina' => 2, 'idreloj' => '1']);
+
+        $this->post('/iclock/upload-log', [
+            'sn' => 'SN-LOG',
+            'file' => UploadedFile::fake()->createWithContent('log.txt', "2026-11-15 10:00:00 - INFO - one\n"),
+        ])->assertOk();
+
+        // Unknown devices are still refused, now by the controller instead of CSRF.
+        $this->post('/iclock/upload-log', [
+            'sn' => 'NOT-REGISTERED',
+            'file' => UploadedFile::fake()->createWithContent('log.txt', "line\n"),
+        ])->assertForbidden();
     }
 }

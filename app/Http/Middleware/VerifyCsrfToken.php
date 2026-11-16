@@ -15,6 +15,9 @@ class VerifyCsrfToken extends Middleware
         //
         'iclock/cdata',
         'iclock/getrequest',
-        'iclock/devicecmd'
+        'iclock/devicecmd',
+        // S8: clocks cannot send a token; uploadLog checks the serial number
+        // against registered devices and caps size and lines instead.
+        'iclock/upload-log',
     ];
 }
