@@ -12,9 +12,13 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        // Clocks have no session and cannot send a token; the device
-        // endpoints are protected by serial-number checks instead (S2).
+        // Clocks have no session and cannot send a token.
         // Covered by tests/Feature/DeviceCsrfContractTest.php.
-        'iclock/*',
+        'iclock/cdata',
+        'iclock/getrequest',
+        'iclock/devicecmd',
+        'iclock/querydata',
+        // iclock/upload-log stays CSRF-protected until S8 adds size limits
+        // and a registered-device check to it.
     ];
 }
