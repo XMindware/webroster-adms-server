@@ -303,34 +303,6 @@
 						"description": "Health/status endpoint. Returns JSON {status: ok} or the latest error_log entry."
 					},
 					"response": []
-				},
-				{
-					"name": "Agentes Bulk Upsert (POST api/agentes/bulk-upsert)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Content-Type", "value": "application/json" },
-							{ "key": "Accept", "value": "application/json" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"agentes\": [\n    {\n      \"idagente\": 1001,\n      \"nombre\": \"Juan Perez\",\n      \"idoficina\": 1,\n      \"idempresa\": 1\n    }\n  ]\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": {
-							"raw": "{{base_url}}/api/agentes/bulk-upsert",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"agentes",
-								"bulk-upsert"
-							]
-						},
-						"description": "Bulk create/update agents. Adjust the payload to match your DeviceController handler."
-					},
-					"response": []
 				}
 			]
 		},

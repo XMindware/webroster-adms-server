@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Api\DeviceStatusController;
-use App\Http\Controllers\DeviceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\iclockController;
@@ -29,7 +28,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::post('/agentes/bulk-upsert', [DeviceController::class, 'agentes.bulkUpsert']);
 
 // WebRoster -> ADMS: per-empresa device status (Authorization: Bearer <empresa api key>)
 Route::middleware('empresa.key')->prefix('empresa')->group(function () {
