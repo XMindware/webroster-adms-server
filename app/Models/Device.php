@@ -28,12 +28,14 @@ class Device extends Model
         'modelo',
         'timezone_format',
         'push_version',
+        'enabled',
     ];
 
     protected $casts = [
         'last_alert_sent_at' => 'datetime',
         'updated_at' => 'datetime',
         'online' => 'datetime',
+        'enabled' => 'boolean',
     ];
 
     public function oficina()

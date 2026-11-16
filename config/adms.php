@@ -143,4 +143,33 @@ return [
     */
     'online_threshold_minutes' => (int) env('ADMS_ONLINE_THRESHOLD_MINUTES', 3),
 
+    /*
+    | Device authentication on /iclock/* (security finding S2).
+    |
+    | 'log'     unknown or disabled serial numbers are logged as warnings
+    |           (once per serial per hour) and still served. Unknown serials
+    |           are still auto-created on first contact, as before.
+    | 'enforce' they get "403 ERROR: Device not registered"; nothing is
+    |           stored and no device row is created.
+    |
+    | Run in 'log' for a week, confirm every warned serial, register the real
+    | ones, then switch to 'enforce'.
+    */
+    'device_auth' => in_array(env('ADMS_DEVICE_AUTH', 'log'), ['log', 'enforce'], true)
+        ? env('ADMS_DEVICE_AUTH', 'log')
+        : 'enforce',
+
+    /*
+    | Requests per minute per serial number + IP on /iclock/*. A full resend
+    | after a bulk pull posts many batches quickly, so keep this generous.
+    | 0 = no limit.
+    */
+    'device_rate_limit' => (int) env('ADMS_DEVICE_RATE_LIMIT', 600),
+
+    /*
+    | Requests per minute per IP across all serials (serials are chosen by the
+    | client). Clocks behind one NAT address share it. 0 = no limit.
+    */
+    'device_rate_limit_per_ip' => (int) env('ADMS_DEVICE_RATE_LIMIT_PER_IP', 3000),
+
 ];
