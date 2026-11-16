@@ -18,4 +18,5 @@ return [
     'registration_successful' => 'Registration successful.',
     'login_failed' => 'Invalid credentials.',
     'registration_failed' => 'Registration failed. Please try again.',
+    'throttle' => 'Too many login attempts. Please try again in :seconds seconds.',
 ];

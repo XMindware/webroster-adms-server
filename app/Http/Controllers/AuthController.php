@@ -7,9 +7,17 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    /** Failed attempts allowed per email + IP before lockout (S9). */
+    private const MAX_LOGIN_ATTEMPTS = 5;
+
+    private const LOGIN_DECAY_SECONDS = 60;
+
     ////Login
     public function login()
     {
@@ -18,19 +26,32 @@ class AuthController extends Controller
     public function loginUser(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email' => 'required|string|email|max:255',
             'password' => 'required|string|max:1024',
         ]);
-    
+
+        $throttleKey = Str::transliterate(Str::lower($request->input('email'))).'|'.$request->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, self::MAX_LOGIN_ATTEMPTS)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+
+            throw ValidationException::withMessages([
+                'email' => trans('auth.throttle', ['seconds' => $seconds, 'minutes' => (int) ceil($seconds / 60)]),
+            ]);
+        }
+
         $credentials = $request->only('email', 'password');
-    
+
         $remember = $request->has('remember'); // if you're using a "Remember me" checkbox
-    
+
         if (Auth::attempt($credentials, $remember)) {
+            RateLimiter::clear($throttleKey);
             $request->session()->regenerate(); // prevent session fixation
             return redirect()->intended('devices'); // redirect to intended page
         }
-    
+
+        RateLimiter::hit($throttleKey, self::LOGIN_DECAY_SECONDS);
+
         return back()->with('fail', 'Email or password is incorrect.');
     }
     ///Logout
