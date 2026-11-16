@@ -20,6 +20,11 @@ use Log;
 
 class iclockController extends Controller
 {
+    /** S8: limits for /iclock/upload-log. */
+    private const UPLOAD_LOG_MAX_KB = 1024;
+
+    private const UPLOAD_LOG_MAX_LINES = 10000;
+
 
    public function __invoke(Request $request)
    {
@@ -539,12 +544,6 @@ class iclockController extends Controller
         return $response;
     }
 
-    public function test(Request $request)
-    {
-        Log::info('call test', ['request' => $request->all()]);
-
-        return "OK";
-    }
     public function getrequest(Request $request)
     {
         Log::info('call getrequest', ['request' => $request->all()]);
@@ -652,12 +651,12 @@ class iclockController extends Controller
         $data = [];
 
         if ($lastError) {
-            Log::info('quickStatus', ['lastError' => $lastError]);
+            // Unauthenticated endpoint (S8): report that an error exists and
+            // when, never its contents.
             $data = [
                 'status' => 'error',
-                'message' => substr($lastError->data, 0, 16),
-                'error' => substr($lastError->data, 0, 30),
-                'timestamp' => $lastError->created_at ? $lastError->created_at->toIso8601String() : '',
+                'message' => 'Error logged',
+                'timestamp' => $lastError->created_at ? \Carbon\Carbon::parse($lastError->created_at)->toIso8601String() : '',
             ];
         }
         else {
@@ -683,9 +682,23 @@ class iclockController extends Controller
             return response()->json(['error' => 'Invalid log file'], 400);
         }
 
-        $sn = $request->input('sn', 'UNKNOWN');
+        // S8: only registered devices may upload, and only small text logs.
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'sn' => ['required', 'string', 'max:64'],
+            'file' => ['required', 'file', 'max:' . self::UPLOAD_LOG_MAX_KB],
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['error' => 'Invalid upload'], 422);
+        }
+
+        $sn = (string) $request->input('sn');
+        if (!Device::where('serial_number', $sn)->exists()) {
+            Log::warning('uploadLog: rejected unknown serial number', ['sn' => $sn]);
+            return response()->json(['error' => 'Unknown device'], 403);
+        }
+
         $file = $request->file('file');
-        $lines = file($file->getRealPath());
+        $lines = array_slice(file($file->getRealPath()) ?: [], 0, self::UPLOAD_LOG_MAX_LINES);
 
         foreach ($lines as $line) {
             $timestamp = now(); // fallback
