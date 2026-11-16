@@ -12,9 +12,9 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        //
-        'iclock/cdata',
-        'iclock/getrequest',
-        'iclock/devicecmd'
+        // Clocks have no session and cannot send a token; the device
+        // endpoints are protected by serial-number checks instead (S2).
+        // Covered by tests/Feature/DeviceCsrfContractTest.php.
+        'iclock/*',
     ];
 }
