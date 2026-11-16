@@ -259,25 +259,6 @@
 						"description": "Multipart upload of a device log file. Fields: sn (text), file (the log file). Returns {\"status\":\"OK\"} or 400 on invalid file."
 					},
 					"response": []
-				},
-				{
-					"name": "Test (GET test)",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/iclock/test",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"iclock",
-								"test"
-							]
-						},
-						"description": "Simple connectivity test. Returns OK."
-					},
-					"response": []
 				}
 			]
 		},

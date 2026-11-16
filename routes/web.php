@@ -76,12 +76,11 @@ Route::get('/iclock/cdata', [iclockController::class, 'handshake']);
 // request dari device
 Route::post('/iclock/cdata', [iclockController::class, 'receiveRecords']);
 Route::post('/iclock/devicecmd', [iclockController::class, 'deviceCommand']);
-Route::get('/iclock/test', [iclockController::class, 'test']);
 Route::get('/iclock/getrequest', [iclockController::class, 'getrequest']);
 Route::get('/iclock/rtdata', [iclockController::class, 'rtdata']);
 Route::post('/iclock/querydata', [iclockController::class, 'querydata']);
 Route::post('/iclock/upload-log', [iclockController::class, 'uploadLog']);
-Route::get('/api/test', [iclockController::class, 'quickStatus']);
+Route::get('/api/test', [iclockController::class, 'quickStatus'])->middleware('throttle:60,1');
 
 
 
