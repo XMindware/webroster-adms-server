@@ -20,8 +20,8 @@
     <script>
     const ctx = document.getElementById('deviceChart').getContext('2d');
 
-    const labels = {!! json_encode(array_keys($data)) !!};
-    const counts = {!! json_encode(array_values($data)) !!};
+    const labels = {{ Js::from(array_keys($data)) }};
+    const counts = {{ Js::from(array_values($data)) }};
 
     const chart = new Chart(ctx, {
         type: 'line',
