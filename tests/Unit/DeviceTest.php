@@ -4,7 +4,7 @@ namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 
-class DeviceTests extends TestCase
+class DeviceTest extends TestCase
 {
     /**
      * A basic test example.
@@ -14,7 +14,7 @@ class DeviceTests extends TestCase
     {
         $deviceLog = new \App\Models\DeviceLog();
         $this->assertEquals(
-            ['id', 'data', 'tgl', 'sn', 'option', 'url'],
+            ['id', 'data', 'tgl', 'sn', 'option', 'url', 'idreloj'],
             $deviceLog->getFillable()
         );
     }
