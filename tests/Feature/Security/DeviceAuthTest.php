@@ -186,15 +186,38 @@ class DeviceAuthTest extends TestCase
         $this->call('POST', '/iclock/cdata?SN=SN-OK&table=ATTLOG', ['SN' => 'SN-OK'])->assertOk();
     }
 
-    public function test_controller_sees_only_the_checked_serial_in_log_mode(): void
+    public function test_conflicting_serial_is_reported_and_passed_through_unchanged_in_log_mode(): void
     {
-        // Log mode serves the request, but the serial the controller stores
-        // must be the one that was checked (the query SN), not the body's.
-        $this->call('GET', '/iclock/cdata?SN=SN-OK&options=all', [], [], [], ['CONTENT_TYPE' => 'application/json'], '{"SN":"SN-EVIL"}')
-            ->assertOk()
-            ->assertSee('GET OPTION FROM: SN-OK');
+        // Log mode must not change what the controller sees: the request
+        // reaches it untouched, so (as on staging) the body SN wins in
+        // $request->input(). Only enforce mode may act on the conflict.
+        $warnings = [];
+        Event::listen(MessageLogged::class, function (MessageLogged $e) use (&$warnings) {
+            if ($e->level === 'warning') {
+                $warnings[] = $e;
+            }
+        });
 
-        $this->assertDatabaseMissing('devices', ['serial_number' => 'SN-EVIL']);
+        $this->call('POST', '/iclock/cdata?SN=SN-OK&table=ATTLOG', [
+            'SN' => 'FAKE-BODY-SN',
+            'note' => 'FAKE-BODY-CANARY',
+        ])->assertOk();
+
+        // Staging behaviour: the body serial is the one stored.
+        $this->assertDatabaseHas('devices', ['serial_number' => 'FAKE-BODY-SN']);
+
+        $conflicts = array_values(array_filter(
+            $warnings,
+            fn (MessageLogged $e) => str_contains($e->message, 'conflicting serial number'),
+        ));
+        $this->assertCount(1, $conflicts, 'the conflict must be reported once');
+
+        // Metadata only: never the request body.
+        $context = $conflicts[0]->context;
+        $this->assertSame([], array_diff(array_keys($context), ['sn', 'ip', 'path', 'mode']));
+        $this->assertSame('/iclock/cdata', $context['path']);
+        $this->assertSame('log', $context['mode']);
+        $this->assertStringNotContainsString('FAKE-BODY-CANARY', $conflicts[0]->message.json_encode($context));
     }
 
     public function test_device_endpoints_have_a_per_ip_ceiling_across_serials(): void
