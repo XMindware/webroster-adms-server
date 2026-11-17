@@ -32,7 +32,21 @@ class AuthenticateDevice
         $sn = $candidates[0] ?? '';
         $conflict = count(array_unique($candidates)) > 1;
 
-        $device = $sn === '' || $conflict ? null : Device::where('serial_number', $sn)->first(['id', 'enabled']);
+        $enforce = config('adms.device_auth') === self::MODE_ENFORCE;
+
+        try {
+            $device = $sn === '' || $conflict ? null : Device::where('serial_number', $sn)->first(['id', 'enabled']);
+        } catch (\Throwable $e) {
+            // Log mode must never take a clock offline because of this check.
+            // Class name only: the message can carry SQL or bound values.
+            Log::warning('device auth: lookup failed', [
+                'sn' => mb_substr($sn, 0, 64),
+                'exception' => $e::class,
+                'mode' => config('adms.device_auth'),
+            ]);
+
+            return $enforce ? $this->forbidden() : $next($request);
+        }
 
         $reason = match (true) {
             $conflict => 'conflicting',
@@ -41,21 +55,17 @@ class AuthenticateDevice
             default => null,
         };
 
-        // The controller reads $request->input('SN'/'sn'), where a body value
-        // beats the query string. Pin every source to the serial checked
-        // here, so what is stored is always what was authenticated.
-        self::pinSerial($request, $sn);
-
         if ($reason === null) {
             return $next($request);
         }
 
         $this->report($request, $sn, $reason);
 
-        if (config('adms.device_auth') !== self::MODE_ENFORCE) {
-            return $next($request);
-        }
+        return $enforce ? $this->forbidden() : $next($request);
+    }
 
+    private function forbidden(): Response
+    {
         return response('ERROR: Device not registered', 403)
             ->header('Content-Type', 'text/plain');
     }
@@ -95,21 +105,6 @@ class AuthenticateDevice
         }
 
         return array_values(array_filter($values, fn (string $v) => $v !== ''));
-    }
-
-    private static function pinSerial(Request $request, string $sn): void
-    {
-        foreach (['SN', 'sn'] as $key) {
-            if ($request->query->has($key)) {
-                $request->query->set($key, $sn);
-            }
-            if ($request->request->has($key)) {
-                $request->request->set($key, $sn);
-            }
-            if ($request->isJson() && $request->json()->has($key)) {
-                $request->json()->set($key, $sn);
-            }
-        }
     }
 
     /**
