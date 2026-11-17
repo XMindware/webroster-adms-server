@@ -78,7 +78,7 @@ Route::middleware(['auth'])
 
 // handshake
 // Device protocol. S2: only registered, enabled serials (see config/adms.php
-// device_auth), rate limited per serial number.
+// device_auth), optional rate limit (see device_rate_limit).
 Route::middleware(['throttle:device', 'device.auth'])->group(function () {
     Route::get('/iclock/cdata', [iclockController::class, 'handshake']);
     // request dari device

@@ -39,7 +39,7 @@ class AuthenticateDevice
         } catch (\Throwable $e) {
             // Log mode must never take a clock offline because of this check.
             // Class name only: the message can carry SQL or bound values.
-            Log::warning('device auth: lookup failed', [
+            $this->warnOnce('lookup-failed|'.$e::class.'|'.$sn, 'device auth: lookup failed', [
                 'sn' => mb_substr($sn, 0, 64),
                 'exception' => $e::class,
                 'mode' => config('adms.device_auth'),
@@ -112,17 +112,35 @@ class AuthenticateDevice
      */
     private function report(Request $request, string $sn, string $reason): void
     {
-        $key = 'device-auth-warned:'.sha1($reason.'|'.$sn);
-
-        if (! Cache::add($key, true, now()->addHour())) {
-            return;
-        }
-
-        Log::warning('device auth: '.$reason.' serial number', [
+        $this->warnOnce($reason.'|'.$sn, 'device auth: '.$reason.' serial number', [
             'sn' => mb_substr($sn, 0, 64),
             'ip' => $request->ip(),
             'path' => '/'.ltrim($request->path(), '/'),
             'mode' => config('adms.device_auth'),
         ]);
+    }
+
+    /**
+     * Reporting must never change the response: a failing cache or log
+     * channel is swallowed. If only the cache fails, the warning is still
+     * written (undeduplicated) so the problem stays visible.
+     *
+     * @param  array<string, mixed>  $context
+     */
+    private function warnOnce(string $dedupeKey, string $message, array $context): void
+    {
+        try {
+            try {
+                if (! Cache::add('device-auth-warned:'.sha1($dedupeKey), true, now()->addHour())) {
+                    return;
+                }
+            } catch (\Throwable) {
+                // fall through and log without dedupe
+            }
+
+            Log::warning($message, $context);
+        } catch (\Throwable) {
+            // nothing sensible left to do
+        }
     }
 }

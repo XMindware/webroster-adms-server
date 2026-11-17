@@ -146,7 +146,7 @@ return [
     /*
     | Device authentication on /iclock/* (security finding S2).
     |
-    | 'log'     unknown or disabled serial numbers are logged as warnings
+    | 'log'     unknown, disabled or conflicting serial numbers are logged as warnings
     |           (once per serial per hour) and still served exactly as before
     |           (unknown serials are still auto-created on first contact).
     |           Any value other than 'enforce' means 'log'.
