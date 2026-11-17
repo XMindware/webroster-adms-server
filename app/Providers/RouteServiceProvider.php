@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Http\Middleware\AuthenticateDevice;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 use Illuminate\Http\Request;
@@ -26,6 +27,26 @@ class RouteServiceProvider extends ServiceProvider
     {
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // S2: per serial number and IP, so one spoofed or looping clock
+        // cannot flood ingest. 0 disables the limit.
+        RateLimiter::for('device', function (Request $request) {
+            $perMinute = (int) config('adms.device_rate_limit', 0);
+            $perIp = (int) config('adms.device_rate_limit_per_ip', 0);
+
+            // Both 0 (default): no limiter, so no X-RateLimit headers.
+            $limits = [];
+            if ($perMinute > 0) {
+                $limits[] = Limit::perMinute($perMinute)
+                    ->by('sn:'.AuthenticateDevice::serialNumber($request).'|'.$request->ip());
+            }
+            if ($perIp > 0) {
+                // The serial is client-chosen, so also cap each IP across serials.
+                $limits[] = Limit::perMinute($perIp)->by('ip:'.$request->ip());
+            }
+
+            return $limits === [] ? Limit::none() : $limits;
         });
 
         $this->routes(function () {

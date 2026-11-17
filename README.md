@@ -84,6 +84,51 @@ Before you begin, ensure you have the following installed on your system:
     php artisan serve
     ```
 
+### 🔐 Device authentication (`/iclock/*`)
+
+Every `/iclock/*` request is checked against the `devices` table: is its serial number registered and enabled? By default the server only logs what it finds and serves the request as before. Rejecting unknown clocks is an explicit opt-in.
+
+**Deploy order:** run `php artisan migrate` as part of the deploy, before the new code serves `/iclock` traffic (for example, migrate, then reload PHP-FPM and any workers). The migration adds the `devices.enabled` column (existing devices stay enabled). Without the column every device lookup fails: in `log` mode clocks are still served but `device auth: lookup failed` is logged, and in `enforce` mode every clock gets a 403.
+
+Settings (in `.env`, read by `config/adms.php`). They are not in `.env.example`, so add them yourself if you want non-default values:
+
+```env
+ADMS_DEVICE_AUTH=log
+ADMS_DEVICE_RATE_LIMIT=0
+ADMS_DEVICE_RATE_LIMIT_PER_IP=0
+```
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `ADMS_DEVICE_AUTH` | `log` | `log`: unknown, disabled or conflicting serials are logged and still served exactly as before (unknown serials are still auto-created on their first handshake). `enforce`: they get `403` with body `ERROR: Device not registered`; nothing is stored and no device row is created. The value is trimmed and case-insensitive. Any value other than `enforce`, including a typo, means `log`. |
+| `ADMS_DEVICE_RATE_LIMIT` | `0` | Requests per minute per serial number + IP. `0` = no limit. |
+| `ADMS_DEVICE_RATE_LIMIT_PER_IP` | `0` | Requests per minute per IP across all serials (clocks behind one NAT address share it). `0` = no limit. |
+
+The two rate limits are independent. With both at `0` (the default) there is no throttling and responses carry no `X-RateLimit-*` headers. If you turn them on, keep them generous: a full re-upload after a bulk pull posts many batches quickly.
+
+What gets logged (warning level, at most once per hour for each serial and reason):
+
+| Message | When |
+| --- | --- |
+| `device auth: unregistered serial number` | The serial is not in `devices`, or the request has no serial. |
+| `device auth: disabled serial number` | The device exists but **Habilitado** is unchecked. |
+| `device auth: conflicting serial number` | The request carries more than one different serial (`SN`/`sn` in the query string or body), or a malformed one. |
+| `device auth: lookup failed` | The database lookup threw. Deduplicated per serial and exception class. |
+
+Each entry has `sn` (truncated to 64 characters) and `mode`. The first three also have `ip` and `path`; `lookup failed` has `exception` (the exception class only, never its message). These entries never include request bodies, biometric templates or tokens. If the lookup fails, `log` mode serves the request and `enforce` mode returns the same 403.
+
+Reporting never changes the response, in either mode. If the cache is down, warnings are still written, just without the hourly dedupe. If the log channel fails, the request is served (or refused) exactly as it would be otherwise.
+
+To mark a clock as not authorized, uncheck the **Habilitado** checkbox (labelled "Habilitado (solo bloquea el reloj con ADMS_DEVICE_AUTH=enforce)") on its edit page. In `log` mode (the default) it keeps working and is only reported as `disabled serial number`; in `enforce` mode it gets a 403.
+
+**Switching to `enforce` later:**
+
+1. Run in `log` mode for at least a week.
+2. Collect the serials from the `device auth:` warnings and compare them, and every row in `devices`, with the clocks you actually own. In `log` mode an unknown serial is warned on its first request and then auto-created, so look for rows you don't recognise, not only for warnings.
+3. Uncheck the **Habilitado** checkbox on any device you don't own. Nothing is blocked yet; it is only reported until step 4. Don't just delete it: in `log` mode its next handshake creates it again.
+4. Set `ADMS_DEVICE_AUTH=enforce`, then run `php artisan config:clear` (or `php artisan config:cache` if you cache config) so the new value is read.
+5. Watch the logs for clocks that now get 403. To roll back, set `ADMS_DEVICE_AUTH=log` and clear the config cache again.
+
 ### 📡 Monitoring Device Status
 
 You can monitor the status of devices by querying the `devices` table where the `online` field indicates the last time the device was online.

@@ -34,6 +34,12 @@
                     <option value="minutes" @if($device->timezone_format === 'minutes') selected @endif>Minutos (-360)</option>
                 </select>
             </div>
+            <div class="form-check">
+                <input type="hidden" name="enabled" value="0">
+                <input type="checkbox" name="enabled" value="1" class="form-check-input" id="enabled" aria-describedby="enabled_help" @if($device->enabled) checked @endif>
+                <label class="form-check-label" for="enabled">Habilitado (solo bloquea el reloj con ADMS_DEVICE_AUTH=enforce)</label>
+                <small id="enabled_help" class="d-block text-muted">Desmarcar indica que este reloj no está autorizado. En modo log (predeterminado) el reloj sigue conectándose a /iclock y solo queda registrado en el log; con ADMS_DEVICE_AUTH=enforce se rechaza con 403.</small>
+            </div>
             <div class="form-group">
                 <label for="online">Online</label>
                 <input type="text" name="online" class="form-control" id="online" value="{{ $device->online }}">

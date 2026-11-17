@@ -678,6 +678,7 @@ public function monitor()
         $device->timezone_format = in_array($request->input('timezone_format'), ['hours', 'minutes'], true)
             ? $request->input('timezone_format')
             : null;
+        $device->enabled = $request->boolean('enabled', true);
         $device->save();
       return redirect()->route('devices.index')->with('success', 'Biométrico actualizado correctamente');
     }
