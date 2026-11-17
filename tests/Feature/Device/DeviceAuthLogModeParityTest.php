@@ -8,10 +8,13 @@ use App\Http\Middleware\AuthenticateDevice;
 use App\Models\Command;
 use App\Models\Device;
 use App\Models\Oficina;
+use Illuminate\Cache\ArrayStore;
+use Illuminate\Cache\Repository;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -53,8 +56,11 @@ class DeviceAuthLogModeParityTest extends TestCase
 
     private const ROUTES = [
         'cdata GET', 'cdata POST ATTLOG', 'getrequest', 'rtdata',
-        'devicecmd', 'querydata', 'upload-log',
+        'devicecmd', 'querydata', 'upload-log', 'test',
     ];
+
+    /** Cases in which log mode reports the serial, and so touches the cache. */
+    private const REPORTED_CASES = ['unregistered', 'no SN', 'disabled'];
 
     private const CASES = ['registered', 'disabled', 'unregistered', 'no SN', 'conflicting SN'];
 
@@ -94,14 +100,66 @@ class DeviceAuthLogModeParityTest extends TestCase
     }
 
     /**
+     * @return array<string, array{string, string}>
+     */
+    public static function reportedRequests(): array
+    {
+        $data = [];
+        foreach (self::ROUTES as $route) {
+            foreach (self::REPORTED_CASES as $case) {
+                $data["$route / $case"] = [$route, $case];
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Reporting an unknown serial is bookkeeping: if the cache that dedupes
+     * the warning is down, log mode must still answer exactly like staging.
+     *
+     * @dataProvider reportedRequests
+     */
+    public function test_log_mode_matches_staging_when_the_warning_cache_fails(string $route, string $case): void
+    {
+        // Only add() fails, so the controller's own cache use (pending
+        // full-resend flags) still works on both sides.
+        $cacheDown = function (): void {
+            Cache::extend('add-fails', fn () => new class(new ArrayStore) extends Repository
+            {
+                public function add($key, $value, $ttl = null)
+                {
+                    throw new \RuntimeException('fake cache outage');
+                }
+            });
+            config([
+                'cache.stores.add-fails' => ['driver' => 'add-fails'],
+                'cache.default' => 'add-fails',
+            ]);
+        };
+
+        $staging = $this->capture($route, $case, bypassDeviceAuth: true, arrange: $cacheDown);
+        $actual = $this->capture($route, $case, bypassDeviceAuth: false, arrange: $cacheDown);
+
+        $this->assertSame($staging['status'], $actual['status'], 'status differs from staging');
+        $this->assertSame($staging['body'], $actual['body'], 'body differs from staging');
+        $this->assertSame($staging['rows'], $actual['rows'], 'stored rows differ from staging');
+    }
+
+    /**
+     * @param  (\Closure(): void)|null  $arrange  runs on the fresh app, before the request
      * @return array{status: int, body: string, headers: array<string, mixed>, rows: array<string, mixed>}
      */
-    private function capture(string $route, string $case, bool $bypassDeviceAuth): array
+    private function capture(string $route, string $case, bool $bypassDeviceAuth, ?\Closure $arrange = null): array
     {
         $this->refreshApplication();
         Carbon::setTestNow(self::NOW);
         Artisan::call('migrate');
         $this->seedFleet();
+
+        if ($arrange !== null) {
+            $arrange();
+        }
 
         if ($bypassDeviceAuth) {
             $this->withoutMiddleware([AuthenticateDevice::class, ThrottleRequests::class]);
@@ -180,6 +238,9 @@ class DeviceAuthLogModeParityTest extends TestCase
             'rtdata' => $conflict
                 ? ['GET', '/iclock/rtdata?'.$query(['type' => 'time']), [], [], $json, $otherJson]
                 : ['GET', '/iclock/rtdata?'.$query(['type' => 'time']), [], [], [], null],
+            'test' => $conflict
+                ? ['GET', '/iclock/test?'.$query([]), [], [], $json, $otherJson]
+                : ['GET', '/iclock/test?'.$query([]), [], [], [], null],
             'devicecmd' => $conflict
                 ? ['POST', '/iclock/devicecmd?'.$query([]), ['SN' => self::SN_OTHER, 'ID' => '501', 'Return' => '0', 'CMD' => 'DATA'], [], [], null]
                 : ['POST', '/iclock/devicecmd?'.$query([]), [], [], $text, 'ID=501&Return=0&CMD=DATA'],
