@@ -129,3 +129,14 @@ curl -H "Authorization: Bearer wrk_..." "https://<adms-host>/api/empresa/devices
 ```
 
 Each device returns `online` (contacted the server within `ADMS_ONLINE_THRESHOLD_MINUTES`, default 3), `last_seen_at`, `seconds_since_last_seen`, `last_checada` (`employee_id`, `device_timestamp` as stored, `received_at`), `pending_commands`, office and timezone. The list also carries a `summary` (total/online/offline) that ignores the `online` filter. Missing/invalid/revoked key → 401; a serial number from another empresa → 404.
+
+### Agents and biometrics
+
+Same key, same empresa scoping. Lists the empresa's agents and whether the terminals hold fingerprints or faces for them. Only counts and flags come back, never template or photo data.
+
+```bash
+curl -H "Authorization: Bearer wrk_..." "https://<adms-host>/api/empresa/agentes?idoficina=60&has_fingerprint=0&has_face=1&per_page=200&page=1"
+curl -H "Authorization: Bearer wrk_..." "https://<adms-host>/api/empresa/agentes/<idagente>"
+```
+
+Each agent returns `has_fingerprint`, `has_face` (a valid face template or a comparison photo), `fingerprint` (`fingers` = distinct finger indexes, `terminals`, `last_captured_at`) and `face` (`template_terminals`, `photo_terminals`, `last_captured_at`). Biometrics are matched by PIN (= `idagente`) across all of the empresa's terminals. The list has a `summary` (total / with_fingerprint / with_face / without_biometrics) that respects `idoficina` but ignores the `has_*` filters, and is paginated (`per_page` up to 1000, default 200; `meta` and `links` give paging). The single-agent call adds `terminals`: per serial number, which finger indexes and how many face templates/photos it holds. An agent of another empresa → 404.
